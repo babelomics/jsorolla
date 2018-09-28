@@ -403,22 +403,30 @@
                             includeIndividual: true,
                             limit: 20}, {})
                         .then(function (response) {
-//                            _this.autocompleteSampleData = response.response[0].result;
-                            let options = "";
-                            for (let sample of response.response[0].result) {
-                                let sampleStr = JSON.stringify(sample);
-                                options += `<option id="${_this.prefix}Sample${sample.name}" value="${sample.name}" data-sample='` + sampleStr + "'>";
+                            const options = response.response[0].result.map(sample => {
+                                const option = document.createElement('option');
+                                option.setAttribute("id", `${_this.prefix}Sample${sample.name}`);
+                                option.setAttribute("value", sample.name);
+                                // option.dataset.sample = sample;
+                                option.sample = sample;
+                                return option;
+                            });
+                            const listElement = document.getElementById(`${_this.prefix}AutocompleteSampleSearchDataList`);
+                            listElement.innerHTML = '';
+                            for (const option of options) {
+                                listElement.appendChild(option);
                             }
-                            PolymerUtils.innerHTML(_this.prefix + "AutocompleteSampleSearchDataList", options);
                         });
                 }
             }
 
             onSampleChange(e) {
                 if (UtilsNew.isNotUndefinedOrNull(this.samples)) {
-                    let sampleSearchInput = PolymerUtils.getElementById(this.prefix + "AutocompleteSampleSearchInput");
-                    let sampleHtmlObj = PolymerUtils.getElementById(this.prefix + "Sample" + sampleSearchInput.value);
-                    let sample = JSON.parse(sampleHtmlObj.dataset.sample);
+                    const sampleSearchInput = document.getElementById(this.prefix + "AutocompleteSampleSearchInput");
+                    const sampleName = sampleSearchInput.value;
+                    const sampleHtmlObj = PolymerUtils.getElementById(this.prefix + "Sample" + sampleName);
+                    // const sample = sampleHtmlObj.dataset.sample;
+                    const sample = sampleHtmlObj.sample;
 
                     if (UtilsNew.isNotUndefinedOrNull(sample)) {
                         // // Default genotype when adding samples is 0/1, 1/1
@@ -1172,7 +1180,8 @@
                     }
                 }
 
-                if (UtilsNew.isNotUndefinedOrNull(this.genotypeSamples.resetMode) && this.genotypeSamples.resetMode) {
+                if (UtilsNew.isNotUndefinedOrNull(this.genotypeSamples) && UtilsNew.isNotUndefinedOrNull(this.genotypeSamples.resetMode)
+                    && this.genotypeSamples.resetMode) {
                     this.genotypesChanged();
                     this.genotypeSamples.resetMode = false;
                 }
@@ -1418,8 +1427,6 @@
                                     </thead>
                                     <tbody></tbody>
                                 </table>
-                                <input type="checkbox" value="alternateGenotype" class="${prefix}AlternateGenotypeCheckBox" style="padding-left: 10px">
-                                    Any allele in multi-allelic variants
                             </div>
                         </div>
                     </div>
