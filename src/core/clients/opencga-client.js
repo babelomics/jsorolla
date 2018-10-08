@@ -20,6 +20,8 @@ class OpenCGAClientConfig {
         this.host = host;
         this.version = version;
         this.useCookies = useCookies;
+        this.cookiePrefix = cookiePrefix;
+
         if (this.useCookies) {
             this.setPrefix(cookiePrefix);
         } else {
@@ -45,17 +47,11 @@ class OpenCGAClient {
         this._config = config;
     }
 
-    getConfig() {
-        return this._config;
-    }
-
-    setConfig(config) {
-        this._config = config;
-    }
-
+    /*
+     * Client factory functions
+     */
     users() {
         if (typeof this._users === "undefined") {
-            console.log(this._config);
             this._users = new Users(this._config);
         }
         return this._users;
@@ -161,6 +157,121 @@ class OpenCGAClient {
         return this._ga4gh;
     }
 
+    /**
+     * Creates and return an anonymous session object, it is a sync function.
+     */
+    createAnonymousSession() {
+        let opencgaSession = {};
+        opencgaSession.user = {
+            id: "anonymous", projects: []
+        };
+        opencgaSession.token = "";
+        opencgaSession.date = new Date().toISOString();
+        opencgaSession.server = {
+            host: this._config.host,
+            version: this._config.version
+        };
+        opencgaSession.opencgaClient = this;
+
+        return opencgaSession;
+    }
+
+
+    /**
+     * Creates an authenticated session for the user and token of the current OpenCGAClient. The token is taken from the
+     * opencgaClient object itself.
+     * @returns {Promise<any>}
+     */
+    createSession() {
+        let _this = this;
+        return new Promise(function(resolve, reject) {
+            // check that a session exists
+            // TODO sould we check the session has not expired?
+            if (UtilsNew.isNotUndefined(_this._config.sessionId)) {
+                _this.users().info()
+                    .then(function(response) {
+                        let session = {};
+                        session.user = response.response[0].result[0];
+                        session.token = _this._config.sessionId;
+                        session.date = new Date().toISOString();
+                        session.server = {
+                            host: _this._config.host,
+                            version: _this._config.version,
+                            serverVersion: _this._config.serverVersion
+                        };
+                        session.opencgaClient = _this;
+
+                        // Fetch authorised Projects and Studies
+                        _this.projects().search({})
+                            .then(function (response) {
+                                session.projects = response.response[0].result;
+                                if (UtilsNew.isNotEmptyArray(session.projects) && UtilsNew.isNotEmptyArray(session.projects[0].studies)) {
+                                    // FIXME This is need to keep backward compatibility with OpenCGA 1.3.x
+                                    for (let project of session.projects) {
+                                        project.alias = project.alias || project.fqn || null;
+                                        if (project.studies !== undefined) {
+                                            for (let study of project.studies) {
+                                                // If study.alias does not exist we are NOT in version 1.3, we set fqn from 1.4
+                                                if (study.alias === undefined || study.alias === "") {
+                                                    if (study.fqn.includes(":")) {
+                                                        study.alias = study.fqn.split(":")[1];
+                                                    } else {
+                                                        study.alias = study.fqn;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // this sets the current active project and study
+                                    session.project = session.projects[0];
+                                    session.study = session.projects[0].studies[0];
+                                }
+
+                                resolve(session);
+                            })
+                            .catch(function (response) {
+                                reject({message: "An error when getting projects", value: response});
+                            });
+                    });
+            } else {
+                reject({message: "No valid token", value: _this._config.sessionId});
+            }
+        });
+    }
+
+    /*
+     * Getter and setters
+     */
+    getConfig() {
+        return this._config;
+    }
+
+    setConfig(config) {
+        this._config = config;
+    }
+
+    getUserId() {
+        if (this._config.hasOwnProperty("cookieUserId")) { // The app is using cookies
+            return Cookies.get(this._config.cookieUserId);
+        } else {
+            if (this._config.hasOwnProperty("userId")) {
+                return this._config.userId;
+            }
+        }
+        return undefined;
+    }
+
+    getToken() {
+        if (this._config.hasOwnProperty("cookieSessionId")) { // The app is using cookies
+            return Cookies.get(this._config.cookieSessionId);
+        } else {
+            if (this._config.hasOwnProperty("sessionId")) {
+                return this._config.sessionId;
+            }
+        }
+        return undefined;
+    }
 }
 
 // parent class
@@ -248,11 +359,10 @@ class OpenCGAParentClass {
     }
 
     _createRestUrl(host, version, category1, ids1, category2, ids2, action) {
-        let url;
-        if (host.startsWith("https://")) {
-            url = `${host}/webservices/rest/${version}/${category1}/`;
-        } else {
-            url = `http://${host}/webservices/rest/${version}/${category1}/`;
+        let url = host + `/webservices/rest/${version}/${category1}/`;
+        // By default we assume https protocol instead of http
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            url = `https://${host}/webservices/rest/${version}/${category1}/`;
         }
 
         // Some web services do not need IDs
@@ -266,7 +376,7 @@ class OpenCGAParentClass {
         }
 
         // Some web services do not need the second category of ids
-        if (typeof ids2 !== "undefined" && ids2 !== null) {
+        if (typeof ids2 !== "undefined" && ids2 !== null && ids2 !== "") {
             url += `${ids2}/`;
         }
 
@@ -370,16 +480,16 @@ class Users extends OpenCGAParentClass {
         }
         return this.get("users", userId, "login", params, options).then(function(response) {
             if (response.error === "") {
+                this._config.userId = userId;
+                this._config.sessionId = response.response[0].result[0].id;
+
+                // Cookies being used
                 if (this._config.useCookies) {
-                    // Cookies being used
                     Cookies.set(this._config.cookieSessionId, response.response[0].result[0].id);
                     Cookies.set(this._config.cookieUserId, userId);
                     Cookies.set(this._config.cookiePassword, encryptedPass);
                     Cookies.set(this._config.cookieLoginResponse, JSON.stringify(response));
-                    console.log("Cookies properly set");
                 }
-                this._config.sessionId = response.response[0].result[0].id;
-                this._config.userId = userId;
 
                 return response;
             }
@@ -408,32 +518,18 @@ class Users extends OpenCGAParentClass {
     }
 
     logout() {
+        this._config.userId = "";
+        this._config.sessionId = "";
+
+        // Remove cookies
         if (this._config.hasOwnProperty("cookieUserId")) {
-            // Cookies being used
             Cookies.expire(this._config.cookieSessionId);
             Cookies.expire(this._config.cookieUserId);
             Cookies.expire(this._config.cookiePassword);
             Cookies.expire(this._config.cookieLoginResponse);
-            console.log("Cookies properly removed");
         }
-        this._config.userId = "";
-        this._config.sessionId = "";
-        // return this.get("users", this._getUserId(), "logout")
-        //     .then(function(response) {
-        //         if (response.error === "") {
-        //             if (this._config.hasOwnProperty("cookieUserId")) {
-        //                 // Cookies being used
-        //                 Cookies.expire(this._config.cookieSessionId);
-        //                 Cookies.expire(this._config.cookieUserId);
-        //                 Cookies.expire(this._config.cookiePassword);
-        //                 Cookies.expire(this._config.cookieLoginResponse);
-        //                 console.log("Cookies properly removed");
-        //             }
-        //             this._config.userId = "";
-        //             this._config.sessionId = "";
-        //             return response;
-        //         }
-        //     }.bind(this));
+
+        return Promise.resolve();
     }
 
     changeEmail(newMail) {
@@ -465,7 +561,8 @@ class Users extends OpenCGAParentClass {
 
     // Filters
     getFilters(params, options) {
-        return this.extendedGet("users", this._getUserId(), "configs/filters", undefined, "list", params, options);
+        let subCat = (options.serverVersion !== undefined && options.serverVersion === "1.3") ? "list" : "";
+        return this.extendedGet("users", this._getUserId(), "configs/filters", undefined, subCat, params, options);
     }
 
     getFilter(filter, params, options) {
@@ -496,6 +593,25 @@ class Users extends OpenCGAParentClass {
         }
         _options["method"] = "POST";
         return this.extendedGet("users", this._getUserId(), "configs/filters", filter, "update", _params, _options);
+    }
+
+    updateFilters(action, params, options) {
+        let _action = action;
+        let _params = Object.assign({}, params);
+        let _options = Object.assign({}, options);
+
+        if (_action === undefined || _action === "") {
+            _action = "ADD";
+        }
+
+        if (!_params.hasOwnProperty("body")) {
+            _params = {
+                action: _action,
+                body: _params
+            };
+        }
+        _options["method"] = "POST";
+        return this.extendedGet("users", this._getUserId(), "configs/filters", undefined, "update", _params, _options);
     }
 
     deleteFilter(filter) {
@@ -942,11 +1058,15 @@ class Panels extends Acls {
     }
 
     create(params, body, options) {
-        return this.post("panels", undefined, "create", params, body, options);
+        return this.post("diseasePanels", undefined, "create", params, body, options);
+    }
+
+    search(params, options) {
+        return this.get("diseasePanels", undefined, "search", params, options);
     }
 
     info(id, params, options) {
-        return this.get("panels", id, "info", params, options);
+        return this.get("diseasePanels", id, "info", params, options);
     }
 
 }
@@ -1014,12 +1134,20 @@ class Variant extends OpenCGAParentClass {
         super(config);
     }
 
+    metadata(params, options) {
+        return this.get("analysis/variant", undefined, "metadata", params, options);
+    }
+
     query(params, options) {
         return this.get("analysis/variant", undefined, "query", params, options);
     }
 
     facet(params, options) {
         return this.get("analysis/variant", undefined, "facet", params, options);
+    }
+
+    samples(params, options) {
+        return this.get("analysis/variant", undefined, "samples", params, options);
     }
 
     index(params, options) {
