@@ -563,7 +563,7 @@
                 this._clearHtmlDom();
 
                 // Check 'query' is not null or empty there is nothing else to do
-                if (UtilsNew.isUndefinedOrNull(this.query) || Object.keys(this.query).length === 0) {
+                if (0 === Object.keys(this.query || []).length) {
                     return;
                 }
 
@@ -576,27 +576,27 @@
                 // }
 
                 // Cohorts
-                let cohortArray = [];
-                if (typeof this.query.maf !== "undefined") {
-                    cohortArray = this.query.maf.split(new RegExp("[,;]"));
-                    for (let i = 0; i < cohortArray.length; i++) {
-                        let [study, cohortFreq] = cohortArray[i].split(':');
-                        let [cohort, freq] = cohortFreq.split(/[<=>]+/);
-                        let operator = cohortFreq.split(/[-A-Za-z0-9._:]+/)[1];
+
+                if (!!this.query.maf) {
+                    const cohortArray = this.query.maf.split(new RegExp("[,;]"));
+                    for (const cohortItem of cohortArray) {
+                        const [study, cohortFreq] = cohortItem.split(':');
+                        const [cohort, freq] = cohortFreq.split(/[<=>]+/);
+                        const operator = cohortFreq.split(/[-A-Za-z0-9._:]+/)[1];
                         PolymerUtils.setValue(this.prefix + study + cohort + "Cohort", freq);
                         PolymerUtils.setValue(this.prefix + study + cohort + "CohortOperator", operator);
                     }
                 }
 
                 // Studies
-                if (typeof this.query.studies !== "undefined") {
-                    if (this.$.includeOtherStudy !== null && this.$.differentStudies !== null) {
-                        let studies = this.query.studies.split(new RegExp("[,;]"));
+                if (!!this.query.studies) {
+                    if (!!this.$.includeOtherStudy && !!this.$.differentStudies) {
+                        const studies = this.query.studies.split(new RegExp("[,;]"));
                         if (studies.length > 1) {
-                            let checkBoxes = PolymerUtils.querySelectorAll("input", this.prefix + "DifferentStudies");
-                            for (let i = 0; i < studies.length; i++) {
-                                let study = studies[i].split(':')[1];
-                                for (let j = 0; j < checkBoxes.length; j++) {
+                            const checkBoxes = PolymerUtils.querySelectorAll("input", this.prefix + "DifferentStudies");
+                            for (const studyItem of studies) {
+                                const study = studyItem.split(':')[1];
+                                for (const checkbox of checkBoxes) {
                                     if (checkBoxes[j].value === study) {
                                         checkBoxes[j].checked = true;
                                     }
@@ -624,7 +624,7 @@
                 }
 
                 // Panel - annot-panel
-                if (typeof this.query["gene"] !== "undefined") {
+                if (!!this.query["gene"]) {
 
                     // TODO: from babelmics-mmp
                     let genesPanelAppValues = PolymerUtils.getValue(this.prefix + "PanelAppsTextarea");
@@ -639,6 +639,7 @@
                     if(this.query["gene"] !== genesExternalPanelValues ){
                         PolymerUtils.setValue(this.prefix + "AutocompleteExternalPanelSearchInput", "");
                         PolymerUtils.setValue(this.prefix + "ExternalPanelAppsTextarea", "");
+                    }
 
                     // TODO: from develop
                     // PolymerUtils.setValue(this.prefix + "PanelAppsTextarea", this.query.gene);
@@ -734,42 +735,40 @@
                 }
 
                 // Conservation
-                if (typeof this.query.conservation !== "undefined") {
-                    let fields = this.query.conservation.split(new RegExp("[,;]"));
-                    for (let i = 0; i < fields.length; i++) {
-                        let source = fields[i].split(/[<=>]+/)[0];
+                if (!!this.query.conservation) {
+                    const fields = this.query.conservation.split(new RegExp("[,;]"));
+                    for (const field of fields) {
+                        const source = field.split(/[<=>]+/)[0];
                         switch (source) {
                             case "phylop":
-                                PolymerUtils.setValue(this.prefix + "PhylopInput", fields[i].split(/[<=>]+/)[1]);
-                                PolymerUtils.setValue(this.prefix + "PhylopOperator", fields[i].split(/[-A-Za-z0-9]+/)[1]);
+                                PolymerUtils.setValue(this.prefix + "PhylopInput", field.split(/[<=>]+/)[1]);
+                                PolymerUtils.setValue(this.prefix + "PhylopOperator", field.split(/[-A-Za-z0-9]+/)[1]);
                                 break;
                             case "phastCons":
-                                PolymerUtils.setValue(this.prefix + "PhastconsInput", fields[i].split(/[<=>]+/)[1]);
-                                PolymerUtils.setValue(this.prefix + "PhastconsOperator", fields[i].split(/[-A-Za-z0-9]+/)[1]);
+                                PolymerUtils.setValue(this.prefix + "PhastconsInput", field.split(/[<=>]+/)[1]);
+                                PolymerUtils.setValue(this.prefix + "PhastconsOperator", field.split(/[-A-Za-z0-9]+/)[1]);
                                 break;
                             case "gerp":
-                                PolymerUtils.setValue(this.prefix + "GerpInput", fields[i].split(/[<=>]+/)[1]);
-                                PolymerUtils.setValue(this.prefix + "GerpOperator", fields[i].split(/[-A-Za-z0-9]+/)[1]);
+                                PolymerUtils.setValue(this.prefix + "GerpInput", field.split(/[<=>]+/)[1]);
+                                PolymerUtils.setValue(this.prefix + "GerpOperator", field.split(/[-A-Za-z0-9]+/)[1]);
                                 break;
                         }
                     }
                 }
 
-                // Consequence Type
-                let ct = [];
-                if (typeof this.query["annot-ct"] !== "undefined") {
-                    let types = this.query["annot-ct"].split(",");
-                    let checkBoxes = PolymerUtils.querySelectorAll("li input", this.prefix + "consequenceTypeFilter");
-                    for (let i = 0; i < types.length; i++) {
-                        for (let j = 0; j < checkBoxes.length; j++) {
-                            if (UtilsNew.isNotUndefinedOrNull(checkBoxes[j]) && checkBoxes[j].getAttribute("data-id") === types[i]) {
-                                checkBoxes[j].checked = true;
-                                ct.push(types[i]);
-                            }
-                        }
-                    }
+                // Consequence Type (rewritten)
+                if (!!this.query["annot-ct"]) {
+                    const types = this.query['annot-ct'].split(",");
+                    const checkBoxes = PolymerUtils.querySelectorAll("li input", `${this.prefix}consequenceTypeFilter`);
+                    const ct = types.filter(type => {
+                        const ctBoxes = checkBoxes.filter(checkbox => !!checkbox && checkbox.getAttribute("data-id") === type);
+                        for (const checkbox of ctBoxes) checkbox.checked = true;
+                        return (ctBoxes.length > 0);
+                    });
+                    this.set('ct', ct);
+                } else {
+                    this.set('ct', []);
                 }
-                this.set('ct', ct);
 
                 // Gene Ontology and Human Phenotype Ontology
                 if (typeof this.query["annot-go"] !== "undefined") {
