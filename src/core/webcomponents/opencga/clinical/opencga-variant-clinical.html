@@ -23,6 +23,7 @@
 <link rel="import" href="clinical-interpretation-view.html">
 <link rel="import" href="../opencga-message-dialog.html">
 <link rel="import" href="../catalog/clinical/opencga-clinical-analysis-grid.html">
+<link rel="import" href="./opencga-variant-clinical-interpretation.html">
 
 <dom-module id="opencga-variant-clinical">
     <template>
@@ -161,8 +162,8 @@
                 </div>
             </div>
 
-            <!-- UPLOAD TAB -->
-            <div class="col-md-12">
+            <div class="col-md-12"></div>
+                <!-- UPLOAD TAB -->
                 <template is="dom-if" if="{{activesTab.uploadTab}}">
                     <div class$="analysis-content" id="{{prefix}}UploadButtonDiv">
                         <variant-clinical-upload-new opencga-session="{{opencgaSession}}" opencga-client="{{opencgaClient}}" config="{{config}}"
@@ -181,207 +182,113 @@
                 </template>
 
                 <!-- INTERPRETATION TAB -->
-                <template is="dom-if" if="{{activesTab.prioritizationTab}}">
+                <!-- analysisSelected -->
+                <template is="dom-if" if="{{activesTab.prioritizationTab}}" restamp="true">
+                    <opencga-variant-clinical-interpretation
+                            opencga-session="{{opencgaSession}}"
+                            opencga-client="{{opencgaClient}}"
+                            cellbase-client="{{cellbaseClient}}"
+                            config="{{config}}"
+                            samples="{{samples}}"
+                            population-frequencies="{{populationFrequencies}}"
+                            consequence-types="{{consequenceTypes}}"
+                            protein-substitution-scores="{{proteinSubstitutionScores}}"
+                            clinical-analysis="{{clinicalAnalysis}}"
+                            panel-examples="{{panelExamples}}"
+                            event-notify-name="{{eventNotifyName}}"
+                            on-change-tool="changeTool"
+                    >
+                    </opencga-variant-clinical-interpretation>
+                </template>
 
-                    <template is="dom-if" if="{{!activePrioritization}}">
-                        <div class="col-md-offset-1 col-md-10">
-
-                            <div class="col-md-12">
-                                <h3>Select Clinical Analysis</h3>
-                                <hr style="width: 80%; margin: 2px 0px;border-top: 2px solid #eee">
+                <!-- REPORT TAB -->
+                <template is="dom-if" if="{{activesTab.reportTab}}" restamp="true">
+                    <template is="dom-if" if="{{!activeReport}}">
+                        <div class="col-md-offset-1 col-md-10 ">
+                            <div class="analysis-content" id="{{prefix}}ReportButtonDiv">
+                                <h3>Clinical Analysis {{clinicalAnalysis.name}}</h3>
                                 <div style="padding: 10px 10px">
-                                    <button id="{{prefix}}clearSelectedAnalysis" data-toggle="modal" role="button" data-placement="bottom"
-                                            on-click="clearSelectedAnalysis" class="btn btn-sm btn-primary" style="display: inline; float:right; margin:0 25%;">
+                                    <button id="{{prefix}}clearSelectedAnalysisInterpretation" data-toggle="modal" role="button" data-placement="bottom"
+                                        on-click="clearSelectedAnalysis" class="btn btn-sm btn-primary" style="display: inline; float:right; margin:0 25%;">
                                         Clear
                                     </button>
                                     <div class="form-group">
                                         <div class="">
-                                            <span for="{{prefix}}SelectOtherAnalysis">Select a recent analysis from the table (last 5 analysis) or select a clinical analysis </span>
-                                            <button id="{{prefix}}SelectOtherAnalysis" data-toggle="modal" role="button" data-placement="bottom"
-                                                    on-click="showClinicalSelector" class="btn btn-sm btn-primary" style="display: inline">
+                                            <span for="{{prefix}}SelectOtherAnalysisInterpretation">Select a recent analysis from the table (last 5 analysis) or select a clinical analysis </span>
+                                            <button id="{{prefix}}SelectOtherAnalysisInterpretation" data-toggle="modal" role="button" data-placement="bottom"
+                                                on-click="showClinicalSelector" class="btn btn-sm btn-primary" style="display: inline">
                                                 Browse...
                                             </button>
                                         </div>
                                     </div>
-                                    <template is="dom-if" if="{{showLastRecent}}" restamp="true">
-                                        <div id="{{prefix}}OpencgaClinicalAnalysisGrid">
-
+                                    <template is="dom-if" if="{{showLastRecentInterpretation}}" restamp="true">
+                                        <div id="{{prefix}}OpencgaClinicalAnalysisGridInterpretation">
                                             <opencga-clinical-analysis-grid opencga-session="{{opencgaSession}}" opencga-client="{{opencgaClient}}"
-                                                                            query="{{clinicalAnalysisQuery}}" config="{{clinicalAnalysisGridConfig}}"
-                                                                            on-analysis-selected="onRecentAnalysisSelected" analysis="{{clinicalAnalysis}}">
+                                                query="{{clinicalAnalysisQuery}}" config="{{clinicalAnalysisGridConfig}}"
+                                                on-analysis-selected="onRecentAnalysisSelected" analysis="{{clinicalAnalysis}}">
                                             </opencga-clinical-analysis-grid>
                                         </div>
                                     </template>
 
-                                    <template is="dom-if" if="{{!showLastRecent}}">
-                                        <div id="{{prefix}}OpencgaClinicalAnalysisGrid2" style="padding: 5px 10px">
+                                    <template is="dom-if" if="{{!showLastRecentInterpretation}}">
+                                        <div id="{{prefix}}OpencgaClinicalAnalysisGrid2Interpretation" style="padding: 5px 10px">
                                             <clinical-analysis-view opencga-session="{{opencgaSession}}" opencga-client="{{opencgaClient}}"
-                                                                    clinical-analysis-id="{{clinicalAnalysisId}}" title="Clinical analysis selected">
+                                                clinical-analysis-id="{{clinicalAnalysisId}}" title="Clinical analysis selected">
                                             </clinical-analysis-view>
                                         </div>
                                     </template>
                                 </div>
-                            </div>
-
-                            <div class="col-md-12" style="padding-top: 20px">
-                                <h3>Interpretation Algorithm</h3>
-                                <hr style="width: 80%; margin: 2px 0px;border-top: 2px solid #eee">
-                                <div class="form-group" style="padding: 10px 10px">
-                                    <p>Several prioritization and interpretation algorithms are available, you can choose an <span style="font-weight: bold">interactive</span> tool:</p>
-                                    <template is="dom-repeat" items="{{config.interpretation.algorithms}}" as="algorithm">
-                                        <div id="{{prefix}}{{algorithm.id}}ModeDiv">
-                                            <template is="dom-if" if="{{algorithm.checked}}">
-                                                <input id="{{prefix}}{{algorithm.id}}Mode" type="radio" name="analysisRadioButtons" value="{{algorithm.id}}" class$="{{prefix}}FilterRadio"
-                                                       checked on-change="selectAnalysisMode" style="padding-left: 20px"> {{algorithm.title}}<br>
-                                            </template>
-                                            <template is="dom-if" if="{{!algorithm.checked}}">
-                                                <input id="{{prefix}}{{algorithm.id}}Mode" type="radio" name="analysisRadioButtons" value="{{algorithm.id}}" class$="{{prefix}}FilterRadio"
-                                                       on-change="selectAnalysisMode" style="padding-left: 20px"> {{algorithm.title}}<br>
+                                <h3>Clinical Interpretation</h3>
+                                <div class="col-md-12" style="padding: 10px 15px">
+                                    <div class="form-group col-md-12" id="{{prefix}}selectInterpretationType">
+                                        <h4>Select Interpretation:</h4>
+                                        <div style="padding: 10px 20px">
+                                            <template is="dom-if" if="{{!checkExistsRecentInterpretations}}">
+                                                <span>No interpretation found</span>
                                             </template>
 
-                                            <template is="dom-if" if="{{isAutomaticMode(algorithm.id)}}">
-                                                <span style="padding-left: 20px">Select a disease panels </span>
-                                                <select id="{{prefix}}DiseasePanels" class="selectpicker show-tick" data-size="10" data-live-search="true"
-                                                        data-max-options="1" data-selected-text-format="count" on-change="onDiseasePanelChange" multiple>
-                                                    <template is="dom-repeat" items="{{panelList}}" as="panel" on-dom-change="updateSelectPicker">
-                                                        <option value="{{panel.id}}">{{panel.title}} ({{panel.genes.length}})</option>
-                                                    </template>
-                                                </select>
+                                            <template is="dom-if" if="{{checkExistsRecentInterpretations}}" >
+                                                <template is="dom-repeat" items="{{recentInterpretations}}" as="interpretation" index-as="i">
+                                                    <input
+                                                        id="{{prefix}}sampleRadio{{interpretation.id}}"
+                                                        type="radio"
+                                                        name="interpretationRecentRadioButtons"
+                                                        value="{{interpretation.file.id}}"
+                                                        class$="{{prefix}}FilterRadio"
+                                                        on-change="selectInterpretationRecent"
+                                                        checked$="{{isCheckedDefaultInterpretation(i, interpretation.file.id)}}"
+                                                        style="padding-left: 20px">
+                                                        {{interpretation.name}}
+                                                        <br>
+                                                </template>
                                             </template>
                                         </div>
-                                    </template>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="col-md-12">
-                                <div style="float: right; margin:0 25%;">
-                                    <button id="clickOkPrioritization" type="button" class="btn btn-lg btn-primary" on-click="onClickOkPrioritization">
-                                        Go to Interpretation
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-            </div>
-        </template>
-
-        <template is="dom-if" if="{{activePrioritization}}">
-            <div style="margin: auto">
-                <opencga-variant-interpretation opencga-session="{{opencgaSession}}" config="{{config.interpretation}}"
-                                                samples="{{samples}}" disease-panel-id="{{diseasePanelId}}"
-                                                population-frequencies="{{populationFrequencies}}"
-                                                protein-substitution-scores="{{proteinSubstitutionScores}}" consequence-types="{{consequenceTypes}}"
-                                                opencga-client="{{opencgaClient}}"
-                                                cellbase-client="{{cellbaseClient}}"
-                                                beacon-hosts="{{config.tools.beacon.hosts}}" on-gene="geneSelected"
-                                                clinical-analysis-id="{{clinicalAnalysisId}}" on-backtoselectanalysis="changeTool" event-notify-name="{{eventNotifyName}}"
-                                                interactive="{{interactive}}" panel-examples="{{panelExamples}}">
-                </opencga-variant-interpretation>
-            </div>
-        </template>
-    </template>
-
-    <!-- REPORT TAB -->
-    <template is="dom-if" if="{{activesTab.reportTab}}">
-        <template is="dom-if" if="{{!activeReport}}">
-            <div class="col-md-offset-1 col-md-10 ">
-                <div class="analysis-content" id="{{prefix}}ReportButtonDiv">
-                    <h3>Clinical Analysis {{clinicalAnalysis.name}}</h3>
-                    <div style="padding: 10px 10px">
-                        <button id="{{prefix}}clearSelectedAnalysisInterpretation" data-toggle="modal" role="button" data-placement="bottom"
-                                on-click="clearSelectedAnalysis" class="btn btn-sm btn-primary" style="display: inline; float:right; margin:0 25%;">
-                            Clear
-                        </button>
-                        <div class="form-group">
-                            <div class="">
-                                <span for="{{prefix}}SelectOtherAnalysisInterpretation">Select a recent analysis from the table (last 5 analysis) or select a clinical analysis </span>
-                                <button id="{{prefix}}SelectOtherAnalysisInterpretation" data-toggle="modal" role="button" data-placement="bottom"
-                                        on-click="showClinicalSelector" class="btn btn-sm btn-primary" style="display: inline">
-                                    Browse...
-                                </button>
-                            </div>
-                        </div>
-                        <template is="dom-if" if="{{showLastRecentInterpretation}}" restamp="true">
-                            <div id="{{prefix}}OpencgaClinicalAnalysisGridInterpretation">
-                                <opencga-clinical-analysis-grid opencga-session="{{opencgaSession}}" opencga-client="{{opencgaClient}}"
-                                                                query="{{clinicalAnalysisQuery}}" config="{{clinicalAnalysisGridConfig}}"
-                                                                on-analysis-selected="onRecentAnalysisSelected" analysis="{{clinicalAnalysis}}">
-                                </opencga-clinical-analysis-grid>
-                            </div>
-                        </template>
-
-                        <template is="dom-if" if="{{!showLastRecentInterpretation}}">
-                            <div id="{{prefix}}OpencgaClinicalAnalysisGrid2Interpretation" style="padding: 5px 10px">
-                                <clinical-analysis-view opencga-session="{{opencgaSession}}" opencga-client="{{opencgaClient}}"
-                                                        clinical-analysis-id="{{clinicalAnalysisId}}" title="Clinical analysis selected">
-                                </clinical-analysis-view>
-                            </div>
-                        </template>
-                    </div>
-                    <h3>Clinical Interpretation</h3>
-                    <div class="col-md-12" style="padding: 10px 15px">
-
-                        <div class="form-group col-md-12" id="{{prefix}}selectInterpretationType">
-                            <h4>Select Interpretation:</h4>
-                            <div style="padding: 10px 20px">
-                                <template is="dom-if" if="{{!checkExistsRecentInterpretations}}">
-                                    <span>No interpretation found</span>
-                                </template>
-
-                                <template is="dom-if" if="{{checkExistsRecentInterpretations}}" >
-                                    <template is="dom-repeat" items="{{recentInterpretations}}" as="interpretation" index-as="i">
-                                        <input id="{{prefix}}sampleRadio{{interpretation.id}}" type="radio" name="interpretationRecentRadioButtons" value="{{interpretation.file.id}}"
-                                               class$="{{prefix}}FilterRadio" on-change="selectInterpretationRecent"
-                                               checked$="{{isCheckedDefaultInterpretation(i, interpretation.file.id)}}" style="padding-left: 20px"> {{interpretation.name}}<br>
-                                    </template>
-                                </template>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="col-md-12" style="padding: 10px 15px">
-                        <template is="dom-if" if="{{interpretationId}}">
-                            <clinical-interpretation-view id="id" interpretation-id={{interpretationId}} opencga-session="{{opencgaSession}}"
+                                <div class="col-md-12" style="padding: 10px 15px">
+                                    <template is="dom-if" if="{{interpretationId}}">
+                                        <clinical-interpretation-view id="id" interpretation-id={{interpretationId}} opencga-session="{{opencgaSession}}"
                                                           opencga-client="{{opencgaClient}}" cellbase-client="{{cellbaseClient}}"
                                                           consequence-types="{{consequenceTypes}}" protein-substitution-scores="{{proteinSubstitutionScores}}"
                                                           on-createreport="onCreateReport" style="font-size: 12px">
-                            </clinical-interpretation-view>
-                        </template>
-                    </div>
-                </div>
+                                        </clinical-interpretation-view>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template is="dom-if" if="{{activeReport}}" restamp="true">
+                        <variant-clinical-report opencga-client="{{opencgaClient}}" opencga-session="{{opencgaSession}}" config="{{config}}"
+                                    tool-title="Report of {{clinicalAnalysis.name}}" interpretation="{{interpretationReport}}" analysis="{{clinicalAnalysis}}" expReport="true">
+                        </variant-clinical-report>
+                    </template>
+                </template>
             </div>
 
+            <opencga-message-dialog opencga-client="{{opencgaClient}}" show-message-modal="{{showMessageModal}}" settings-message-modal="{{settingsMessageModal}}"></opencga-message-dialog>
         </template>
-        <template is="dom-if" if="{{activeReport}}" restamp="true">
-            <variant-clinical-report opencga-client="{{opencgaClient}}" opencga-session="{{opencgaSession}}" config="{{config}}"
-                                     tool-title="Report of {{clinicalAnalysis.name}}" interpretation="{{interpretationReport}}" analysis="{{clinicalAnalysis}}" expReport="true">
-            </variant-clinical-report>
-        </template>
-    </template>
-    </div>
-
-    <opencga-message-dialog opencga-client="{{opencgaClient}}" show-message-modal="{{showMessageModal}}" settings-message-modal="{{settingsMessageModal}}"></opencga-message-dialog>
-
-    <div class="modal fade" id="{{prefix}}AnalysisBrowser" tabindex="-1" role="dialog" aria-labelledby="sampleBrowserLabel">
-        <div class="modal-dialog modal-lg" role="document" style="width: 1280px;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="{{prefix}}AnalysisBrowserLabel">Analysis Selector</h4>
-                </div>
-                <div class="modal-body" style="height: 780px">
-                    <opencga-clinical-analysis-browser opencga-client="{{opencgaClient}}" opencga-session="{{opencgaSession}}" analysis-selected="{{analysisSelected}}"
-                                               analysis-modal="{{analysisModal}}">
-                    </opencga-clinical-analysis-browser>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal" on-click="onAnalysisSelected">
-                        OK
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    </template>
     </template>
 
     <script>
@@ -401,7 +308,8 @@
             static get properties() {
                 return {
                     opencgaSession: {
-                        type: Object
+                        type: Object,
+                        observer: "onOpencgaSessionChange",
                     },
                     toolTitle: {
                         type: String,
@@ -429,16 +337,6 @@
                     proteinSubstitutionScores: {
                         type: Object
                     },
-                    query: {
-                        type: Object
-                    },
-                    search: {
-                        type: Object
-                    },
-                    analysisSelected: {
-                        type: Object,
-                        observer: "analysisSelectedObserver"
-                    },
                     clinicalAnalysis: {
                         type: Object,
                         observer: "getRecentInterpretations"
@@ -453,7 +351,7 @@
                     },
                     checkPermissions: {
                         type: Boolean,
-                        computed: '_checkPermissions(opencgaSession.project)'
+                        computed: '_checkPermissions(opencgaSession.project, opencgaSession.user)'
                     },
                     eventNotifyName: {
                         type: String,
@@ -470,7 +368,7 @@
             }
 
             _init() {
-                this.prefix = "clinical-analysis-view-" + Utils.randomString(6);
+                this.prefix = "clinical-analysis-view-interpretation" + Utils.randomString(6);
 
                 this.mode = "clinical";
                 this.activePrioritization = false;
@@ -604,11 +502,6 @@
                 return !isActive ? "btn-success" : "btn-primary";
             }
 
-            onClear() {
-                this.query = {studies: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias};
-                this.search = {};
-            }
-
             showClinicalSelector(e) {
                 e.preventDefault();
                 this.analysisModal = UtilsNew.isUndefined(this.analysisModal) ? true : !this.analysisModal;
@@ -623,56 +516,6 @@
                 this.clinicalAnalysisId = this.clinicalAnalysis.id;
 
                 this.checkTypeAnalysisSelected(this.clinicalAnalysis);
-            }
-
-            onAnalysisSelected(e) {
-                e.preventDefault(); // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
-                this.clinicalAnalysis = this.analysisSelected;
-                this.clinicalAnalysisId = this.analysisSelected.id;
-                this.showLastRecent = false;
-                this.showLastRecentInterpretation = false;
-                this.checkTypeAnalysisSelected(this.clinicalAnalysis);
-            }
-
-            analysisSelectedObserver() {
-                this.clinicalAnalysis = null;
-                this.clinicalAnalysisId = null;
-            }
-
-            selectAnalysisMode(e) {
-                this.interactive = e.target.value === "interactive";
-                this.checkTypeAnalysisSelected(this.clinicalAnalysis);
-            }
-            onClickOkPrioritization() {
-                if (UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis)) {
-
-                    if (!this.interactive && UtilsNew.isUndefinedOrNull(this.diseasePanelId)) {
-                        let _message = "You must select a panel to continue.";
-
-                        this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                            detail: {
-                                message: _message,
-                                type: UtilsNew.MESSAGE_INFO
-                            },
-                            bubbles: true,
-                            composed: true
-                        }));
-                    } else {
-                        this.activePrioritization = true;
-                        $('select.selectpicker').selectpicker('render');
-                    }
-                } else {
-                    let _message = "You must select an analysis to continue.";
-
-                    this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                        detail: {
-                            message: _message,
-                            type: UtilsNew.MESSAGE_INFO
-                        },
-                        bubbles: true,
-                        composed: true
-                    }));
-                }
             }
 
             getRecentInterpretations() {
@@ -734,7 +577,6 @@
             clearSelectedAnalysis(){
                 this.showLastRecent = true;
                 this.showLastRecentInterpretation = true;
-                this.analysisSelectedObserver();
             }
 
             onDiseasePanelChange(e) {
@@ -766,6 +608,12 @@
                 }
                 // Refresh Boostrap Select component
                 $(PolymerUtils.getElementById(this.prefix + "DiseasePanels")).selectpicker("refresh");
+            }
+
+            onOpencgaSessionChange(newValue, oldValue) {
+                // TODO: in order to fix performance by not reloading the component
+                // we should make this component and its children smart enough to clear
+                // their data; currently they are not
             }
         }
 

@@ -174,7 +174,7 @@
                     },
                     family: {
                         type: Object,
-                        observer: "familyObserver"
+                        // observer: "familyObserver"
                     },
                     opencgaClient: {
                         type: Object
@@ -382,6 +382,7 @@
             // }
 
 
+            // removed for 20180924 course
 //             _autocompleteSampleSearch(e) {
 //                 // Only gene symbols are going to be searched and not Ensembl IDs
 //                 let sampleNamePrefix = PolymerUtils.getElementById(this.prefix  + "AutocompleteSampleSearchInput").value;
@@ -406,35 +407,31 @@
 //                 }
 //             }
 
-            onSampleFilterClick() {
-                $("#" + this.prefix + "SampleFilterModal").modal("show");
-            }
+            onSampleChange(e) {
+                    let sampleSearchInput = PolymerUtils.getElementById(this.prefix + "AutocompleteSampleSearchInput");
+                    let sampleHtmlObj = PolymerUtils.getElementById(this.prefix + "Sample" + sampleSearchInput.value);
+                    let sample = JSON.parse(sampleHtmlObj.dataset.sample);
 
-            // onSampleChange(e) {
-            //     let sampleSearchInput = PolymerUtils.getElementById(this.prefix + "AutocompleteSampleSearchInput");
-            //     let sampleHtmlObj = PolymerUtils.getElementById(this.prefix + "Sample" + sampleSearchInput.value);
-            //     let sample = JSON.parse(sampleHtmlObj.dataset.sample);
-            //
-            //     if (UtilsNew.isNotUndefinedOrNull(sample)) {
-            //         // This triggers the call to samplesObserver()
-            //         if (UtilsNew.isUndefinedOrNull(this.samples)) {
-            //             this.samples = [];
-            //         }
-            //         this.push("samples", sample);
-            //
-            //         // Empty previous Sample selection
-            //         this.autocompleteSampleData = [];
-            //         sampleSearchInput.value = "";
-            //
-            //         // Notify the sample change
-            //         this.dispatchEvent(new CustomEvent("samplechange", {
-            //             detail: {samples: this.samples}, bubbles: true, composed: true
-            //         }));
-            //         this.dispatchEvent(new CustomEvent("inheritancemode", {
-            //             detail: {decisionTreeInheritance: this.decisionTreeInheritance}, bubbles: true, composed: true
-            //         }));
-            //     }
-            // }
+                    if (UtilsNew.isNotUndefinedOrNull(sample)) {
+                        // This triggers the call to samplesObserver()
+                        if (UtilsNew.isUndefinedOrNull(this.samples)) {
+                            this.samples = [];
+                        }
+                        this.push("samples", sample);
+
+                        // Empty previous Sample selection
+                        this.autocompleteSampleData = [];
+                        sampleSearchInput.value = "";
+
+                        // Notify the sample change
+                        this.dispatchEvent(new CustomEvent("samplechange", {
+                            detail: {samples: this.samples}, bubbles: true, composed: true
+                        }));
+                        this.dispatchEvent(new CustomEvent("inheritancemode", {
+                            detail: {decisionTreeInheritance: this.decisionTreeInheritance}, bubbles: true, composed: true
+                        }));
+                    }
+            }
 
             propagateOkHPO(e) {
                 if (this.openHPO) {
@@ -498,14 +495,14 @@
 
             updateConsequenceTypeFilter(e) {
                 // Select LoF term checkboxes
-                let lofCheckBox = PolymerUtils.getElementById(this.prefix + "LossOfFunctionCheckBox");
-                if (e.target.id === this.prefix + "LossOfFunctionCheckBox") {
-                    let checkBoxes = PolymerUtils.querySelectorAll("li input", this.prefix + "consequenceTypeFilter");
-                    this.consequenceTypes.lof.forEach((consType) => {
-                        checkBoxes.forEach((checkbox) => {
+                const lofCheckBox = PolymerUtils.getElementById(this.prefix + "LossOfFunctionCheckBox");
+                if (e.target.id === (this.prefix + "LossOfFunctionCheckBox")) {
+                    const checkBoxes = PolymerUtils.querySelectorAll("li input", this.prefix + "consequenceTypeFilter");
+                    this.consequenceTypes.lof.forEach(consType => {
+                        checkBoxes.forEach(checkbox => {
                             if (checkbox.getAttribute("data-id") === consType) {
                                 checkbox.checked = lofCheckBox.checked;
-                                return;
+                                // return;
                             }
                         });
                     });
@@ -1281,6 +1278,33 @@
             //     }
             // }
 
+
+            // This is from course20180921; should check why was it removed
+            //     if (UtilsNew.isNotEmptyArray(samples)) {  // this.query.samples !== undefined && this.query.samples.length > 0
+            //         // this.showSampleGenotypes = true;
+            //         PolymerUtils.setAttribute(this.prefix + "SampleGenotypeDivTable", "style", "display: inline");
+            //         // removed for 20180924 course
+            //         // PolymerUtils.setAttribute(this.prefix + "SampleGenotypeOptions", "style", "display: inline");
+            //         // If there is more than one sample we make visible the Segregation dropdown
+            //         if (samples.length > 0) {
+            //             PolymerUtils.setAttribute(this.prefix + "SampleSegregation", "style", "display: inline");
+            //             let allContainsIndividual = false;
+            //             if (UtilsNew.isNotUndefinedOrNull(this.samples) && UtilsNew.isNotEmptyArray(this.samples)) {
+            //                 let allContainsIndividual = this.samples.every((sample) => {
+            //                     return UtilsNew.isNotUndefinedOrNull(sample.attributes) && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual);
+            //                 });
+            //                 if (allContainsIndividual) {
+            //                     PolymerUtils.setPropertyById(this.prefix + "SegregationOperator", "disabled", true)
+            //                 } else {
+            //                     PolymerUtils.removeAttribute(this.prefix + "SegregationOperator", "disabled")
+            //                 }
+            //             }
+            //         }
+            //     } else {
+            //         PolymerUtils.setAttribute(this.prefix + "SampleGenotypeDivTable", "style", "display: none");
+            //     }
+            // }
+
             genotypeCheckboxClicked(e) {
                 this.modeInheritance = "none";
                 PolymerUtils.setValue(this.prefix + "SegregationOperator", this.modeInheritance);
@@ -1449,6 +1473,8 @@
             }
 
             _getSampleHtml(subsection, prefix) {
+
+
                 // let options = "";
                 // if (UtilsNew.isNotUndefinedOrNull(subsection) && UtilsNew.isNotEmptyArray(subsection.inheritanceModes)) {
                 //     for (let inheritanceMode of subsection.inheritanceModes) {
@@ -1460,6 +1486,65 @@
                 //     // approxCountCheckbox = `<input id="${prefix}ApproxCountCheckbox" type="checkbox" value="approximateCount" class="${prefix}FilterCheckBox" checked> Approximate Count<br>`;
                 //     approxCountCheckbox = '<input id="${prefix}ApproxCountCheckbox" type="checkbox" value="approximateCount" class="${prefix}FilterCheckBox" style="display: none;" checked> Approximate Count<br>';
                 // }
+
+
+                // // this is from out course20180921 version
+                // let options = "";
+                //                 if (UtilsNew.isNotUndefinedOrNull(subsection) && UtilsNew.isNotEmptyArray(subsection.inheritanceModes)) {
+                //                     for (let inheritanceMode of subsection.inheritanceModes) {
+                //                         options += `<option value="${inheritanceMode.key}">${inheritanceMode.text}</option>`;
+                //                     }
+                //                 }
+                //                 let approxCountCheckbox = "";
+                //                 if (subsection.showApproximateCount) {
+                //                     // approxCountCheckbox = `<input id="${prefix}ApproxCountCheckbox" type="checkbox" value="approximateCount" class="${prefix}FilterCheckBox" checked> Approximate Count<br>`;
+                //                     approxCountCheckbox = '<input id="${prefix}ApproxCountCheckbox" type="checkbox" value="approximateCount" class="${prefix}FilterCheckBox" style="display: none;" checked> Approximate Count<br>';
+                //                 }
+
+                //                 // removed from next piece of code for 20180924 course
+                //                 /*
+                //                     <div id="${prefix}AutocompleteSampleSelect" style="margin: 15px 0px">
+                //                         <span>Select Sample:</span>
+
+                //                         <div class="row">
+                //                             <div class="col-md-9">
+                //                                 <input id="${prefix}AutocompleteSampleSearchInput" type="text" class="form-control" placeholder="Search name..."
+                //                                             list="${prefix}AutocompleteSampleSearchDataList"">
+                //                                 <datalist id="${prefix}AutocompleteSampleSearchDataList"></datalist>
+                //                             </div>
+                //                             <div class="col-md-3">
+                //                                 <button id="${prefix}SampleAddButton" type="button" class="btn btn-default btn-sm form-control">
+                //                                     <i class="fa fa-plus"></i>
+                //                                 </button>
+                //                             </div>
+                //                         </div>
+                //                     </div>
+
+                //                     <!-- remaining code -->
+
+                //                     <div id="${prefix}SampleGenotypeOptions" style="display: inline">
+                //                         <span>Sample Genotypes Query Options</span>
+                //                         <div id="${prefix}GenotypeQueryOptions" style="padding-left: 10px;padding-top: 5px">
+                //                             ${approxCountCheckbox}
+                //                             <input type="checkbox" value="multiAllelic" class="${prefix}FilterCheckBox"> Select all multi-allelic variants<br>
+                //                         </div>
+                //                     </div>
+                //                 */
+                //                 return `
+                //                     <div style="margin: 15px 0px">
+                //                         <span>Select Sample Genotypes:</span>
+                //                         <div id="${prefix}SampleGenotypeMessage">
+                //                             <span style="color: darkred;padding: 5px 0px 0px 10px">No samples selected</span>
+                //                         </div>
+                //                         <div id="${prefix}SampleSegregation" style="display: none">
+                //                             <div style="padding-left: 10px;padding-top: 10px">
+                //                                 <span class="control-label">Inheritance Mode:</span>
+                //                                 <select id="${prefix}SegregationOperator" name="${prefix}Segregation"
+                //                                      class="form-control input-sm ${prefix}FilterSelect">
+                //                                  ${options}
+                //                                 </select>
+
+
                 let res = "";
                 if (subsection.showSelectSamples) {
                     res = `
@@ -1473,6 +1558,7 @@
                             <div style="padding: 15px 0px;">
                                 <span style="font-weight: bold">Filters Summary</span>
                             </div>
+                            <!-- DELETED FROM VERSION 20180921 -->
                             <div>
                                 <span>Sample Filters:</span>
                             </div>
@@ -1578,6 +1664,11 @@
                 //         </div>
                 //     </div>`
                 //     ;
+
+                // from version 20180921
+                //         </div>
+                //     </div>`
+                // ;
             }
 
             _getCohortHtml(cohorts, prefix) {
@@ -2207,18 +2298,13 @@
                     }
                 }
 
+                // removed for 20180924 course
                 // Add events for Sample IDs
-                let elementById = PolymerUtils.getElementById(this.prefix + "SampleFilterModalButton");
-                if (UtilsNew.isNotUndefinedOrNull(elementById)) {
-                    elementById.addEventListener('click', this.onSampleFilterClick.bind(this));
-                }
-
                 // let autoCompleteSampleElement = PolymerUtils.getElementById(this.prefix + "AutocompleteSampleSearchInput");
                 // if (UtilsNew.isNotUndefinedOrNull(autoCompleteSampleElement)) {
                 //     autoCompleteSampleElement.addEventListener('keyup', this._autocompleteSampleSearch.bind(this));
                 //     PolymerUtils.getElementById(this.prefix + "SampleAddButton").addEventListener('click', this.onSampleChange.bind(this));
                 // }
-
                 // Add event for inheritanceMode
                 // let inheritanceModeElement = PolymerUtils.getElementById(this.prefix + "SegregationOperator");
                 // if (UtilsNew.isNotUndefinedOrNull(inheritanceModeElement)) {

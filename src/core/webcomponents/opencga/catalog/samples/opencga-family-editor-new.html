@@ -13,28 +13,38 @@
         </style>
 
         <template is="dom-if" if="{{!_sampleExists}}">
-            <div class="alert alert-warning" role="alert"><h4>No samples selected, please select some samples. {{_sampleExists}}</h4>
+            <div class="alert alert-warning" role="alert">
+                <h4>No samples selected, please select some samples. {{_sampleExists}}</h4>
             </div>
         </template>
         <template is="dom-if" if="{{_sampleExists}}">
-                <template is="dom-repeat" items="{{messageError}}">
-                    <div class="alert alert-danger" role="alert">
-                        {{item}}
-                    </div>
-                </template>
+            <template is="dom-repeat" items="{{messageError}}">
+                <div class="alert alert-danger" role="alert">
+                    {{item}}
+                </div>
+            </template>
 
             <div id="{{prefix}}FilterMenu1" class="col-md-12">
                 <form class="form-inline">
                     <div class="row" style="padding: 15px 10px">
                         <div class="col-md-3">
                             <label>Name </label>
-                            <input type="text" class="form-control" id="{{prefix}}FamilyName" placeholder="Family name" maxlength="100"
-                                   on-change="_changeName" value="{{data.name}}">
+                            <input
+                                    type="text"
+                                    class="form-control"
+                                    id="{{prefix}}FamilyName"
+                                    placeholder="Family name"
+                                    maxlength="100"
+                                    on-change="_changeName"
+                                    value="{{family.name}}" />
                         </div>
                         <div class="col-md-9">
                             <label class="labels">Description </label>
-                            <input class="form-control" id="{{prefix}}FamilyDescription"
-                                   on-change="_changeDescription" value="{{data.description}}" />
+                            <input
+                                class="form-control"
+                                id="{{prefix}}FamilyDescription"
+                                on-change="_changeDescription"
+                                value="{{family.description}}" />
                         </div>
                     </div>
 
@@ -46,8 +56,8 @@
                             <div class="panel panel-default">
                                 <div class="panel-heading" role="tab" id="headingTwo">
                                     <h4 class="panel-title">
-                                        <a role="button" class="collapsed" data-toggle="collapse" data-parent="#accordion"
-                                           href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo" on-click="_summaryOnClick">
+                                        <a role="button" class="collapsed" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo"
+                                                aria-expanded="false" aria-controls="collapseTwo" on-click="_summaryOnClick">
                                             <i id="{{prefix}}SummaryCollapseIcon" class="fa fa-plus-square-o" aria-hidden="true"></i> Add custom disease
                                         </a>
                                     </h4>
@@ -69,7 +79,7 @@
                                             </div>
                                             <div class="col-md-2">
                                                 <label>Add to diseases</label>
-                                                <button  class="button-form" type="button" class="btn btn-secondary" on-click="addDisease">Add</button>
+                                                <button  class="button-form" type="button" class="btn btn-secondary" on-click="addAddedDisease">Add</button>
                                             </div>
                                         </div>
                                     </div>
@@ -79,119 +89,89 @@
                         <div class="col-md-8">
                             <div class="row">
                                 <ul class="list-group">
-                                    <template is="dom-repeat" items="{{data.ontologyTermsDiseases}}">
+                                    <template is="dom-repeat" items="{{sourceDiseases}}">
                                         <li class="list-group-item">{{item.name}}({{item.id}})</li>
                                     </template>
                                 </ul>
                             </div>
                             <div class="row">
                                 <ul class="list-group">
-                                    <template is="dom-repeat" items="{{data.customDiseases}}" >
-                                        <li class="list-group-item">{{item.name}}({{item.id}}) <button type="button" class="btn danger" on-click="deletedTermFromList" data-selected-term$="{{item}}">X</button></li>
+                                    <template is="dom-repeat" items="{{addedDiseases}}" >
+                                        <li class="list-group-item">{{item.name}}({{item.id}})
+                                            <button type="button" class="btn danger" on-click="removeAddedDisease" data-selected-term$="{{item}}">X</button>
+                                        </li>
                                     </template>
                                 </ul>
                             </div>
                         </div>
-
                     </div>
-
-
                 </form>
             </div>
 
             <div class="col-md-12">
-
                 <table class="table hover">
                     <thead>
-                    <tr class="active">
-                        <th>Sample ID</th>
-                        <th>Father</th>
-                        <th>Mother</th>
-                        <th>Phenotypes</th>
-                        <th>Deceased</th>
-                        <th>Parental Consanguinity</th>
-                        <th>Sex</th>
-                    </tr>
+                        <tr class="active">
+                            <th>Sample ID</th>
+                            <th>Father</th>
+                            <th>Mother</th>
+                            <th>Phenotypes</th>
+                            <th>Deceased</th>
+                            <th>Parental Consanguinity</th>
+                            <th>Sex</th>
+                        </tr>
                     </thead>
 
                     <tbody>
-                    <template id="samplesTable" is="dom-repeat" items="{{data.samples}}" as="sample">
+                    <template id="samplesTable" is="dom-repeat" items="{{samples}}" as="sample">
                         <tr>
-                            <td>{{sample.name}} ({{sample.attributes.individual.name}})</td>
+                            <td>{{sample.name}} ({{sample.individual.name}})</td>
 
                             <td>
-                                <template is="dom-if" if="{{data.showSelectParents}}">
+                                <template is="dom-if" if="{{showSelectParents}}">
                                     <div class="dropdown">
                                         <select class="form-control" id="{{prefix}}{{sample.name}}Father"
                                                 data-sample-id$="{{sample.id}}" data-is-father="true"
                                                 on-change="_selectParent">
                                             <option value="none">Select a sample...</option>
-                                            <template is="dom-repeat" items="{{samples}}" as="sampleFather">
-                                                <template is="dom-if" if="{{isSelectedParent(0, sampleFather.id, sample.id)}}">
-                                                    <option value="{{sampleFather.id}}" selected>
-                                                        {{sampleFather.name}}
-                                                    </option>
-                                                </template>
-                                                <template is="dom-if" if="{{!isSelectedParent(0, sampleFather.id, sample.id)}}">
-                                                    <template is="dom-if" if="{{isDisabledParent(0, sampleFather.id, sample.id)}}">
-                                                        <option disabled value="{{sampleFather.id}}">
-                                                            {{sampleFather.name}}
-                                                        </option>
-                                                    </template>
-                                                    <template is="dom-if" if="{{!isDisabledParent(0, sampleFather.id, sample.id)}}">
-                                                        <option value="{{sampleFather.id}}">
-                                                            {{sampleFather.name}}
-                                                        </option>
-                                                    </template>
-                                                </template>
+                                            <template is="dom-repeat" items="{{getPotentialFathersFor(sample, potentialParents)}}" as="sampleFather">
+                                                <option value="{{sampleFather.id}}" selected$="{{isSelectedParent(0, sampleFather.id, sample.id)}}">
+                                                    {{sampleFather.name}}
+                                                </option>
                                             </template>
                                         </select>
                                     </div>
                                 </template>
-                                <template is="dom-if" if="{{!data.showSelectParents}}">
+                                <template is="dom-if" if="{{!showSelectParents}}">
                                     <span>Unknown</span>
                                 </template>
                             </td>
                             <td>
-                                <template is="dom-if" if="{{data.showSelectParents}}">
+                                <template is="dom-if" if="{{showSelectParents}}">
                                     <div class="dropdown">
                                         <select class="form-control" id="{{prefix}}{{sample.name}}Mother"
                                                 data-sample-id$="{{sample.id}}" data-is-mother="true"
                                                 on-change="_selectParent">
                                             <option value="none">Select a sample...</option>
-                                            <template is="dom-repeat" items="{{data.samples}}" as="sampleMother">
-                                                <template is="dom-if" if="{{isSelectedParent(1, sampleMother.id, sample.id)}}">
-                                                    <option value="{{sampleMother.id}}" selected>
-                                                        {{sampleMother.name}}
-                                                    </option>
-                                                </template>
-                                                <template is="dom-if" if="{{!isSelectedParent(1, sampleMother.id, sample.id)}}">
-                                                    <template is="dom-if" if="{{isDisabledParent(1, sampleMother.id, sample.id)}}">
-                                                        <option disabled value="{{sampleMother.id}}">
-                                                            {{sampleMother.name}}
-                                                        </option>
-                                                    </template>
-                                                    <template is="dom-if" if="{{!isDisabledParent(1, sampleMother.id, sample.id)}}">
-                                                        <option value="{{sampleMother.id}}">
-                                                            {{sampleMother.name}}
-                                                        </option>
-                                                    </template>
-                                                </template>
+                                            <template is="dom-repeat" items="{{getPotentialMothersFor(sample, potentialParents)}}" as="sampleMother">
+                                                <option value="{{sampleMother.id}}" selected$="{{isSelectedParent(1, sampleMother.id, sample.id)}}">
+                                                    {{sampleMother.name}}
+                                                </option>
                                             </template>
                                         </select>
                                     </div>
                                 </template>
-                                <template is="dom-if" if="{{!data.showSelectParents}}">
+                                <template is="dom-if" if="{{!showSelectParents}}">
                                     <span>Unknown</span>
                                 </template>
                             </td>
 
                             <td style="width: 150px;">
-                                <template is="dom-repeat" items="{{data.phenotypes}}" as="disease">
-                                    <input id="{{prefix}}{{disease.id}}Affected" data-sample-id$="{{sample.id}}"
+                                <template is="dom-repeat" items="{{allDiseases}}" as="disease">
+                                    <input data-sample-id$="{{sample.id}}"
                                            data-disease-id$="{{disease.id}}"
                                            checked$="{{isCheckedDisease(sample.id, disease.id)}}"
-                                           type="checkbox" on-change="_selectAffected">
+                                           type="checkbox" on-change="selectAffected">
                                     {{disease.id}}
                                     <br>
                                 </template>
@@ -224,7 +204,7 @@
                                 </template>
                             </td>
                             <td>
-                                <span>{{sample.member.sex}}</span>
+                                <span>{{sample.individual.sex}}</span>
                             </td>
                         </tr>
                     </template>
@@ -235,16 +215,23 @@
                 <div id="{{prefix}}PedigreeView"></div>
             </div>
 
-            <opencga-message-dialog opencga-client="{{opencgaClient}}" show-message-modal="{{showMessageModal}}"
-                                    settings-message-modal="{{settingsMessageModal}}"></opencga-message-dialog>
+            <opencga-message-dialog
+                    opencga-client="{{opencgaClient}}"
+                    show-message-modal="{{showMessageModal}}"
+                    settings-message-modal="{{settingsMessageModal}}">
+            </opencga-message-dialog>
         </template>
-
-
-
     </template>
 
     <script>
         class OpencgaFamilyEditorNew extends Polymer.Element {
+
+
+
+            /*
+            we should update the pedigree render whenever changes
+            father.id, mother.id, phenotypes, lifeStatus, parentalConsanguinity
+            */
 
             constructor() {
                 super();
@@ -258,165 +245,169 @@
             static get properties() {
                 return {
                     opencgaSession: {
-                        type: Object
+                        type: Object,
+                        observer: 'onSamplesChanged',
                     },
                     opencgaClient: {
                         type: Object
                     },
                     samples: {
                         type: Array,
-                        observer: '_updateSamples'
+                        observer: 'onSamplesChanged',
                     },
                     family: {
-                        type: Object
+                        type: Object,
+                        // observer: 'onFamilyChange',
                     },
                     messageErrorFamily: {
                         type: Array,
-                        observer: 'updateError'
-
+                        observer: 'updateError',
+                    },
+                    potentialParents: {
+                        type: Object,
+                        observer: 'onPotentialParentsChange',
+                        value: {a: 0},
+                    },
+                    sourceDiseases: {
+                        type: Array,
+                        value: () => [],
+                    },
+                    addedDiseases: {
+                        type: Array,
+                        value: () => [],
+                    },
+                    allDiseases: {
+                        type: Array,
+                        computed: 'concatenateSourceAndAddedDiseases(sourceDiseases.*, addedDiseases.*, potentialParents)',
+                    },
+                    showSelectParents: {
+                        type: Boolean,
+                        computed: 'computeShowSelectParents(samples)',
                     }
                 }
+            }
+
+            addSourceDiseases(diseases) {
+                const newDiseases = (diseases || []).filter(disease => !this.sourceDiseases.some(d => (d.id === disease.id)));
+                if (diseases.length > 0) {
+                    this.sourceDiseases = this.sourceDiseases.concat(newDiseases);
+                }
+            }
+
+            addAddedDisease(e) {
+                // customDiseases
+                const newDisease = {
+                    id: PolymerUtils.getValue(this.prefix + "idDisease"),
+                    name: PolymerUtils.getValue(this.prefix + "nameDisease"),
+                    source: PolymerUtils.getValue(this.prefix + "srcDisease"),
+                };
+                PolymerUtils.setValue(this.prefix + "idDisease", "");
+                PolymerUtils.setValue(this.prefix + "nameDisease", "");
+                PolymerUtils.setValue(this.prefix + "srcDisease", "");
+
+                if (!this.addedDiseases.some(disease => (disease.id == newDisease.id))
+                        && !this.sourceDiseases.some(disease => (disease.id == newDisease.id))) {
+                    this.push('addedDiseases', newDisease);
+                }
+            }
+
+            removeAddedDisease(e) {
+                const diseaseToRemove = JSON.parse(e.target.getAttribute("data-selected-term"));
+                for (let idx=0; idx<this.samples.length; ++idx) {
+                    const sample = this.samples[idx];
+                    if (!!sample.individual && !!sample.individual.phenotypes) {
+                        if (sample.individual.phenotypes.some(disease => (disease.id !== diseaseToRemove.id))) {
+                            this.set(
+                                `samples.${idx}.individual.phenotypes`,
+                                sample.individual.phenotypes.filter(disease => (disease.id !== diseaseToRemove.id))
+                            );
+                        }
+                    }
+                }
+                this.set('addedDiseases', this.addedDiseases.filter(disease => (disease.id !== diseaseToRemove.id)));
+            }
+
+
+            concatenateSourceAndAddedDiseases() {
+                return (this.sourceDiseases || []).concat(this.addedDiseases || []);
+            }
+
+            getPhenotypesFromIndividuals() {
+                const diseases = this.samples
+                    .filter(sample => !!sample.individual && !!sample.individual.phenotypes)
+                    .map(sample => sample.individual.phenotypes)
+                    .reduce((accum, diseaseSet) => accum.concat(diseaseSet), []);
+                return diseases.filter((disease, idx) => (diseases.findIndex(d => disease.id === d.id) === idx));
+            }
+
+            computeOntologyTermsDiseases() {
+                const sampleDiseases = this.getPhenotypesFromIndividuals();
+                let diseases = (this.customDiseases || []).concat(sampleDiseases || []);
+                diseases = diseases.filter((disease, index) => (index === diseases.findIndex(d => (d.id === disease.id))));
+                return diseases;
             }
 
             _attachDom(dom) {
                 this.appendChild(dom);
             }
 
-            ready() {
-                super.ready();
-            }
-
             connectedCallback() {
                 super.connectedCallback();
-                this.newDisease = {};
                 this._summaryCollapsed = true;
             }
 
-            initData() {
-                this.data = {};
-                this.data.showSelectParents = false;
-                if(PolymerUtils.getElementById("samplesTable") != null) {
-                    PolymerUtils.getElementById("samplesTable").render();
+            computeShowSelectParents() {
+                return !!this.samples && (this.samples.length > 1);
+            }
+
+            readSampleDataFromServer() {
+                if (!this.samples) return;
+
+                const params = { study: this.opencgaSession.study.alias };
+                const _this = this;
+                for (let idx = 0; idx < this.samples.length; ++idx) {
+                    const sample = this.samples[idx];
+                    const hasIndividual = UtilsNew.isNotUndefinedOrNull(sample.individual) && (sample.individual.id > 0);
+                    if (hasIndividual) {
+                        this.opencgaClient.individuals().info(sample.individual.id, params, {method: "GET"}).then(response => {
+                            if (response.response[0].numResults >= 1) {
+                                const individual = response.response[0].result[0];
+                                _this.set(`samples.${idx}.individual`, individual);
+                                _this.fillSampleParentNames();
+                                if (!!individual.phenotypes)    _this.addSourceDiseases(individual.phenotypes);
+                                _this.updateFamily();
+                            }
+                        }).catch(response => {
+                            _this.settingsMessageModal = {
+                                messageHeader: "Error",
+                                messageBody: [response.error],
+                                type: "danger",
+                                height: "100px",
+                                width: "500px"
+                            };
+                            _this.set('settingsMessageModal', _this.settingsMessageModal);
+                            _this.showMessageModal = true;
+                        });
+                    }
                 }
-                if (UtilsNew.isNotUndefinedOrNull(this.samples)) {
-                    this.data.showSelectParents = this.samples.length > 1;
-                    this.data.name = this.family.name;
-                    this.data.description = this.family.description;
-                    this.data.phenotypes = this.family.phenotypes;
-                    // This are the set of ontology terms name of all member of the family
-                    this.data.ontologyTermsDiseases = [];
-                    this.data.customDiseases = [];
-
-                    let _samples = [];
-                    let params = {
-                        study: this.opencgaSession.study.alias
-                    };
-                    let _this = this;
-                    this.samples.forEach((sample) => {
-                        sample.member = _this.family.members[sample.id];
-
-                        if (UtilsNew.isNotUndefinedOrNull(sample.attributes) && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual)
-                            && sample.attributes.individual.id > 0) {
-                            // Fetch every individual from Webservices to get every ontologyTerm and create array of custom diseases and array of selected diseases from create individual form.
-                            this.opencgaClient.individuals().info(sample.attributes.individual.id, params, {method: "GET"})
-                                .then(function (response) {
-                                    if (response.response[0].numResults >= 1) {
-                                        sample.attributes.individual = response.response[0].result[0];
-                                    }
-                                    // Union of all ontologyTerms of every sample and we save it in diseases.
-                                    if(UtilsNew.isNotUndefinedOrNull(sample.attributes.individual.phenotypes
-                                            && UtilsNew.isNotEmptyArray(sample.attributes.individual.phenotypes))){
-                                        sample.attributes.individual.phenotypes.forEach((term) => {
-                                            if (UtilsNew.isNotEmpty(term.id)) {
-                                                // check if exists already this term in data.diseases
-                                                let existsTerm = _this.data.phenotypes.find((element) => {
-                                                    return element.id === term.id;
-                                                });
-
-                                                let existsTermOntology = _this.data.ontologyTermsDiseases.find((element) => {
-                                                    return element.id === term.id;
-                                                });
-
-                                                if(UtilsNew.isUndefinedOrNull(existsTermOntology)) {
-                                                    // save ontologyTerms from individual in data.ontologyTermsDiseases
-                                                    _this.data.ontologyTermsDiseases.push(term);
-                                                }
-
-                                                if(UtilsNew.isUndefinedOrNull(existsTerm)){
-                                                    _this.data.phenotypes.push(term);
-                                                }
-                                            }
-                                        });
-                                    }
-
-                                    // Difference between ontologyTermsDiseases and diseases are the custom diseases
-                                    _this.data.customDiseases = _this.data.phenotypes.filter(disease => !_this.data.ontologyTermsDiseases.some(ar2 => ar2.id === disease.id));
-                                    // Made this to update dom-repeat in from the component prioritization-view
-                                    _this.set("data.customDiseases", _this.data.customDiseases.slice());
-                                    _this.set("data.ontologyTermsDiseases", _this.data.ontologyTermsDiseases.slice());
-
-                                    // Save in family members[sample.id] the member object using individual data
-                                    _this.family.members[sample.id] = Object.assign(_this.family.members[sample.id], {name: sample.attributes.individual.name, sex: sample.attributes.individual.sex});
-
-                                    // Update samples selected
-                                    _samples.push(sample);
-                                    _this.data.samples = _samples;
-
-                                    // Made this to update dom-repeat in from the component prioritization-view
-                                    _this.set('data.samples', _samples.slice());
-                                })
-                                .catch(function (response) {
-                                    _this.settingsMessageModal = {
-                                        messageHeader: "Error",
-                                        messageBody: [response.error],
-                                        type: "danger",
-                                        height: "100px",
-                                        width: "500px"
-                                    };
-                                    _this.set('settingsMessageModal', _this.settingsMessageModal);
-                                    _this.showMessageModal = true;
-                                });
-                        } else {
-                            _samples.push(sample);
-                        }
-                    });
-
-                    this._sampleExists = UtilsNew.isNotUndefinedOrNull(this.samples);
-
-                    _this.data.samples = _samples;
-
-                }
-                this.data = Object.assign({}, this.data);
             }
 
             findSample(sampleId) {
-                if (UtilsNew.isNotUndefinedOrNull(this.data) && UtilsNew.isNotUndefinedOrNull(this.data.samples)) {
-                    return this.data.samples.find((sample) => {
-                        return parseInt(sampleId) === sample.id;
-                    });
-                }
-                return null;
+                return !!this.samples ? this.samples.find(sample => parseInt(sampleId) === sample.id) : null;
             }
 
             isCheckedDisease(sampleId, diseaseId) {
-                let sampleSelected = this.findSample(sampleId);
-                if (UtilsNew.isNotUndefinedOrNull(sampleSelected) && UtilsNew.isNotUndefinedOrNull(sampleSelected.member)
-                    && UtilsNew.isNotUndefinedOrNull(sampleSelected.member.phenotypes)) {
-
-                    let existsSelectedDisease = sampleSelected.member.phenotypes.find((disease) => {
-                        return disease.id === diseaseId;
-                    });
-
-                    return UtilsNew.isNotUndefinedOrNull(existsSelectedDisease);
-                }
-                return false;
+                const sample = this.findSample(sampleId);
+                return (!!sample && !!sample.individual && !!sample.individual.phenotypes)
+                    ? sample.individual.phenotypes.some(disease => (disease.id === diseaseId))
+                    : false;
             }
 
             isCheckedParentalConsanguinity(sampleId) {
                 let sampleSelected = this.findSample(sampleId);
-                if(UtilsNew.isNotUndefinedOrNull(sampleSelected) && UtilsNew.isNotUndefinedOrNull(sampleSelected.member)
-                    && UtilsNew.isNotUndefinedOrNull(sampleSelected.member.parentalConsanguinity)) {
-                    return sampleSelected.member.parentalConsanguinity;
+                if(UtilsNew.isNotUndefinedOrNull(sampleSelected) && UtilsNew.isNotUndefinedOrNull(sampleSelected.individual)
+                    && UtilsNew.isNotUndefinedOrNull(sampleSelected.individual.parentalConsanguinity)) {
+                    return sampleSelected.individual.parentalConsanguinity;
                 }
 
                 return false;
@@ -424,29 +415,73 @@
 
             isCheckedDeceased(sampleId) {
                 let sampleSelected = this.findSample(sampleId);
-                if(UtilsNew.isNotUndefinedOrNull(sampleSelected) && UtilsNew.isNotUndefinedOrNull(sampleSelected.member)
-                    && UtilsNew.isNotUndefinedOrNull(sampleSelected.member.lifeStatus)) {
-                    return sampleSelected.member.lifeStatus === "DECEASED";
+                if(UtilsNew.isNotUndefinedOrNull(sampleSelected) && UtilsNew.isNotUndefinedOrNull(sampleSelected.individual)
+                    && UtilsNew.isNotUndefinedOrNull(sampleSelected.individual.lifeStatus)) {
+                    return sampleSelected.individual.lifeStatus === "DECEASED";
                 }
 
                 return false;
             }
 
-            isSelectedParent(isMother, sampleParentId, sampleId) {
-                let sampleSelected = this.findSample(sampleId);
-                let sampleCurrentParent = this.findSample(sampleParentId);
-                let parentSelected = false;
+            isSelectedParent(isMother, parentSampleId, sampleId) {
+                const sample = this.samples.find(s => (s.id === sampleId));
+                const parentSample = this.getSampleParent(sample, isMother);
+                return (parentSample && parentSampleId === parentSample.id);
+            }
 
-                if(UtilsNew.isNotUndefinedOrNull(sampleSelected) && UtilsNew.isNotUndefinedOrNull(sampleCurrentParent) &&
-                    UtilsNew.isNotUndefinedOrNull(sampleCurrentParent.individual) && UtilsNew.isNotUndefinedOrNull(sampleCurrentParent.individual.name)) {
-                    if (isMother) {
-                        parentSelected = sampleSelected.member.mother === sampleCurrentParent.individual.name;
-                    } else {
-                        parentSelected = sampleSelected.member.father === sampleCurrentParent.individual.name;
-                    }
-                }
+            getSampleFromIndividualId(individualId) {
+                return (individualId
+                    ? this.samples.find(sample => (sample && sample.individual && sample.individual.id === individualId))
+                    : undefined
+                );
+            }
 
-                return parentSelected;
+            // returns a sample
+            getSampleParent(sample, mother) {
+                const parentId = sample && sample.individual && (mother
+                    ? sample.individual.mother && sample.individual.mother.id
+                    : sample.individual.father && sample.individual.father.id
+                );
+                return this.getSampleFromIndividualId(parentId);
+            }
+
+            // receives two samples
+            isAncestor(sampleAncestor, sampleDescendant) {
+                // TODO: fix case of previously existing cycles
+                if (sampleAncestor === sampleDescendant)    return false;
+                if (!sampleAncestor || !sampleDescendant || sampleAncestor === sampleDescendant)    return false;
+                const sampleDescendantMother = this.getSampleParent(sampleDescendant, true);
+                const sampleDescendantFather = this.getSampleParent(sampleDescendant, false);
+                return (!!sampleDescendantMother && sampleDescendantMother.id === sampleAncestor.id)
+                    || (!!sampleDescendantFather && sampleDescendantFather.id === sampleAncestor.id)
+                    || (!!sampleDescendantMother && this.isAncestor(sampleAncestor, sampleDescendantMother))
+                    || (!!sampleDescendantFather && this.isAncestor(sampleAncestor, sampleDescendantFather));
+            }
+
+            // received a sample, returns a list of samples
+            getPotentialFathersFor(sample, potentialParents) {
+                return this.samples.filter(s => (
+                    s !== sample
+                    && !!s.individual
+                    && (s.individual.sex === 'MALE')
+                    && !this.isAncestor(sample, s)
+                ));
+            }
+
+            getPotentialMothersFor(sample, potentialParents) {
+                return this.samples.filter(s => (
+                    s !== sample
+                    && !!s.individual
+                    && (s.individual.sex === 'FEMALE')
+                    && !this.isAncestor(sample, s)
+                ));
+            }
+
+            onPotentialParentsChange() {
+            }
+
+            invalidatePotentialParents() {
+                this.potentialParents = Object.assign({}, this.potentialParents, {a: this.potentialParents.a+1});
             }
 
             isDisabledParent(isMother, sampleParentId, sampleId) {
@@ -459,56 +494,35 @@
                     UtilsNew.isNotUndefinedOrNull(sampleCurrentParent.individual) && UtilsNew.isNotUndefinedOrNull(sampleCurrentParent.individual.name)) {
                         parentSelected = sampleSelected.id === sampleCurrentParent.id || sampleCurrentParent.individual.sex !== gender;
                 }
+
+                parentSelected = parentSelected || this.isAncestor(sampleSelected.individual, sampleCurrentParent.individual);
+
                 return parentSelected;
             }
 
-            _updateSamples() {
-                this.initData();
-
-                if (UtilsNew.isNotUndefinedOrNull(this.samples)) {
-                    this._sampleExists = true;
-                } else {
-                    this._sampleExists = false;
-                }
-
-                if (UtilsNew.isNotUndefinedOrNull(PolymerUtils.getElementById("samplesTable"))) {
-                    PolymerUtils.getElementById("samplesTable").render();
-                }
-            }
-
             _changeName(e) {
-                this.data.name = e.target.value;
-                this.family.name = this.data.name;
-                this._updateFamily();
+                this.family.name = e.target.value;
+                this.updateFamily();
             }
 
             _changeDescription(e) {
-                this.data.description = e.target.value;
-                this.family.description = this.data.description;
-                this._updateFamily();
+                this.family.description = e.target.value;
+                this.updateFamily();
             }
 
-            _selectAffected(e) {
-                let sampleId = e.target.getAttribute("data-sample-id");
-                let diseaseId = e.target.getAttribute("data-disease-id");
-                let sampleSelected = this.findSample(sampleId);
-                if(UtilsNew.isNotUndefinedOrNull(sampleSelected)) {
-                    let existsSelectedDisease = sampleSelected.member.phenotypes.find((disease) => {
-                        return disease.id === diseaseId;
-                    });
-                    if (UtilsNew.isUndefinedOrNull(existsSelectedDisease)) {
-                        let selectedDisease = this.data.phenotypes.find((disease) => {
-                            return disease.id === diseaseId;
-                        });
-                        sampleSelected.member.phenotypes.push(selectedDisease);
+            selectAffected(e) {
+                const sampleId = e.target.getAttribute("data-sample-id");
+                const diseaseId = e.target.getAttribute("data-disease-id");
+                const sample = this.findSample(sampleId);
+                if (!!sample) {
+                    const isDiseased = sample.individual.phenotypes.some(disease => (disease.id === diseaseId));
+                    if (isDiseased) {
+                        sample.individual.phenotypes = sample.individual.phenotypes.filter(disease => (disease.id !== diseaseId));
                     } else {
-                        sampleSelected.member.phenotypes = sampleSelected.member.phenotypes.filter((disease) => {
-                            return disease.id !== diseaseId;
-                        });
+                        const disease = this.allDiseases.find(disease => (diseaseId === disease.id));
+                        sample.individual.phenotypes.push(disease);
                     }
-
-                    this.family.members[sampleId].phenotypes = sampleSelected.member.phenotypes;
-                    this._updateFamily();
+                    this.updateFamily();
                 }
             }
 
@@ -516,14 +530,8 @@
                 let sampleId = e.target.getAttribute("data-sample-id");
                 let sampleSelected = this.findSample(sampleId);
                 if(UtilsNew.isNotUndefinedOrNull(sampleSelected)) {
-
-                    if(e.target.checked){
-                        sampleSelected.member.lifeStatus = "DECEASED";
-                    } else {
-                        sampleSelected.member.lifeStatus = "UNKNOWN";
-                    }
-                    this.family.members[sampleId].lifeStatus = sampleSelected.member.lifeStatus;
-                    this._updateFamily();
+                    sampleSelected.individual.lifeStatus = (e.target.checked ? 'DECEASED' : 'UNKNOWN');
+                    this.updateFamily();
                 }
             }
 
@@ -532,144 +540,117 @@
                 let sampleId = e.target.getAttribute("data-sample-id");
                 let sampleSelected = this.findSample(sampleId);
                 if(UtilsNew.isNotUndefinedOrNull(sampleSelected)) {
-                    sampleSelected.member.parentalConsanguinity = e.target.checked;
-                    this.family.members[sampleId].parentalConsanguinity = sampleSelected.member.parentalConsanguinity;
-                    this._updateFamily();
+                    sampleSelected.individual.parentalConsanguinity = e.target.checked;
                 }
+                this.updateFamily();
             }
 
             _selectParent(e) {
-                let sampleId = e.target.getAttribute("data-sample-id");
-                let isFather = e.target.getAttribute("data-is-father");
-                let isMother = e.target.getAttribute("data-is-mother");
+                const sampleId = e.target.getAttribute("data-sample-id");
+                const isFather = (e.target.getAttribute("data-is-father") === "true");
+                const isMother = (e.target.getAttribute("data-is-mother") === "true");
 
-                // Search the sample which is parent selected
-                let sampleSelectedParent = this.samples.find((sample) => {
-                    return sample.id === parseInt(e.target.value);
-                });
+                // search the sample which is parent selected
+                const parentSampleId = ("none" === e.target.value ? null : parseInt(e.target.value));
+                const sampleSelectedParent = this.samples.find(sample => (sample.id === parentSampleId));
 
-                // Search the sample which we are selecting a parent.
-                let sampleSelected = this.samples.find((sample) => {
-                    return sample.id === parseInt(sampleId);
-                });
+                // search the sample which we are selecting a parent.
+                const sampleSelected = this.samples.find(sample => (sample.id === parseInt(sampleId)));
 
-                let parent = null;
-                if (UtilsNew.isNotUndefinedOrNull(sampleSelectedParent)) {
-                    parent = {
+                const parent = UtilsNew.isNotUndefinedOrNull(sampleSelectedParent) ? {
+                        id: sampleSelectedParent.individual.id,
                         name: sampleSelectedParent.individual.name,
                         sex: sampleSelectedParent.individual.sex
-                    };
-
+                    } : null;
+                if (!!sampleSelected && !!sampleSelected.individual) {
+                    sampleSelected.individual.sex = sampleSelected.individual.sex || "UNKNOWN";
+                    if (!!parent)   parent.sex = (isMother ? 'FEMALE' : (isFather? 'MALE' : "UNKNOWN"));
+                    if (isMother) sampleSelected.individual.mother = parent || null;
+                    else if (isFather) sampleSelected.individual.father = parent || null;
                 }
-                if (UtilsNew.isNotUndefinedOrNull(sampleSelected)) {
-
-                    // If selected individual sex is undefined
-                    if(UtilsNew.isUndefinedOrNull(sampleSelected.member.sex)){
-                        sampleSelected.member.sex = "UNKNOWN";
-                        this.family.members[sampleId].sex = "UNKNOWN";
-                    }
-
-                    // Set the sex of the parent
-                    if (isMother === "true") {
-                        if(UtilsNew.isNotUndefinedOrNull(parent)) {
-                            parent.sex = "FEMALE";
-                        }
-                        if (UtilsNew.isNotUndefinedOrNull(parent)) {
-                            sampleSelected.member.mother = parent.name;
-                            this.family.members[sampleId].mother = parent.name;
-                        } else {
-                            sampleSelected.member.mother = null;
-                            this.family.members[sampleId].mother = null;
-                        }
-
-                    } else if (isFather === "true") {
-                        if(UtilsNew.isNotUndefinedOrNull(parent)) {
-                            parent.sex = "MALE";
-                        }
-                        if (UtilsNew.isNotUndefinedOrNull(parent)) {
-                            sampleSelected.member.father = parent.name;
-                            this.family.members[sampleId].father = parent.name;
-                        } else {
-                            sampleSelected.member.father = null;
-                            this.family.members[sampleId].father = null;
-                        }
-                    }
-                    this._updateFamily();
-                }
+                this.updateFamily();
+                this.invalidatePotentialParents();
             }
 
-            addDisease(e){
-                this.newDisease.id = PolymerUtils.getValue(this.prefix + "idDisease");
-                PolymerUtils.setValue(this.prefix + "idDisease", "");
-                this.newDisease.name = PolymerUtils.getValue(this.prefix + "nameDisease");
-                PolymerUtils.setValue(this.prefix + "nameDisease", "");
-                this.newDisease.src = PolymerUtils.getValue(this.prefix + "srcDisease");
-                PolymerUtils.setValue(this.prefix + "srcDisease", "");
-
-                // Add by polymer array pushing a new disease to the family diseases array and to the custom diseases
-                this.push("data.phenotypes",{
-                    id: this.newDisease.id.toString(),
-                    name: this.newDisease.name,
-                    source: this.newDisease.src
+            updateFamilyMembersFromSamples() {
+                // const members = this.samples.filter(sample => !!sample.individual).map(sample => sample.individual);
+                this.family.members = this.samples.filter(sample => !!sample.individual).map(sample => {
+                    const srcIndividual = sample.individual;
+                    const individual = { name: srcIndividual.name, };
+                    if (!!srcIndividual.sex)    individual.sex = srcIndividual.sex;
+                    if (!!srcIndividual.karyotypicSex)    individual.karyotypicSex = srcIndividual.karyotypicSex;
+                    if (!!srcIndividual.ethnicity)    individual.ethnicity = srcIndividual.ethnicity;
+                    if (!!srcIndividual.population)    individual.population = srcIndividual.population;
+                    if (!!srcIndividual.lifeStatus)    individual.lifeStatus = srcIndividual.lifeStatus;
+                    if (!!srcIndividual.affectationStatus)    individual.affectationStatus = srcIndividual.affectationStatus;
+                    if (!!srcIndividual.parentalConsanguinity)    individual.parentalConsanguinity = srcIndividual.parentalConsanguinity;
+                    // if (!!sample.individual.annotationSets)    individual.annotationSets = Object.assign({}, sample.individual.annotationSets);
+                    if (!!srcIndividual.phenotypes)    individual.phenotypes = srcIndividual.phenotypes.slice();
+                    if (!!srcIndividual.father && !!srcIndividual.father.name)  individual.father = srcIndividual.father.name;
+                    if (!!srcIndividual.mother && !!srcIndividual.mother.name)  individual.mother = srcIndividual.mother.name;
+                    return individual;
                 });
-                this.push("data.customDiseases",{
-                    id: this.newDisease.id.toString(),
-                    name: this.newDisease.name,
-                    source: this.newDisease.src
-                });
-
-                this.newDisease = {};
-                this.family.phenotypes = this.data.phenotypes;
-                this._updateFamily();
             }
 
-            _updateFamily() {
-                // Updating family in parents sending an event.
-                let _this = this;
+            updateFamily() {
+                // sync family and parent
+                this.family.phenotypes = this.getPhenotypesFromIndividuals();
+                this.updateFamilyMembersFromSamples();
+
+                // updating family in parents sending an event.
                 this.dispatchEvent(new CustomEvent('familychange', {
-                    detail: { _family: _this.family, _samples: _this.samples},
+                    detail: { _family: this.family, _samples: this.samples},
                     bubbles: true,
                     composed: true
                 }));
-                this.pedigreeRender();
+                this.invalidatePotentialParents();
+                this.renderPedigree();
+
             }
 
+            fillSampleParentNames() {
+                if (!this.samples) return;
 
-            pedigreeRender() {
-                if(this.data.showSelectParents){
-                    if (UtilsNew.isNotUndefined(this.svg)) {
-                        PolymerUtils.getElementById(this.prefix + "PedigreeView").removeChild(this.svg);
+                for (const sample of this.samples) {
+                    const individual = sample.individual;
+                    if (!!individual) {
+                        if (!!individual.father && !!individual.father.id && individual.father.id>0) {
+                            const parentId = individual.father.id;
+                            const parentSample = this.samples.find(sample => (!!sample.individual && sample.individual.id === parentId));
+                            if (!!parentSample) {
+                                individual.father.name = parentSample.individual.name;
+                            }
+                        }
+                        if (!!individual.mother && !!individual.mother.id && individual.mother.id>0) {
+                            const parentId = individual.mother.id;
+                            const parentSample = this.samples.find(sample => (!!sample.individual && sample.individual.id === parentId));
+                            if (!!parentSample) {
+                                individual.mother.name = parentSample.individual.name;
+                            }
+                        }
                     }
-                    let body = Object.assign({},this.family);
-                    let membersNew =[];
-                    body.members.forEach((member) => {
-                        let newMember = Object.assign({},member);
-                        membersNew.push(newMember);
-                    });
-                    body.members = membersNew;
-
-                    // Render new Pedigree
-                    let querySelector = PolymerUtils.getElementById(this.prefix + "PedigreeView");
-                    let pedigree = new Pedigree(body, {selectShowSampleNames: true});
-                    this.svg = pedigree.pedigreeFromFamily(pedigree.pedigree);
-                    querySelector.appendChild(this.svg);
                 }
             }
 
-            deletedTermFromList(e){
-                let deletedTerm = JSON.parse(e.target.getAttribute("data-selected-term"));
 
-                let diseasesWithoutElement = this.data.phenotypes.filter((element) => {
-                    return element.id !== deletedTerm.id;
-                });
-                let customDiseasesWithoutElement = this.data.customDiseases.filter((element) => {
-                    return element.id !== deletedTerm.id;
-                });
-                this.set('data.phenotypes', diseasesWithoutElement);
-                this.set('data.customDiseases', customDiseasesWithoutElement);
-                this.family.phenotypes = this.data.phenotypes;
-                this.push("data.phenotypes");
-                this._updateFamily();
+            renderPedigree() {
+                if (!this.showSelectParents)    return;
+
+                const pedigreeView = PolymerUtils.getElementById(this.prefix + "PedigreeView");
+                if (!pedigreeView) return;
+
+                if (UtilsNew.isNotUndefined(this.svg)) {
+                    pedigreeView.removeChild(this.svg);
+                }
+
+                // const members = Object.assign({}, this.samples.members);
+                const body = Object.assign({}, this.family);
+
+                // Render new Pedigree
+                const pedigree = new Pedigree(body, { selectShowSampleNames: true });
+                this.svg = pedigree.pedigreeFromFamily(pedigree.pedigree);
+                this.svg.style = "display: block; margin: auto";
+                pedigreeView.appendChild(this.svg);
             }
 
             _summaryOnClick() {
@@ -681,8 +662,41 @@
                 this._summaryCollapsed = !this._summaryCollapsed;
             }
 
-            updateError(){
+            updateError() {
                 this.messageError = this.messageErrorFamily.slice();
+            }
+
+            // updates family.phenotypes and ontologyTermsDiseases
+            updatePhenotypesFromSamples() {
+                const phenotypes = [...new Set(this.samples
+                    .map(sample => ((!!sample.individual && sample.individual.phenotypes) || []))
+                    .reduce((acc, cur, idx, src) => acc.concat(cur), []))];
+                this.family.phenotypes = phenotypes;
+                this.ontologyTermsDiseases = phenotypes;
+                // custom diseases son las enfermedades que están en family.phenotypes pero no en customDiseases
+                this.customDiseases = this.family.phenotypes.filter(disease => !this.ontologyTermsDiseases.some(ar2 => ar2.id === disease.id));
+            }
+
+
+
+            onSamplesChanged() {
+                this._sampleExists = !!this.samples;
+                if (!this._sampleExists)    return;
+
+                this.ontologyTermsDiseases = [];
+                this.customDiseases = [];
+
+                this.readSampleDataFromServer();
+
+                if (!!this.samples) {
+                    this.fillSampleParentNames();
+                    this.updatePhenotypesFromSamples();
+                    this.updateFamily();
+                }
+
+                if (UtilsNew.isNotUndefinedOrNull(PolymerUtils.getElementById("samplesTable"))) {
+                    PolymerUtils.getElementById("samplesTable").render();
+                }
             }
         }
 

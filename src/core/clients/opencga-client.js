@@ -204,29 +204,17 @@ class OpenCGAClient {
                         // Fetch authorised Projects and Studies
                         _this.projects().search({})
                             .then(function (response) {
-                                session.projects = response.response[0].result;
-                                if (UtilsNew.isNotEmptyArray(session.projects) && UtilsNew.isNotEmptyArray(session.projects[0].studies)) {
-                                    // FIXME This is need to keep backward compatibility with OpenCGA 1.3.x
-                                    for (let project of session.projects) {
-                                        project.alias = project.alias || project.fqn || null;
-                                        if (project.studies !== undefined) {
-                                            for (let study of project.studies) {
-                                                // If study.alias does not exist we are NOT in version 1.3, we set fqn from 1.4
-                                                if (study.alias === undefined || study.alias === "") {
-                                                    if (study.fqn.includes(":")) {
-                                                        study.alias = study.fqn.split(":")[1];
-                                                    } else {
-                                                        study.alias = study.fqn;
-                                                    }
-                                                }
-                                            }
-                                        }
+                                session.projects = response.response[0].result || [];
+                                for (const project of (session.projects || [])) {
+                                    project.alias = project.alias || project.fqn || null;
+                                    project.fqn = project.alias;
+                                    for (const study of (project.studies || [])) {
+                                        study.alias = study.alias || (study.fqn || "").split(":").slice(-1).pop() || null;
+                                        study.fqn = study.fqn || `${project.fqn}:${study.alias}`;
                                     }
-
-                                    // this sets the current active project and study
-                                    session.project = session.projects[0];
-                                    session.study = session.projects[0].studies[0];
                                 }
+                                session.project = !!session.projects ? session.projects[0] : null;
+                                session.study = !!session.project && !!session.project.studies ? session.project.studies[0] : null;
 
                                 resolve(session);
                             })

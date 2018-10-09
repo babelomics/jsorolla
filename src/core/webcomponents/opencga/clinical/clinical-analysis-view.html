@@ -259,9 +259,8 @@
                 this._summaryCollapsed = !this._summaryCollapsed;
             }
 
-            searchAnalysis(){
+            searchAnalysis() {
                 if(UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysisId)) {
-                    debugger
                     let params = {
                         study: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias
                     };
@@ -282,7 +281,15 @@
             }
 
             pedigreeRender() {
-                if (UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis) && UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis.family)) {
+                const shouldRender = UtilsNew.isNotUndefined(this.clinicalAnalysis)
+                    && UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis.family)
+                    && this.clinicalAnalysis.family.id >= 0;
+                const pedigreeView = PolymerUtils.getElementById(this.prefix + "PedigreeView");
+                if (UtilsNew.isUndefinedOrNull(pedigreeView))    return;
+
+                pedigreeView.parentElement.parentElement.style.display = (shouldRender ? 'block' : 'none');
+
+                if (shouldRender) {
                     if (UtilsNew.isNotUndefined(this.svg) && PolymerUtils.getElementById(this.prefix + "PedigreeView").hasChildNodes()) {
                         PolymerUtils.getElementById(this.prefix + "PedigreeView").removeChild(this.svg);
                     }

@@ -44,20 +44,20 @@
                 <h3>Analysis Type</h3>
                 <div id="{{prefix}}toolbar">
                     <div class="btn-group btn-group-sm">
-                        <button id="singleButton" class="button" on-click="addAnalysis">
-                            <img src="[[importPath]]images/analysis_single_button.png" height="60">
+                        <button id="singleButton" class="button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 1)}}">
+                            <img src="[[importPath]]images/analysis_single_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 1)}}">
                         </button>
-                        <button id="duoButton" class="button" on-click="addAnalysis">
-                            <img src="[[importPath]]images/analysis_duo_button.png" height="60">
+                        <button id="duoButton" class="button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 2)}}">
+                            <img src="[[importPath]]images/analysis_duo_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 2)}}">
                         </button>
-                        <button id="trioButton" class="button" on-click="addAnalysis">
-                            <img src="[[importPath]]images/analysis_trio_button.png" height="60">
+                        <button id="trioButton" class="button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 3)}}">
+                            <img src="[[importPath]]images/analysis_trio_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 3)}}">
                         </button>
-                        <button id="familyButton" class="button" on-click="addAnalysis">
-                            <img src="[[importPath]]images/analysis_family_button.png" height="60">
+                        <button id="familyButton" class="button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 4)}}">
+                            <img src="[[importPath]]images/analysis_family_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 4)}}">
                         </button>
-                        <button id="autoButton" class="hidden button" on-click="addAnalysis">
-                            <img src="[[importPath]]images/analysis_auto_button.png" height="60">
+                        <button id="autoButton" class="hidden button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 4, 'ge')}}">
+                            <img src="[[importPath]]images/analysis_auto_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 4, 'ge')}}">
                         </button>
                     </div>
                 </div>
@@ -96,30 +96,37 @@
         </div>
 
         <!-- Modal dialog for Family Editor-->
-        <div class="modal fade" id="{{prefix}}FamilyEditor" tabindex="-1" role="dialog"
-             aria-labelledby="familyEditorLabel">
-            <div class="modal-dialog modal-sm" role="document" style="width: 1300px;">
+        <div
+                class="modal fade"
+                id="{{prefix}}FamilyEditor"
+                tabindex="-1"
+                role="dialog"
+                aria-labelledby="familyEditorLabel">
+            <div class="modal-dialog modal-sm" role="document" style="width:90%">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                                aria-hidden="true">&times;</span></button>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                         <h4 class="modal-title" id="{{prefix}}FamilyEditorLabel">Family Editor</h4>
                     </div>
-                    <div class="modal-body" style="height: 500px">
-                        <template is="dom-if" if="{{showModalFamilyEditor}}" restamp="true">
-
-                            <opencga-family-editor-new opencga-session="{{opencgaSession}}" samples="{{_samplesAnalysis}}"
-                                                       opencga-client="{{opencgaClient}}" family="{{family}}"
-                                                       on-familychange="familyChange" message-error-family="{{messageErrorFamily}}">
-                            </opencga-family-editor-new>
-                        </template>
+                    <div class="modal-body">
+                        <div class="row">
+                            <template is="dom-if" if="{{showModalFamilyEditor}}" restamp="true">
+                                <opencga-family-editor-new
+                                        opencga-session="{{opencgaSession}}"
+                                        opencga-client="{{opencgaClient}}"
+                                        samples="{{_samplesAnalysis}}"
+                                        family="{{family}}"
+                                        on-familychange="familyChange"
+                                        message-error-family="{{messageErrorFamily}}">
+                                </opencga-family-editor-new>
+                            </template>
+                        </div>
                     </div>
-
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel
-                        </button>
-                        <button type="button" class="btn btn-primary" on-click="checkFamily">OK
-                        </button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" on-click="checkFamily">OK</button>
                     </div>
                 </div>
             </div>
@@ -144,13 +151,32 @@
             </div>
         </div>
 
-        <opencga-message-dialog opencga-client="{{opencgaClient}}" show-message-modal="{{showMessageModal}}"
-                                settings-message-modal="{{settingsMessageModal}}">
+        <opencga-message-dialog
+                opencga-client="{{opencgaClient}}"
+                show-message-modal="{{showMessageModal}}"
+                settings-message-modal="{{settingsMessageModal}}">
         </opencga-message-dialog>
     </template>
 
     <script>
         class VariantClinicalSamples extends Polymer.Element {
+
+            onSamplesChanged(newValue, oldValue) {
+                // TODO
+            }
+
+            isAnalysisTypeEnabled(actualCount, properCount, operator="eq") {
+                const op = !!operator ? operator : 'eq';
+                switch(op) {
+                    case 'ge':  return actualCount >= properCount;
+                    default:    return actualCount === properCount;
+                }
+            }
+
+            getAnalysisTypeButtonStyle(actualCount, properCount, operator) {
+                const res = this.isAnalysisTypeEnabled(actualCount, properCount, operator);
+                return res ? "" : "opacity: 0.4; filter: alpha(opacity=40);";
+            }
 
             constructor() {
                 super();
@@ -164,7 +190,8 @@
             static get properties() {
                 return {
                     opencgaSession: {
-                        type: Object
+                        type: Object,
+                        observer: "clear"
                     },
                     opencgaClient: {
                         type: Object,
@@ -172,7 +199,8 @@
                     },
                     samples: {
                         type: Array,
-                        notify: true
+                        notify: true,
+                        observer: 'onSamplesChanged',
                     },
                     prefix: {
                         type: String
@@ -208,18 +236,18 @@
                 }
             }
 
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
 
             _init() {
                 this.prefix = "sample" + Utils.randomString(6);
 
             }
-            _attachDom(dom) {
-                this.appendChild(dom);
-            }
 
-            ready() {
-                super.ready();
-
+            clear() {
+                this.samples = [];
+                this._analysis = [];
                 this._numAnalysisSelected = 0;
                 this.analysisChanged = 0;
                 this.currentAnalysis = {};
@@ -227,6 +255,11 @@
                 this.unsavedAnalysis = 0;
                 this.messageError = false;
                 this.fixedFilters = ["studies"];
+            }
+
+            ready() {
+                super.ready();
+                this.clear();
             }
 
             static get observers() {
@@ -441,7 +474,7 @@
                     case "singleButton":
                         analysisType = "Single";
                         _properMembers = 1;
-                        _familyEditor = !UtilsNew.isNotUndefinedOrNull(this.samples[0].attributes.individual) && UtilsNew.isNotEmptyArray(this.samples[0].attributes.phenotypes);
+                        _familyEditor = !UtilsNew.isNotUndefinedOrNull(this.samples[0].individual) && UtilsNew.isNotEmptyArray(this.samples[0].phenotypes);
                         break;
                     case "autoButton":
                         analysisType = "Auto comparative";
@@ -516,6 +549,7 @@
             }
 
             saveAnalysis(rowInfo) {
+                const _this = this;
                 try {
                     if (this.opencgaClient instanceof OpenCGAClient) {
 
@@ -549,26 +583,14 @@
                         }
 
                         // When analysis type != SINGLE Or AUTO
-                        let membersWithParents = null;
-                        let bodyFamily = null;
-                        if (UtilsNew.isNotUndefinedOrNull(rowInfo.family)) {
-                            bodyFamily = Object.assign({}, rowInfo.family);
-                            let membersNew = [];
 
-                            bodyFamily.members.forEach((member) => {
-                                let newMember = Object.assign(member);
-                                membersNew.push(member);
-                            });
-                            bodyFamily.members = membersNew;
-                            // Get members with parents in the current analysis
-                            membersWithParents = bodyFamily.members.filter((member) => {
-                                return UtilsNew.isNotUndefinedOrNull(member.father) || UtilsNew.isNotUndefinedOrNull(member.mother);
-                            });
-                        }
+                        const bodyFamily = !!rowInfo.family ? Object.assign({}, rowInfo.family) : null;
+                        const membersWithParents = !!bodyFamily && bodyFamily.members.filter(member => (
+                            UtilsNew.isNotUndefinedOrNull(member.father) || UtilsNew.isNotUndefinedOrNull(member.mother)
+                        ));
 
                         let individualPromises = [];
                         let checkPromises = [];
-                        let _this = this;
                         let subjectName = "";
                         let samplesName = [];
                         let diseaseAnalysis = [];
@@ -650,18 +672,50 @@
                             });
                         checkPromises.push(checkAnalysisName);
 
-
                         // Once all checkExistsName promise are resolved we try to create family
                         Promise.all(checkPromises)
                             .then(function (response) {
                                 if (checkExistsNames) {
-                                    if (UtilsNew.isNotUndefinedOrNull(membersWithParents) && membersWithParents.length > 0) {
+                                    if (!!membersWithParents && membersWithParents.length > 0) {
+
+                                        for (const individualToUpdate of bodyFamily.members) {
+                                            _this.opencgaClient.individuals().info(individualToUpdate.name, params, {"method": "GET"}).then(response => {
+                                                if (response.response[0].numResults >= 1) {
+                                                    const individual = response.response[0].result[0];
+                                                    const individualId = individual.id;
+
+                                                    // check if individual already has any parent; if not the case, we will allow create family.
+                                                    if (((UtilsNew.isUndefinedOrNull(individual.father) ||
+                                                        (UtilsNew.isNotUndefinedOrNull(individual.father) && UtilsNew.isUndefinedOrNull(individual.father.id)) ||
+                                                        individual.father.id <= 0)
+                                                        &&
+                                                        (UtilsNew.isUndefinedOrNull(individual.mother) ||
+                                                        UtilsNew.isNotUndefinedOrNull(individual.mother) && UtilsNew.isUndefinedOrNull(individual.mother.id) || individual.mother.id <= 0))) {
+                                                        const individualPost = {};
+                                                        if (!!individualToUpdate.mother)    individualPost.mother = individualToUpdate.mother;
+                                                        if (!!individualToUpdate.father)    individualPost.father = individualToUpdate.father;
+                                                        if (!!individualToUpdate.lifeStatus)    individualPost.lifeStatus = individualToUpdate.lifeStatus;
+                                                        if (!!individualToUpdate.parentalConsanguinity)    individualPost.parentalConsanguinity = individualToUpdate.parentalConsanguinity;
+                                                        if (!!individualToUpdate.phenotypes)    individualPost.phenotypes = individualToUpdate.phenotypes.slice();
+                                                        const individualPromise = _this.opencgaClient.individuals().update(individualId, params, individualPost, {"method": "POST"})
+                                                            .then(response => { console.log("Individual updated"); });
+                                                        individualPromises.push(individualPromise);
+                                                    } else {
+                                                        _this.messageError = true;
+                                                        _this.messageErrorText.push(analysisInfo.analysisID + " " + individualToUpdate.name + " individual already has parents.");
+                                                        // PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
+                                                    }
+                                                }
+                                            });
+                                        }
+
+                                        /*
                                         membersWithParents.forEach(function (individualToUpdate) {
                                             _this.opencgaClient.individuals().info(individualToUpdate.name, params, {"method": "GET"})
                                                 .then(function (response) {
                                                     if (response.response[0].numResults >= 1) {
-                                                        let individual = response.response[0].result[0];
-                                                        let individualId = individual.id;
+                                                        const individual = response.response[0].result[0];
+                                                        const individualId = individual.id;
 
                                                         // Check if individual has father or mother already. If individual does not have, we will allow create family.
                                                         if (((UtilsNew.isUndefinedOrNull(individual.father) ||
@@ -688,6 +742,7 @@
                                                     }
                                                 });
                                         });
+                                        */
 
                                         Promise.all(individualPromises)
                                             .then(function (response) {
@@ -724,9 +779,8 @@
                             });
                     }
                 } catch(err) {
-                        _this.messageError = true;
+                    _this.messageError = true;
                     _this.messageErrorText.push(err);
-//                        PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
                 }
             }
 

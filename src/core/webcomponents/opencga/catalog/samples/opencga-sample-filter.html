@@ -404,6 +404,193 @@
                 this._reset = true;
             }
 
+            // this comes from course20180921
+            /*
+            _getDateFilter(e) {
+                let year = PolymerUtils.getElementById(this.prefix + "YearSelect").value;
+                let month =  PolymerUtils.getElementById(this.prefix + "MonthSelect").value;
+                let day =  PolymerUtils.getElementById(this.prefix + "DaySelect").value;
+                let date;
+                if (month === "any") {
+                    date = "~^" + year + "*";
+                } else {
+                    let monthIndex = this.monthToSearch.indexOf(month) + 1;
+                    if (monthIndex < 10) {
+                        monthIndex = "0" + monthIndex;
+                    }
+                    if (day === "any") {
+                        date = "~^" + year + monthIndex + "*";
+                    } else {
+                        if (day < 10) {
+                            day = "0" + day;
+                        }
+                        date = "~^" + year + monthIndex + day + "*";
+                    }
+                }
+                return date;
+            }
+
+            updateVariableSets() {
+                this.variables = [];
+                let _this = this;
+                this.opencgaClient.studies().info(this.opencgaSession.study.id, {include: "variableSets"})
+                    .then(function (response) {
+                        _this.variableSets = response.response[0].result[0].variableSets;
+                        if (_this.variableSets.length > 0) {
+                            _this.variables = _this.variableSets[0].variables; // setting first one by default
+                            _this.filteredVariables = {
+                                variableSet: _this.variableSets[0].id,
+                                variables: []
+                            };
+                        } else {
+                            // _this.variableSets = [{name: "none"}];
+                            _this.variableSets = [];
+                        }
+                    })
+                    .catch(function () {
+                        console.log("Could not obtain the variable sets of the study " + _this.opencgaSession.study);
+                    });
+            }
+
+            renderVariableTemplate() {
+                let myTemplate = PolymerUtils.getElementById(this.prefix + 'VariableTemplate');
+                if (UtilsNew.isNotNull(myTemplate)) {
+                    myTemplate.render();
+                }
+            }
+
+            variableSelected(e) {
+                this.variable = e.target.dataVariable;
+                if (UtilsNew.isUndefined(this.variable) || Object.getOwnPropertyNames(this.variable).length === 0) {
+                    return;
+                }
+                this._isCategorical = false;
+                this._isText = false;
+                this._isNumerical = false;
+                this._isBoolean = false;
+                this._isObject = false;
+                if (this.variable.type.toLowerCase() === "categorical") {
+                    this._isCategorical = true;
+                } else if (this.variable.type.toLowerCase() === "text") {
+                    this._isText = true;
+                } else if (this.variable.type.toLowerCase() === "numeric") {
+                    this._isNumerical = true;
+                } else if (this.variable.type.toLowerCase() === "boolean") {
+                    this._isBoolean = true;
+                } else if (this.variable.type.toLowerCase() === "object") {
+                    this._isObject = true;
+                }
+                //TODO Refactor
+                $(e.target.dataTarget).modal('show');
+            }
+
+            updateCompactFilter(e) {
+                let myFilter = {};
+                if (this.variable.type.toLowerCase() === "categorical") {
+                    let allValues = [];
+                    //TODO Refactor
+                    let selected = $("input[name='" + this.prefix + "Categorical']:checked");
+                    for (let i = 0; i < selected.length; i++) {
+                        allValues.push(selected[i].value);
+                    }
+                    myFilter = {
+                        name: this.variable.name,
+                        value: allValues.join()
+                    };
+                } else if (this.variable.type.toLowerCase() === "text") {
+                    //TODO Refactor
+                    let value = $("input[name='" + this.prefix + "Text']");
+                    myFilter = {
+                        name: this.variable.name,
+                        value: value.value
+                    };
+                    value.value = "";
+                } else if (this.variable.type.toLowerCase() === "numeric") {
+                    //TODO Refactor
+                    let value = $("input[name='" + this.prefix + "Numerical']");
+                    myFilter = {
+                        name: this.variable.name,
+                        value: value.value
+                    };
+                    value.value = "";
+                } else if (this.variable.type.toLowerCase() === "boolean") {
+                    this._isBoolean = true;
+                } else if (this.variable.type.toLowerCase() === "object") {
+                    this._isObject = true;
+                }
+                this.query[myFilter.name] = myFilter.value;
+                this.query = Object.assign({}, this.query);
+                this.fire('opencga-filter-added', myFilter);
+            }
+
+            variablesChanged() {
+                this._areVariablesEmpty = (this.variables.length === 0);
+            }
+
+            checkVarType(myVar, type) {
+                return (myVar.type === type);
+            }
+
+            checkCatType(myVar, type, lowerLimit, upperLimit) {
+                return (myVar.type === type && myVar.allowedValues.length >= lowerLimit && myVar.allowedValues.length < upperLimit);
+            }
+
+            checkYears(e) {
+                e.preventDefault(); // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
+                PolymerUtils.innerHTML(this.prefix + '_errorDiv_birthYear', '');
+                PolymerUtils.innerHTML(this.prefix + '_errorDiv_testYear', '');
+                let currentElement =  PolymerUtils.getElementById(e.target.id);
+                let identifier = e.target.id;
+                let pairElement = '';
+                let divSuffix = '';
+                let message = '';
+                if (identifier.search('birthYear') !== -1) { // Birth year element raises the event -> check Test year
+                    pairElement =  PolymerUtils.getElementById(this.prefix + "testYear");
+                    divSuffix = "birthYear";
+                    message = "Year of Birth must be prior to year of Test";
+                } else { // Year of test element raises the event -> swap elements and check the birth year
+                    currentElement =  PolymerUtils.getElementById(this.prefix + "birthYear");
+                    pairElement =  PolymerUtils.getElementById(e.target.id);
+                    divSuffix = "testYear";
+                    message = "Year of Test must be posterior to year of Birth";
+                }
+
+                if (PolymerUtils.querySelectorAll("option:selected",pairElement) !== ""
+                    && (parseInt(PolymerUtils.querySelectorAll("option:selected", currentElement).textContent) > parseInt(PolymerUtils.querySelectorAll("option:selected", pairElement).textContent))) { // Year of birth cannot be lower than Year of test
+                    PolymerUtils.innerHTML(this.prefix + "_errorDiv_" + divSuffix, message);
+                }
+            }
+
+            checkType(str1, str2) {
+                return str1.search(str2) !== -1;
+            }
+
+            _filterVariable(variable) {
+                for (let i = 0; i < this.filteredVariables.variables.length; i++) {
+                    if (variable.name === this.filteredVariables.variables[i].name) {
+                        return false;
+                    }
+                }
+                if (UtilsNew.isNotUndefined(this.searchVariable)
+                    && variable.name.toLowerCase().indexOf(this.searchVariable.toLowerCase()) === -1) {
+                    return false;
+                }
+                return true;
+            }
+
+            _sortVariables(a, b) {
+                if (a.rank < b.rank) {
+                    return -1;
+                }
+                return 1;
+            }
+
+            _changeMode(e) {
+                this.compact = !this.compact;
+            }
+            */
+
+
             /**
              * Use custom CSS class to easily reset all controls.
              */

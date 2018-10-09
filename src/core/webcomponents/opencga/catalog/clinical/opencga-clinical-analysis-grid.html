@@ -65,6 +65,12 @@
                 }
             }
 
+            static get observers() {
+                return [
+                    'renderTable(opencgaSession.*)',
+                ];
+            }
+
             _attachDom(dom) {
                 this.appendChild(dom);
             }

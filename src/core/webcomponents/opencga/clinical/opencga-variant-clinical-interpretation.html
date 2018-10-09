@@ -1,0 +1,429 @@
+000000000000<link rel="import" href="variant-clinical-upload-new.html">
+<link rel="import" href="variant-clinical-samples.html">
+<link rel="import" href="../variant/opencga-variant-interpretation.html">
+<link rel="import" href="../catalog/clinical/opencga-clinical-analysis-browser.html">
+<link rel="import" href="clinical-analysis-view.html">
+<link rel="import" href="clinical-interpretation-view.html">
+<link rel="import" href="../opencga-message-dialog.html">
+<link rel="import" href="../catalog/clinical/opencga-clinical-analysis-grid.html">
+
+<dom-module id="opencga-variant-clinical-interpretation">
+    <template>
+        <!-- no active prioritization -->
+        <template is="dom-if" if="{{!activePrioritization}}">
+            <div class="col-md-offset-1 col-md-10">
+
+                <!-- clinical analysis selector -->
+                <div class="col-md-12">
+                    <h3>Select Clinical Analysis</h3>
+                    <hr style="width: 80%; margin: 2px 0px;border-top: 2px solid #eee">
+                    <div style="padding: 10px 10px">
+                        <button
+                                id="{{prefix}}clearSelectedAnalysis"
+                                data-toggle="modal"
+                                role="button"
+                                data-placement="bottom"
+                                on-click="clearSelectedAnalysis"
+                                class="btn btn-sm btn-primary"
+                                style="display: inline; float:right; margin:0 25%;">
+                            Clear
+                        </button>
+                        <div class="form-group">
+                            <div class="">
+                                <span for="{{prefix}}SelectOtherAnalysis">
+                                    Select a recent analysis from the table (last 5 analysis) or select a clinical analysis
+                                </span>
+                                <button
+                                        id="{{prefix}}SelectOtherAnalysis"
+                                        data-toggle="modal"
+                                        role="button"
+                                        data-placement="bottom"
+                                        on-click="showClinicalSelector"
+                                        class="btn btn-sm btn-primary"
+                                        style="display: inline">
+                                    Browse...
+                                </button>
+                            </div>
+                        </div>
+                        <!-- last recent clinical analyses-->
+                        <template is="dom-if" if="{{showLastRecent}}" restamp="true">
+                            <div id="{{prefix}}OpencgaClinicalAnalysisGrid">
+                                <div>Recent interpretations</div>
+                                <opencga-clinical-analysis-grid
+                                        opencga-session="{{opencgaSession}}"
+                                        opencga-client="{{opencgaClient}}"
+                                        query="{{clinicalAnalysisQuery}}"
+                                        config="{{clinicalAnalysisGridConfig}}"
+                                        analysis="{{clinicalAnalysis}}"
+                                        on-analysis-selected="onRecentAnalysisSelected">
+                                </opencga-clinical-analysis-grid>
+                            </div>
+                        </template>
+                        <!-- not showing last recent clinical analyses-->
+                        <template is="dom-if" if="{{!showLastRecent}}">
+                            <div id="{{prefix}}OpencgaClinicalAnalysisGrid2" style="padding: 5px 10px">
+                                <clinical-analysis-view
+                                        opencga-session="{{opencgaSession}}"
+                                        opencga-client="{{opencgaClient}}"
+                                        clinical-analysis-id="{{clinicalAnalysisId}}"
+                                        title="Clinical analysis selected">
+                                </clinical-analysis-view>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- algorithm selector -->
+                <div class="col-md-12" style="padding-top: 20px">
+                    <h3>Interpretation Algorithm</h3>
+                    <hr style="width: 80%; margin: 2px 0px;border-top: 2px solid #eee">
+                    <div class="form-group" style="padding: 10px 10px">
+                        <p>Several prioritization and interpretation algorithms are available, you can choose an <span style="font-weight: bold">interactive</span> tool:</p>
+                        <template is="dom-repeat" items="{{config.interpretation.algorithms}}" as="algorithm">
+                            <div id="{{prefix}}{{algorithm.id}}ModeDiv">
+                                <template is="dom-if" if="{{algorithm.checked}}">
+                                    <input
+                                            id="{{prefix}}{{algorithm.id}}Mode"
+                                            type="radio" name="analysisRadioButtons"
+                                            value="{{algorithm.id}}"
+                                            class$="{{prefix}}FilterRadio"
+                                            checked
+                                            on-change="selectAnalysisMode"
+                                            style="padding-left: 20px">
+                                        {{algorithm.title}}<br>
+                                </template>
+                                <template is="dom-if" if="{{!algorithm.checked}}">
+                                    <input
+                                            id="{{prefix}}{{algorithm.id}}Mode"
+                                            type="radio"
+                                            name="analysisRadioButtons"
+                                            value="{{algorithm.id}}"
+                                            class$="{{prefix}}FilterRadio"
+                                            on-change="selectAnalysisMode"
+                                            style="padding-left: 20px">
+                                        {{algorithm.title}}<br>
+                                </template>
+                                <template is="dom-if" if="{{isAutomaticMode(algorithm.id)}}">
+                                    <span style="padding-left: 20px">Select a disease panels </span>
+                                    <select
+                                            id="{{prefix}}DiseasePanels"
+                                            class="selectpicker show-tick"
+                                            data-size="10"
+                                            data-live-search="true"
+                                            data-max-options="1"
+                                            data-selected-text-format="count"
+                                            on-change="onDiseasePanelChange"
+                                            multiple>
+                                        <template
+                                                is="dom-repeat"
+                                                items="{{panelList}}"
+                                                as="panel"
+                                                on-dom-change="updateSelectPicker">
+                                            <option value="{{panel.id}}">{{panel.title}} ({{panel.genes.length}})</option>
+                                        </template>
+                                    </select>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <div style="float: right; margin:0 25%;">
+                        <button
+                                id="clickOkPrioritization"
+                                type="button"
+                                class="btn btn-lg btn-primary"
+                                on-click="onClickOkPrioritization">
+                            Go to Interpretation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- active prioritization -->
+        <template is="dom-if" if="{{activePrioritization}}">
+            <div style="margin: auto">
+                <opencga-variant-interpretation
+                        opencga-session="{{opencgaSession}}"
+                        config="{{config.interpretation}}"
+                        samples="{{samples}}"
+                        disease-panel-id="{{diseasePanelId}}"
+                        population-frequencies="{{populationFrequencies}}"
+                        protein-substitution-scores="{{proteinSubstitutionScores}}"
+                        consequence-types="{{consequenceTypes}}"
+                        opencga-client="{{opencgaClient}}"
+                        cellbase-client="{{cellbaseClient}}"
+                        beacon-hosts="{{config.tools.beacon.hosts}}"
+                        on-gene="geneSelected"
+                        clinical-analysis-id="{{clinicalAnalysis.id}}"
+                        on-backtoselectanalysis="onBackToSelectAnalysis"
+                        event-notify-name="{{eventNotifyName}}"
+                        interactive="{{interactive}}"
+                        panel-examples="{{panelExamples}}">
+                </opencga-variant-interpretation>
+            </div>
+        </template>
+
+        <!-- modal analysis browser -->
+        <div class="modal fade" id="{{prefix}}AnalysisBrowser" tabindex="-1" role="dialog" aria-labelledby="sampleBrowserLabel">
+            <div class="modal-dialog modal-lg" role="document" style="width: 1280px;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="{{prefix}}AnalysisBrowserLabel">Analysis Selector</h4>
+                    </div>
+                    <!--  style="height: 780px" -->
+                    <div class="modal-body">
+                        <opencga-clinical-analysis-browser
+                                opencga-client="{{opencgaClient}}"
+                                opencga-session="{{opencgaSession}}"
+                                analysis-selected="{{analysisSelected}}"
+                                analysis-modal="{{analysisModal}}">
+                        </opencga-clinical-analysis-browser>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" on-click="onAnalysisSelected">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </template>
+    <script>
+
+        class OpencgaVariantClinicalInterpretation extends Polymer.Element {
+
+            constructor() {
+                super();
+
+                // set status and init private properties
+                this._init();
+            }
+
+            static get is() {
+                return 'opencga-variant-clinical-interpretation';
+            }
+
+            static get properties() {
+                return {
+                    opencgaSession: {
+                        type: Object,
+                        observer: 'onOpenCgaSessionChanged',
+                    },
+                    opencgaClient: {
+                        type: Object
+                    },
+                    cellbaseClient: {
+                        type: Object
+                    },
+                    config: {
+                        type: Object
+                    },
+                    samples: {
+                        type: Array,
+                        notify: true
+                    },
+                    populationFrequencies: {
+                        type: Object
+                    },
+                    consequenceTypes: {
+                        type: Object
+                    },
+                    proteinSubstitutionScores: {
+                        type: Object
+                    },
+                    // TODO: evaluate if it can be removed
+                    // and chain its observer and dependencies
+                    analysisSelected: {
+                        type: Object,
+                        observer: "analysisSelectedObserver"
+                    },
+                    clinicalAnalysis: {
+                        type: Object,
+                    },
+                    eventNotifyName: {
+                        type: String,
+                        value: "messageevent"
+                    },
+                    panelExamples: {
+                        type: Array
+                    },
+                    activePrioritization: {
+                        type: Boolean,
+                        value: false,
+                    }
+                };
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            _init() {
+                this.prefix = "clinical-analysis-view-" + Utils.randomString(6);
+
+                this.activePrioritization = false;
+                this.checkExistsRecentAnalysis = false;
+
+                this.interactive = false;
+                this.clinicalAnalysisQuery = {sort: "id", limit: 5};
+                this.clinicalAnalysisGridConfig = {pagination: false, pageSize: 2, pageList: [1, 2]};
+                this.showLastRecent = true;
+                this.showLastRecentInterpretation = true;
+                // TODO REMOVE IT!!!!!
+                if (typeof PANELS !== "undefined") {
+                    let panelList = PANELS.slice();
+                    panelList.sort((a, b) => {
+                        if (a.title === b.title) {
+                            return 0;
+                        }
+                        return a.title < b.title ? -1 : 1;
+                    });
+                    this.set("panelList", panelList);
+                }
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+
+                // initialise the default mode
+                for (let alg of this.config.interpretation.algorithms) {
+                    if (alg.id === "interactive" && alg.checked) {
+                        this.interactive = true;
+                    }
+                }
+                $('select.selectpicker').selectpicker('render');
+            }
+
+            onBackToSelectAnalysis(e) {
+                // prevent the hash to change to "#", allowing to manipulate the hash fragment as needed
+                // e.preventDefault();
+                this.activePrioritization = false;
+                this.activeReport = false;
+                // this.dispatchEvent(e);
+            }
+
+            showClinicalSelector(e) {
+                e.preventDefault();
+                this.analysisModal = UtilsNew.isUndefined(this.analysisModal) ? true : !this.analysisModal;
+                this.checkExistsRecentAnalysis = false;
+                $("#" + this.prefix + "AnalysisBrowser").modal('show');
+            }
+
+            onRecentAnalysisSelected(e) {
+                e.preventDefault(); // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
+                this.clinicalAnalysis = e.detail;
+                this.clinicalAnalysisId = this.clinicalAnalysis.id;
+
+                this.checkTypeAnalysisSelected(this.clinicalAnalysis);
+            }
+
+            analysisSelectedObserver() {
+                this.clinicalAnalysis = null;
+                this.clinicalAnalysisId = null;
+            }
+
+            selectAnalysisMode(e) {
+                this.interactive = e.target.value === "interactive";
+                this.checkTypeAnalysisSelected(this.clinicalAnalysis);
+            }
+
+            showMessage(msg, type) {
+                const params = {
+                    detail: { message: msg, type: type },
+                    bibbles: true,
+                    composed: true,
+                };
+                this.dispatchEvent(new CustomEvent(this.eventNotifyName, params));
+            }
+
+            onClickOkPrioritization() {
+                if (UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis)) {
+                    if (!this.interactive && UtilsNew.isUndefinedOrNull(this.diseasePanelId)) {
+                        this.showMessage("You must select a panel to continue.", UtilsNew.MESSAGE_INFO);
+                    } else {
+                        this.activePrioritization = true;
+                        $('select.selectpicker').selectpicker('render');
+                    }
+                } else {
+                    this.showMessage("You must select an analysis to continue.", UtilsNew.MESSAGE_INFO);
+                }
+            }
+
+            // just to overcome polymer limitations; should be static
+            // check if algorithm id is 'automatic'
+            isAutomaticMode(mode) {
+                return mode === "automatic";
+            }
+            updateSelectPicker(){
+                $('select.selectpicker').selectpicker('render');
+            }
+
+            onDiseasePanelChange(e) {
+                this.diseasePanelId = e.target.value;
+            }
+
+            checkTypeAnalysisSelected(analysis) {
+                // Disabled by default Diseases Panel
+                PolymerUtils.setPropertyById(this.prefix + "DiseasePanels", "disabled", true);
+
+                // If analysis type selected is not single we disabled automatic mode completely and we checked interactive mode by default
+                if (analysis.type.toLowerCase() !== "single") {
+                    PolymerUtils.setPropertyById(this.prefix + "automaticMode", "disabled", true);
+                    PolymerUtils.setPropertyById(this.prefix + "automaticMode", "checked", false);
+                    PolymerUtils.setPropertyById(this.prefix + "interactiveMode", "checked", true);
+                    // This remove the selected panel
+                    $(PolymerUtils.getElementById(this.prefix + "DiseasePanels")).val("default");
+                    this.diseasePanelId = undefined;
+                    this.interactive = true;
+                } else {
+                    PolymerUtils.setPropertyById(this.prefix + "automaticMode", "disabled", false);
+                    if (!this.interactive) {
+                        PolymerUtils.setPropertyById(this.prefix + "DiseasePanels", "disabled", false);
+                    } else {
+                        $(PolymerUtils.getElementById(this.prefix + "DiseasePanels")).val("default");
+                        this.diseasePanelId = undefined;
+                        this.interactive = true;
+                    }
+                }
+                // Refresh Boostrap Select component
+                $(PolymerUtils.getElementById(this.prefix + "DiseasePanels")).selectpicker("refresh");
+            }
+
+            onAnalysisSelected(e) {
+                e.preventDefault(); // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
+                this.clinicalAnalysis = this.analysisSelected;
+                this.clinicalAnalysisId = this.analysisSelected.id;
+                this.showLastRecent = false;
+                this.showLastRecentInterpretation = false;
+                this.checkTypeAnalysisSelected(this.clinicalAnalysis);
+            }
+
+            clearSelectedAnalysis(){
+                this.showLastRecent = true;
+                this.showLastRecentInterpretation = true;
+                this.analysisSelectedObserver();
+            }
+
+            onOpenCgaSessionChanged(newValue, oldValue) {
+                // const newUser = !!newValue && !!newValue.user && newValue.user.id;
+                // const oldUser = !!oldValue && !!oldValue.user && oldValue.user.id;
+                // if (oldUser !== newUser) {
+                //     console.log(`opencga-variant-clinical-interpretation.onOpenCgaSessionChanged(${oldUser}, ${newUser})`);
+                //     this.clearSelectedAnalysis();
+                //     this.activePrioritization = false;
+                // }
+            }
+        }
+
+        customElements.define(OpencgaVariantClinicalInterpretation.is, OpencgaVariantClinicalInterpretation);
+
+
+    </script>
+</dom-module>

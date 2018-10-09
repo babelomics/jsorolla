@@ -49,7 +49,7 @@
                 return {
                     opencgaSession: {
                         type: Object,
-                        observer: "renderTable"
+                        observer: "renderTable",
                     },
                     opencgaClient: {
                         type: Object,
@@ -101,7 +101,6 @@
 
                 this.table = PolymerUtils.getElementById(this.prefix + "SampleSelector");
                 this.search = {};
-
             }
 
             renderTable() {
@@ -112,14 +111,15 @@
                 this.from = 1;
                 this.to = 10;
 
-                if (UtilsNew.isNotUndefined(this.opencgaClient) && UtilsNew.isNotUndefined(this.opencgaSession.study)
-                    && UtilsNew.isNotUndefined(this.opencgaSession.study.fqn)) {
+                if (!!this.opencgaSession && !!this.opencgaSession.study && !!this.opencgaSession.study.fqn) {
                     // Make a copy of the samples (if they exist), we will use this private copy until it is assigned to this.samples
+                    /*
                     if (UtilsNew.isNotUndefined(this.samples)) {
                         this._samples = this.samples;
                     } else {
                         this._samples = [];
                     }
+                    */
 
                     // Check that HTTP protocol is present and complete the URL
                     let opencgaHostUrl = this.opencgaClient.getConfig().host;
@@ -145,7 +145,7 @@
                                 limit: params.limit,
                                 skip: params.offset,
                                 includeIndividual: true,
-                                include: "id,creationDate,status,type,sex,version,release,individual.id,individual.sex,"
+                                include: "id,name,creationDate,status,type,sex,version,release,individual.id,individual.sex,"
                                     + "individual.father,individual.mother,individual.phenotypes"
                             };
 
@@ -185,72 +185,43 @@
                             }
                         },
                         onCheck: function (row, elem) {
-                            // check sample is not already selected
-                            for (let i in _this._samples) {
-                                if (_this._samples[i].id === row.id) {
-                                    return;
-                                }
+                            if (!_this.samples.find(sample => (sample.name === row.name))) {
+                                const newSamples = _this.samples.slice();
+                                newSamples.push(row);
+                                _this.set('samples', newSamples);
                             }
-
-                            // we add samples to selected samples
-                            _this.push("_samples", row);
-                            _this.set('samples', _this._samples.slice());
-
                         },
                         onUncheck: function (row, elem) {
-                            let sampleToDeleteIdx = -1;
-                            for (let i in _this.samples) {
-                                if (_this.samples[i].id === row.id) {
-                                    sampleToDeleteIdx = i;
-                                    break;
-                                }
+                            const sampleToDeleteIdx = _this.samples.findIndex(sample => (sample.name === row.name));
+                            if (-1 != sampleToDeleteIdx) {
+                                const newSamples = _this.samples.slice();
+                                newSamples.splice(sampleToDeleteIdx, 1);
+                                _this.set('samples', newSamples);
                             }
-
-                            if (sampleToDeleteIdx === -1) {
-                                return;
-                            }
-
-                            _this.splice('_samples', sampleToDeleteIdx, 1);
-                            _this.set('samples', _this._samples.slice());
                         },
                         onCheckAll: function (rows) {
-                            let newSamples = _this._samples.slice();
-                            // check sample is not already selected
-                            rows.forEach((sample) => {
-                                let existsNewSelected = _this._samples.some((sampleSelected) => {
-                                   return sampleSelected.id === sample.id;
-                                });
-
-                                if(!existsNewSelected) {
-                                    newSamples.push(sample);
+                            const newSamples = _this.samples.slice();
+                            rows.forEach(row => {
+                                if (!_this.samples.find(sample => row.name === sample.name)) {
+                                    newSamples.push(row);
                                 }
                             });
-
-                            // we add samples to selected samples
-                            _this._samples = newSamples;
-                            _this.set('samples', newSamples.slice());
-
+                            if (newSamples.length !== _this.samples.length) {
+                                _this.set('samples', newSamples);
+                            }
                         },
                         onUncheckAll: function (rows) {
-                            // check sample is not already selected
-                            rows.forEach((sample) => {
-                                _this._samples = _this._samples.filter((sampleSelected) => {
-                                    return sampleSelected.id !== sample.id;
-                                });
-
-                            });
-
-                            // we add samples to selected samples
-//                            _this.push("_samples", row);
-                            _this.set('samples', _this._samples.slice());
-
+                            const newSamples = _this.samples.filter(sample => (!rows.some(row => (row.name === sample.name))));
+                            if (newSamples.length !== _this.samples.length) {
+                                _this.set('samples', newSamples);
+                            }
                         },
                         onLoadSuccess: function (data) {
                             // Check all already selected rows. Selected samples are stored in this.samples array
                             if (_this.samples !== "undefined") {
                                 for (let idx in _this.samples) {
                                     for (let j in data.rows) {
-                                        if (_this.samples[idx].id === data.rows[j].id) {
+                                        if (_this.samples[idx].name === data.rows[j].name) {
                                             $(PolymerUtils.getElementById(_this.prefix + 'SampleSelector')).bootstrapTable('check', j);
                                             break;
                                         }
@@ -453,23 +424,15 @@
             }
 
             fatherFormatter(value, row) {
-                if (UtilsNew.isNotUndefined(row.attributes) && UtilsNew.isNotUndefined(row.attributes.individual)
-                    && UtilsNew.isNotUndefined(row.attributes.individual.father)
-                    && UtilsNew.isNotUndefined(row.attributes.individual.father.id)) {
-                    return row.attributes.individual.father.id;
-                } else {
-                    return '-';
-                }
+                return (!!row.individual && !!row.individual.father && row.individual.father.id>0)
+                    ? row.attributes.individual.father.id
+                    : '-';
             }
 
             motherFormatter(value, row) {
-                if (UtilsNew.isNotUndefined(row.attributes) && UtilsNew.isNotUndefined(row.attributes.individual)
-                    && UtilsNew.isNotUndefined(row.attributes.individual.mother)
-                    && UtilsNew.isNotUndefined(row.attributes.individual.mother.id)) {
-                    return row.attributes.individual.mother.id;
-                } else {
-                    return '-';
-                }
+                return (!!row.individual && !!row.individual.mother && row.individual.mother.id>0)
+                    ? row.attributes.individual.mother.id
+                    : '-';
             }
 
             cellTypeFormatter(value, row) {
@@ -543,7 +506,7 @@
                         },
                         {
                             title: 'Sample',
-                            field: 'id'
+                            field: 'name'
                         },
                         {
                             title: 'Individual ID',
@@ -573,17 +536,16 @@
                         },
                         {
                             title: 'Father',
-                            field: 'attributes.individual.father.id',
-                            formatter: this.fatherFormatter
+                            formatter: this.fatherFormatter,
                         },
                         {
                             title: 'Mother',
-                            field: 'attributes.individual.mother.id',
-                            formatter: this.motherFormatter
+                            formatter: this.motherFormatter,
                         },
                         {
                             title: 'Cell Line',
-                            formatter: this.cellTypeFormatter
+                            formatter: this.cellTypeFormatter,
+                            visible: false,
                         },
                         {
                             title: 'Type',

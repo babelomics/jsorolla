@@ -317,7 +317,7 @@
 
                             <div id="{{prefix}}GridTableDiv" style="margin-top: 5px">
                                 <table id="{{prefix}}mainTable" data-pagination="true" data-page-list="[5, 10, 25]"
-                                       data-show-export="true" data-detail-view="true" data-detail-formatter="detailFormatter">
+                                       data-show-export="true" data-detail-view="true" data-detail-formatter="{{detailFormatter}}">
                                     <thead style="background-color: #eee"></thead>
                                 </table>
                             </div>
@@ -489,15 +489,15 @@
                 ]
             }
 
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
             ready() {
                 super.ready();
                 this._summaryCollapsed = false;
                 this.variantObj = {};
                 this.reportVariants = [];
-            }
-
-            _attachDom(dom) {
-                this.appendChild(dom);
             }
 
             connectedCallback() {
@@ -646,19 +646,16 @@
                     }
                     x += `</span>`;
                     x += `<span class='col-md-3'>`;
-                    if (ct.exonOverlap !== undefined) {
+                    if (!!ct.exonOverlap && ct.exonOverlap.length > 0) {
                         x += `<span><span style="font-weight: bold">cDNA:</span> ${ct.cdnaPosition}, <span style="font-weight: bold">CDS:</span> ${ct.cdsPosition}, <span style="font-weight: bold">Codon:</span> ${ct.codon}, <span style="font-weight: bold">Exon:</span> ${ct.exonOverlap[0].number}</span>`;
                     }
                     x += "</span>";
                     x += "</span>";
                     ctHtml.push(x);
                 }
-                let commentsHtml = [];
-                for (let comment of row.comments) {
-                    let x = `<span class='col-md-12'>${comment.comment} (${comment.author}, ${comment.date})</span><br>`;
-                    commentsHtml.push(x);
-                }
-
+                const commentsHtml = !!row.comments
+                    ? row.comments.map(comment => (`<span class='col-md-12'>${comment.comment} (${comment.author}, ${comment.date})</span><br>`))
+                    : [];
                 let html = `<div class="col-md-12" style="padding: 2px 0px">
                                 <div class="col-md-2" style="padding: 0px 5px">
                                     <label>Consequence Type:</label>

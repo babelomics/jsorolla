@@ -57,7 +57,8 @@
             static get properties() {
                 return {
                     opencgaSession: {
-                        type: Object
+                        type: Object,
+                        observer: "onClear",
                     },
                     opencgaClient: {
                         type: Object
@@ -68,7 +69,6 @@
                     },
                     analysisModal: {
                         type: Boolean,
-                        observer: "loadData"
                     },
                     query:{
                         type: Object,
