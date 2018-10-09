@@ -219,12 +219,9 @@
             }
 
             getVariable(variableId) {
-                for (let i in this.variables){
-                    if (this.variables[i].id === variableId) {
-                        return this.variables[i];
-                    }
-                }
-                console.error("Variable " + variableId + " not found");
+                const variable = this.variables.find(variable => variable.name === variableId);
+                if (!!variable) return variable;
+                else console.error("Variable " + variableId + " not found");
             }
 
             addCategoricalFilter(e) {
