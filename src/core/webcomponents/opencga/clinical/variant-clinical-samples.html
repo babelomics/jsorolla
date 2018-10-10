@@ -493,7 +493,7 @@
                 }
 
 
-               if (this.analysisError(analysisType, this.samples.length, _properMembers, this.samples)) {
+               if (this.analysisError(analysisType, this.samples, _properMembers)) {
                     let fullDate = new Date();
                     let twoDigitMonth = ((fullDate.getMonth() + 1) >= 10) ? (fullDate.getMonth() + 1) : '0' + (fullDate.getMonth() + 1);
                     let currentDate = fullDate.getDate() + "/" + twoDigitMonth + "/" + fullDate.getFullYear();
@@ -934,66 +934,36 @@
                 return '<input type="text" id="' + this.prefix + 'description' + randomString + '" class="form-control" maxlength="75">';
             }
 
-            analysisError(analysisType, introducedLength, properLength, samples) {
-                let _existsAllIndividual= this._checkExistIndividualsInSamples(samples);
-                if (_existsAllIndividual) {
-                    if ((analysisType === 'Trio' || analysisType === 'Duo' || analysisType === 'Single' || analysisType === 'Auto comparative') && introducedLength != properLength) {
-                        this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                            detail: {
-                                message: "Incorrect number of samples selected (" + introducedLength.toString() + ") for " + analysisType + " analysis (" + properLength.toString() + ")",
-                                type: UtilsNew.MESSAGE_ERROR,
-                            },
-                            bubbles: true,
-                            composed: true
-                        }));
+            // we don't want to worry about the details of sending a message in every function
+            throwMessage(message, type) {
+                const params = { detail: { message: message, type: type }, bubbles: true, composed: true };
+                this.dispatchEvent(new CustomEvent(this.eventNotifyName, params));
+            }
+
+            analysisError(analysisType, samples, properLength) {
+                // check all samples have an associated individual
+                const sampleHasIndividual = sample => (
+                    !!sample && !!sample.attributes && !!sample.attributes.individual
+                    && !!samples.attributes.individual.id && (samples.attributes.individual.id>0)
+                );
+                const allSamplesHaveIndividual = (samples || []).every(sampleHasIndividual);
+                if (allSamplesHaveIndividual) {
+                    const invalidSubjectCount = (['Single', 'Duo', 'Trio', 'Auto comparative'].includes(analysisType) && samples.length != properLength)
+                        || (['Family', 'Multisample'].includes(analysisType) && samples.length < properLength);
+                    if (invalidSubjectCount) {
+                        const message = `Incorrect number of samples selected (${samples.length.toString()}) for ${analysisType} analysis (${properLength.toString()})`;
+                        this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
                         return false;
-                    } else if ((analysisType === 'Family' || analysisType === 'Multisample') && introducedLength < properLength) {
-                        this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                            detail: {
-                                message: "Incorrect number of samples selected (" + introducedLength.toString() + ") for " + analysisType + " analysis (at least " + properLength.toString() + ")",
-                                type: UtilsNew.MESSAGE_ERROR,
-                            },
-                            bubbles: true,
-                            composed: true
-                        }));
-                        return false;
-                    } else if (analysisType === "Single" && UtilsNew.isNotUndefinedOrNull(samples[0]) &&
-                        (UtilsNew.isUndefinedOrNull(samples[0].phenotypes) || UtilsNew.isEmptyArray(samples[0].phenotypes))) {
-                            debugger;
-                        this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                            detail: {
-                                message: "Incorrect single analysis without diseases",
-                                type: UtilsNew.MESSAGE_ERROR,
-                            },
-                            bubbles: true,
-                            composed: true
-                        }));
+                    } else if (analysisType === "Single" && !!samples && samples.length>0 && !!(samples[0]) && (samples[0].phenotypes || []).length === 0) {
+                        this.throwMessage("Incorrect single analysis without diseases", UtilsNew.MESSAGE_ERROR);
                         return false;
                     } else {
                         return true;
                     }
                 } else {
-                    this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                        detail: {
-                            message: "All samples must have an associated individual.",
-                            type: UtilsNew.MESSAGE_ERROR
-                        },
-                        bubbles: true,
-                        composed: true
-                    }));
+                    this.throwMessage("All samples must have an associated individual.", UtilsNew.MESSAGE_ERROR);
+                    return false;
                 }
-            }
-
-            _checkExistIndividualsInSamples(samples) {
-                let samplesWithoutIndividuals = [];
-
-                if (UtilsNew.isNotUndefinedOrNull(samples) && UtilsNew.isNotEmptyArray(samples)) {
-                    samplesWithoutIndividuals = samples.filter( (sample) => {
-                        return UtilsNew.isUndefinedOrNull(sample.attributes) || UtilsNew.isUndefinedOrNull(sample.attributes.individual)
-                            || UtilsNew.isUndefinedOrNull(sample.attributes.individual.id) || sample.attributes.id < 0;
-                    });
-                }
-                return UtilsNew.isEmptyArray(samplesWithoutIndividuals);
             }
 
             selectSubject(e){

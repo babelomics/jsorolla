@@ -36,9 +36,7 @@
 
             constructor() {
                 super();
-
                 this._init();
-
             }
 
             static get is() {
@@ -128,15 +126,19 @@
                     }
                     opencgaHostUrl += '/webservices/rest/v1/samples/search';
 
-                    let _this = this;
+                    const _this = this;
                     $("#" + this.prefix + 'SampleSelector').bootstrapTable('destroy');
                     $("#" + this.prefix + 'SampleSelector').bootstrapTable({
                         url: opencgaHostUrl,
                         columns: _this._columns,
                         method: 'get',
                         sidePagination: 'server',
-                        queryParams: function (params) {
-                            let auxParams = {
+                        queryParams: params => {
+                            const fieldsToIncludeInSample = [
+                              'id', 'name', 'creationDate', 'status', 'type', 'sex', 'version', 'release', 'phenotypes',
+                                'individual.id', 'individual.sex', 'individual.father', 'individual.mother', 'individual.phenotypes'
+                            ];
+                            const auxParams = {
                                 study: _this.opencgaSession.study.fqn,
 //                                lazy: "false",
                                 sid: Cookies.get(_this.opencgaClient.getConfig().cookieSessionId),
@@ -145,16 +147,11 @@
                                 limit: params.limit,
                                 skip: params.offset,
                                 includeIndividual: true,
-                                include: "id,name,creationDate,status,type,sex,version,release,individual.id,individual.sex,"
-                                    + "individual.father,individual.mother,individual.phenotypes"
+                                include: fieldsToIncludeInSample.join(',')
                             };
-
-                            if (UtilsNew.isUndefined(filters)) {
-                                filters = {};
-                            }
-                            return Object.assign(filters, auxParams);
+                            return Object.assign(filters || {}, auxParams);
                         },
-                        responseHandler: function (response) {
+                        responseHandler: response => {
                             if (!_this.hasOwnProperty("numTotalResults")) {
                                 _this.numTotalResults = 0;
                             }
