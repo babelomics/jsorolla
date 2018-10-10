@@ -486,7 +486,7 @@
             static get observers() {
                 return [
                     'projectStudyObtained(opencgaSession)'
-                ]
+                ];
             }
 
             _attachDom(dom) {
@@ -539,19 +539,10 @@
 
             onCreateReport() {
                 // Make a deep copy object
-                let copy = JSON.parse(JSON.stringify(this.interpretation));
-
-                // Find all reportedVariant object from this.reportVariants
-                let _reportVariants = [];
-                for (let variantId of this.reportVariants) {
-                    for (let reportedVariant of this.interpretation.reportedVariants) {
-                        if (variantId === reportedVariant.id) {
-                            _reportVariants.push(reportedVariant);
-                            break;
-                        }
-                    }
-                }
-                copy.reportedVariants = _reportVariants;
+                const copy = JSON.parse(JSON.stringify(this.interpretation));
+                cooy.reportedVariants = this.interpretation.reportedVariants.filter(variant => (
+                    this.reportVariants.some(v => v.id === variant.id)
+                ));
 
                 // Fire an event with the new interpretation data model
                 this.dispatchEvent(new CustomEvent('createreport', {detail: {interpretation: copy}}));

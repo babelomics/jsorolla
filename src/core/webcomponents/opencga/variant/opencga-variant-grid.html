@@ -255,6 +255,7 @@
                         queryParams: function (params) {
                             queryParams.limit = params.limit;
                             queryParams.skip = params.offset;
+                            queryParams.skipCount = false;
                             return queryParams;
                         },
                         responseHandler: function (resp) {
@@ -297,10 +298,10 @@
 //                            $('.success').removeClass('success');
 //                            $($element).addClass('success');
 
-                            let _variant = row.chromosome + ":" + row.start + ":" + row.reference + ":" + row.alternate;
+                            const variantId = `${row.chromosome}:${row.start}:${row.reference}:${row.alternate}`;
                             _this.dispatchEvent(new CustomEvent('checkvariant', {
                                 detail: {
-                                    id: _variant,
+                                    id: variantId,
                                     variant: row,
                                     checkdVariant: false,
                                     variants: $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('getAllSelections'),
@@ -1430,7 +1431,7 @@
                     detailView: true,
                     detailFormatter: this.tableDetailFormatter,
 
-                    showSelectCheckbox: false,
+                    showSelectCheckbox: true,
                     nucleotideGenotype: true,
                     alleleStringLengthMax: 15
                 }

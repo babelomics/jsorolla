@@ -291,13 +291,8 @@
 
             connectedCallback() {
                 super.connectedCallback();
-
                 // initialise the default mode
-                for (let alg of this.config.interpretation.algorithms) {
-                    if (alg.id === "interactive" && alg.checked) {
-                        this.interactive = true;
-                    }
-                }
+                this.interactive = this.config.interpretation.algorithms.some(alg => "interactive" === alg.id && alg.checked);
                 $('select.selectpicker').selectpicker('render');
             }
 

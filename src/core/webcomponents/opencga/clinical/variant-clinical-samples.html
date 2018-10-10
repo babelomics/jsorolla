@@ -917,12 +917,11 @@
             }
 
             actionFormatter(familyEditor, randomString) {
-                if (familyEditor) {
-                    return '<button type="button" id="' + this.prefix + 'Save' + randomString + '" class="btn btn-sm btn-primary disabled" disabled><i class="fa fa-floppy-o" aria-hidden="true"></i>&nbsp;Save</button>';
-                }
-                else { // If not a family analysis, such analysis can be saved inmediatly
-                    return '<button type="button" id="' + this.prefix + 'Save' + randomString + '" class="btn btn-sm btn-primary"><i class="fa fa-floppy-o" aria-hidden="true"></i>&nbsp;Save</button>';
-                }
+                const buttonClass = `class="btn btn-sm btn-primary${familyEditor ? " disabled" : ""}"`;
+                const buttonDisabled = familyEditor ? " disabled" : "";
+                const buttonString = `<button type="button" id="${this.prefix}Save${randomString}" ${buttonClass}${buttonDisabled}>`;
+                const istring = '<i class="fa fa-floppy-o" aria-hidden="true"></i>&nbsp;Save</button>';
+                return `${buttonString}${istring}`;
             }
 
             analysisFormatter(analysisID, randomString) {
@@ -944,7 +943,7 @@
                 // check all samples have an associated individual
                 const sampleHasIndividual = sample => (
                     !!sample && !!sample.attributes && !!sample.attributes.individual
-                    && !!samples.attributes.individual.id && (samples.attributes.individual.id>0)
+                    && !!sample.attributes.individual.id && (sample.attributes.individual.id>0)
                 );
                 const allSamplesHaveIndividual = (samples || []).every(sampleHasIndividual);
                 if (allSamplesHaveIndividual) {
