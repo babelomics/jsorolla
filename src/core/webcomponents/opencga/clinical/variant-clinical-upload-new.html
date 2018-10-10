@@ -665,98 +665,57 @@
                 }
             }
 
-            readFile (formFields) {
 
-                // Some checks before submitting VCF to Catalog
-                if (window.File && window.FileReader && window.FileList && window.Blob) {
-                    let vcfFile = PolymerUtils.getPropertyById(this.prefix + 'FileToUpload', 'files')[0];
+            sendErrorMessage(message, type) {
+                this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
+                    detail: {
+                        message: message,
+                        type: type,
+                    },
+                    bubbles: true,
+                    composed: true,
+                }));
+            }
 
-                    // Linux text/vcard
-                    // Winwdows text/x-card text/x-vcard
-                    ///MAC text/directory
-                    if ((vcfFile.type === 'text/vcard' || vcfFile.type === "text/x-card" || vcfFile.type === "text/x-vcard" || vcfFile.type === "text/directory")
-                        && vcfFile.name.split('.').pop() === 'vcf') {
-
-                        let reader = new FileReader();
-                        let _this = this;
-
-                        reader.onload = (function () {
-                            // Get SampleID from VCF file
-                            let content = reader.result.split('\n');
-                            let i = 0;
-                            let sampleName = "";
-                            while (i < content.length) {
-                                if (content[i].startsWith('#CHROM')) {
-                                    let headerColumns = content[i].split('\t');
-                                    if (headerColumns.length != 10) {
-                                        let _message = "VCF file does not have proper number of data columns which are CHROM POS ID REF ALT QUAL FILTER INFO FORMAT <sample>. Besides, notice that for this version VCF multisample is not allowed";
-                                        this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                                            detail: {
-                                                message: _message,
-                                                type: UtilsNew.MESSAGE_ERROR
-                                            },
-                                            bubbles: true,
-                                            composed: true
-                                        }));
-                                    } else {
-                                        sampleName = headerColumns[headerColumns.length - 1];
-                                        sampleName = sampleName.replace(/[\r\n]/g, "");
-                                        break;
-                                    }
-                                }
-                                i++;
-                            }
-                            // Register the form in openCGA through different steps
-                            if (isNaN(sampleName)) {
+            readFile(formFields) {
+                if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+                    // browser do not support FILE API
+                    const message = "Your browser is not supported. The latest version of Google Chrome is recommended (https://www.google.es/chrome/browser/desktop/index.html)";
+                    this.sendErrorMessage(message, UtilsNew.MESSAGE_ERROR);
+                } else {
+                    const fileToUploadElement = document.getElementById(`${this.prefix}FileToUpload`);
+                    const vcfFile = !!fileToUploadElement && !!fileToUploadElement.files && (fileToUploadElement.files.length>0) && fileToUploadElement.files[0];
+                    if (!vcfFile)  return;
+                    // Linux: text/vcard; Winwdows: text/x-card text/x-vcard; OSX: text/directory
+                    const validTypes = ['text/vcard', 'text/x-card', 'text/x-vcard', 'text/directory'];
+                    const filenameComps = vcfFile.name.split('.');
+                    const fileExtension = filenameComps.length > 1 ? filenameComps.pop().toLowerCase() : "";
+                    if ('vcf' === fileExtension && validTypes.includes(vcfFile.type.toLowerCase())) {
+                        const _this = this;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            // get SampleID from VCF file
+                            const content = reader.result.split('\n');
+                            const header = content.find(line => line.startsWith('#CHROM'));
+                            const headerColumns = !!header ? header.split('\t') : [];
+                            if (10 === headerColumns.length) {
+                                const sampleName = headerColumns[headerColumns.length-1].replace(/[\r\n]/g, "");
                                 _this.openCGAsteps(formFields, sampleName, vcfFile);
                             } else {
-                                let _message = "VCF name cannot be a number. Changed and upload it again please.";
-                                _this.dispatchEvent(new CustomEvent(_this.eventNotifyName, {
-                                    detail: {
-                                        message: _message,
-                                        type: UtilsNew.MESSAGE_ERROR
-                                    },
-                                    bubbles: true,
-                                    composed: true
-                                }));
+                                const message = (0 === headerColumns.length)
+                                    ? "VCF name cannot be a number. Changed and upload it again please."
+                                    : "VCF file does not have proper number of data columns which are CHROM POS ID REF ALT QUAL FILTER INFO FORMAT <sample>. Besides, notice that for this version VCF multisample is not allowed";
+                                _this.sendErrorMessage(message, UtilsNew.MESSAGE_ERROR);
                             }
-                        });
-                        reader.onerror = (function () {
-                            let _message = "The VCF file couldn't be read";
-                            this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                                detail: {
-                                    message: _message,
-                                    type: UtilsNew.MESSAGE_ERROR
-                                },
-                                bubbles: true,
-                                composed: true
-                            }));
-                        });
-
+                        };
+                        reader.onerror = () => {
+                            _this.sendErrorMessage("The VCF file couldn't be read", UtilsNew.MESSAGE_ERROR);
+                        };
                         reader.readAsText(vcfFile);
                     } else {
-                        // Type of file: VCF or not
-                        let _message = "The file selected is not a VCF file";
-                        this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                            detail: {
-                                message: _message,
-                                type: UtilsNew.MESSAGE_ERROR
-                            },
-                            bubbles: true,
-                            composed: true
-                        }));
+                        // not VCF or invalid mime type
+                        this.sendErrorMessage("The file selected is not a VCF file", UtilsNew.MESSAGE_ERROR);
                     }
-                } else {
-                    // Whether browser supports FILE API
-                    let _message = "Your browser is not supported. The latest version of Google Chrome is recommended (https://www.google.es/chrome/browser/desktop/index.html)";
-                    this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                        detail: {
-                            message: _message,
-                            type: UtilsNew.MESSAGE_ERROR
-                        },
-                        bubbles: true,
-                        composed: true
-                    }));
                 }
             }
 

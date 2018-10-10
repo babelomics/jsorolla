@@ -448,7 +448,9 @@
             addAnalysis(e) {
 
                 e.preventDefault(); // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
-                let analysisId = Math.floor(Math.random() * 10000) + 1;
+
+                // TODO: this should be changed; with 700 analyses, 7% probability of collision
+                const analysisId = 1 + Math.floor(Math.random() * 1000000);
                 // Get the type of analysisId
                 let analysisType = "";
                 let _properMembers = -1;
@@ -939,7 +941,7 @@
                         this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
                             detail: {
                                 message: "Incorrect number of samples selected (" + introducedLength.toString() + ") for " + analysisType + " analysis (" + properLength.toString() + ")",
-                                type: UtilsNew.MESSAGE_ERROR
+                                type: UtilsNew.MESSAGE_ERROR,
                             },
                             bubbles: true,
                             composed: true
@@ -949,7 +951,7 @@
                         this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
                             detail: {
                                 message: "Incorrect number of samples selected (" + introducedLength.toString() + ") for " + analysisType + " analysis (at least " + properLength.toString() + ")",
-                                type: UtilsNew.MESSAGE_ERROR
+                                type: UtilsNew.MESSAGE_ERROR,
                             },
                             bubbles: true,
                             composed: true
@@ -957,10 +959,11 @@
                         return false;
                     } else if (analysisType === "Single" && UtilsNew.isNotUndefinedOrNull(samples[0]) &&
                         (UtilsNew.isUndefinedOrNull(samples[0].phenotypes) || UtilsNew.isEmptyArray(samples[0].phenotypes))) {
+                            debugger;
                         this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
                             detail: {
                                 message: "Incorrect single analysis without diseases",
-                                type: UtilsNew.MESSAGE_ERROR
+                                type: UtilsNew.MESSAGE_ERROR,
                             },
                             bubbles: true,
                             composed: true
