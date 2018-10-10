@@ -280,9 +280,15 @@
                     </template>
 
                     <template is="dom-if" if="{{activeReport}}" restamp="true">
-                        <variant-clinical-report opencga-client="{{opencgaClient}}" opencga-session="{{opencgaSession}}" config="{{config}}"
-                                    tool-title="Report of {{clinicalAnalysis.name}}" interpretation="{{interpretationReport}}" analysis="{{clinicalAnalysis}}" expReport="true">
-                        </variant-clinical-report>
+                        <variant-clinical-report
+                                opencga-client="{{opencgaClient}}"
+                                opencga-session="{{opencgaSession}}"
+                                config="{{config}}"
+                                tool-title="Report of {{clinicalAnalysis.name}}"
+                                interpretation="{{interpretationReport}}"
+                                analysis="{{clinicalAnalysis}}"
+                                expReport="true"
+                        ></variant-clinical-report>
                     </template>
                 </template>
             </div>

@@ -540,7 +540,7 @@
             onCreateReport() {
                 // Make a deep copy object
                 const copy = JSON.parse(JSON.stringify(this.interpretation));
-                cooy.reportedVariants = this.interpretation.reportedVariants.filter(variant => (
+                copy.reportedVariants = this.interpretation.reportedVariants.filter(variant => (
                     this.reportVariants.some(v => v.id === variant.id)
                 ));
 

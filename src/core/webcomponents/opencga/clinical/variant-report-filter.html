@@ -222,7 +222,7 @@
                             </a>
                         </h4>
                     </div>
-    
+
                     <div id="{{prefix}}MethodologyContent" class="panel-collapse collapse" role="tabpanel"
                             aria-labelledby="{{prefix}}MethodologyHeading">
                         <div class="panel-body">
@@ -445,11 +445,9 @@
             }
 
             loadi18n(key) {
-                if (UtilsNew.isNotUndefinedOrNull(this.i18n[key])) {
-                    return this.i18n[key]
-                } else {
-                    return "No exists key:" + key;
-                }
+                // HACK!!! i18n exists as a global variable; no need to pass it
+                return i18n.es.clinical.report[key] || `Key does not exists: ${key}`;
+                // return (!!this.i18n && this.i18n[key]) || `Key does not exists: ${key}`;
             };
 
             updateDataFields() {
@@ -478,10 +476,7 @@
             }
 
             _sortVariables(a, b) {
-                if (a.rank < b.rank) {
-                    return -1;
-                }
-                return 1;
+                return a.rank < b.rank ? -1 : (a.rank > b.rank ? 1 : 0);
             }
 
             sampleInfoField() {

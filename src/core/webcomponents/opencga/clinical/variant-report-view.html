@@ -593,7 +593,6 @@
                 </div>
             </div>
         </div>
-
     </template>
     <script>
         function splitTable(table, maxHeight) {
@@ -635,12 +634,18 @@
         }
 
         class VariantReportView extends Polymer.Element {
+
             static get is() {
                 return 'variant-report-view';
             }
 
             static get properties() {
                 return {
+                    interpretation: {
+                        type: Object,
+                        observer: 'updateReport'
+
+                    },
                     opencgaSession: {
                         type: Object
                     },
@@ -675,11 +680,6 @@
                     //     type: Object,
                     //     observer: 'loadData'
                     // },
-                    interpretation: {
-                        type: Object,
-                        observer: 'loadData'
-
-                    },
                     i18n: {
                         type: Object
                     },
@@ -715,24 +715,21 @@
 
             connectedCallback() {
                 super.connectedCallback();
+                this.updateReport();
+
+            }
+
+            updateReport() {
                 this.loadVariableSet();
                 this.loadData();
             }
 
             loadi18n(key) {
-                if (UtilsNew.isNotUndefinedOrNull(this.i18n[key])) {
-                    // if (this.i18n[key] instanceof Function) {
-                    // let data = {};
-                    // keys.forEach((key, i) => {
-                    //     data[key] = this.dataFields[key];
-                    // });
-                    // return this.i18n[key](data);
-                    // } else {
-                    return this.i18n[key]
-                    // }
-                } else {
-                    return "No exists key:" + key;
-                }
+                // HACK!!! i18n exists as a global variable; no need to pass it
+                return i18n.es.clinical.report[key] || `Key does not exists: ${key}`;
+                // // TODO: this is a copy of variant-report-filter.loadi18n
+                // // the duplication smells very bad
+                // return (!!this.i18n && this.i18n[key]) || `Key does not exists: ${key}`;
             };
 
             zigosityResult(studies) {
@@ -762,7 +759,7 @@
                         let sampleName = this.interpretation.clinicalAnalysis.subjects[0].samples[0].name;
 
                         let resFormat = sampleName.split("-");
-                        let dnaNumber = resFormat[1]; //DNA sample number correct format 
+                        let dnaNumber = resFormat[1]; //DNA sample number correct format
 
                         this.dataFieldsFixed.hospital = this.getValueVariableSet('hospital');
                         this.dataFieldsFixed.birthYear = birthYear;
@@ -1009,10 +1006,20 @@
 
             loadVariableSet() {
                 this.variableSetMap = {};
-                let _this = this;
-                this.interpretation.clinicalAnalysis.subjects[0].samples[0].annotationSets[0].annotations.forEach((annotation) => {
-                    _this.variableSetMap[annotation.name] = annotation.value;
-                });
+                const annotations = (!!this.interpretation
+                    && !!this.interpretation.clinicalAnalysis
+                    && !!this.interpretation.clinicalAnalysis.subjects
+                    && (this.interpretation.clinicalAnalysis.subjects.length > 0)
+                    && !!this.interpretation.clinicalAnalysis.subjects[0]
+                    && !!this.interpretation.clinicalAnalysis.subjects[0].annotationSets
+                    && (this.interpretation.clinicalAnalysis.subjects[0].annotationSets > 0)
+                    && !!this.interpretation.clinicalAnalysis.subjects[0].annotationSets[0]
+                    && !!this.interpretation.clinicalAnalysis.subjects[0].annotationSets[0].annotations)
+                    || [];
+                for (const annotation of annotations) {
+                    this.variableSetMap[annotation.name] = annotation.value;
+                }
+                return;
             }
 
             getValueVariableSet(key) {
@@ -1098,9 +1105,9 @@
                     }
                 }
 
-                if (UtilsNew.isNotUndefinedOrNull(this.interpretation) && UtilsNew.isNotUndefinedOrNull(this.interpretation.attributes.panelInfo.positive)
-                    && UtilsNew.isNotUndefinedOrNull(this.interpretation.attributes.panelInfo) && this.interpretation.attributes.panelInfo.positive) {
-                    PolymerUtils.removeAttribute(this.prefix + "variantsTableDiv", "hidden");
+                if (!!this.interpretation && this.interpretation.attributes && this.interpretation.attributes.panelInfo && this.interpretation.attributes.panelInfo.positive) {
+                    document.getElementById(`${this.prefix}variantsTableDiv`).removeAttribute('hidden');
+                    // PolymerUtils.removeAttribute(this.prefix + "variantsTableDiv", "hidden");
                 }
             }
 
@@ -1190,7 +1197,7 @@
             genesRow(row) {
                 let genes = [];
                 for (let o in row.annotation.consequenceTypes) {
-                    if (UtilsNew.isNotUndefined(row.annotation.consequenceTypes[o].geneName) && !UtilsNew.isEmpty(row.annotation.consequenceTypes[o].geneName)  
+                    if (UtilsNew.isNotUndefined(row.annotation.consequenceTypes[o].geneName) && !UtilsNew.isEmpty(row.annotation.consequenceTypes[o].geneName)
                     && !genes.includes(row.annotation.consequenceTypes[o].geneName)) {
                         genes.push(row.annotation.consequenceTypes[o].geneName);
                     }
