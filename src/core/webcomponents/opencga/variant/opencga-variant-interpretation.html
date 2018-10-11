@@ -63,12 +63,18 @@
                     <div id="{{prefix}}FilterMenu" class$="{{filterClass}}">
                         <opencga-variant-filter opencga-session="{{opencgaSession}}"
                                                 family="[[family]]"
-                                                opencga-client="{{opencgaClient}}" cellbase-client="{{cellbaseClient}}" config="{{config.filter}}"
+                                                opencga-client="{{opencgaClient}}"
+                                                cellbase-client="{{cellbaseClient}}"
+                                                config="{{config.filter}}"
                                                 population-frequencies="{{populationFrequencies}}"
-                                                consequence-types="{{consequenceTypes}}" query="{{query}}" search="{{search}}"
+                                                consequence-types="{{consequenceTypes}}"
+                                                query="{{query}}"
+                                                search="{{search}}"
                                                 on-samplechange="onSampleChange"
-                                                on-inheritancemode="_onInheritanceMode" mode-inheritance="{{modeInheritance}}">
-                        </opencga-variant-filter>
+                                                on-inheritancemode="_onInheritanceMode"
+                                                mode-inheritance="{{modeInheritance}}"
+                                                samples="[[samples]]"
+                        ></opencga-variant-filter>
                     </div>
                     <!--</template>-->
 
