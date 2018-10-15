@@ -80,11 +80,18 @@
 
                     <div id="{{prefix}}MainWindow" class$="{{gridClass}}">
 
-                        <opencga-active-filters opencga-client="{{opencgaClient}}" query="[[query]]" filters="{{config.filter.examples}}" on-filterchange="onFilterChange" on-clear="onClear"
-                                                filter-bioformat="VARIANT" default-study="{{opencgaSession.study.alias}}" alias="{{activeFilterAlias}}" refresh="{{search}}" genotype-samples="{{genotypeSamples}}"
-                                                mode-inheritance="[[modeInheritance]]">
-                        </opencga-active-filters>
-
+                        <opencga-active-filters opencga-client="{{opencgaClient}}"
+                                                query="[[query]]"
+                                                filters="{{config.filter.examples}}"
+                                                on-filterchange="onFilterChange"
+                                                on-clear="onClear"
+                                                filter-bioformat="VARIANT"
+                                                default-study="{{opencgaSession.study.alias}}"
+                                                alias="{{activeFilterAlias}}"
+                                                refresh="{{search}}"
+                                                genotype-samples="{{genotypeSamples}}"
+                                                mode-inheritance="[[modeInheritance]]"
+                        ></opencga-active-filters>
 
                         <div class="col-md-12" style="padding: 5px 0px 5px 0px">
                             <div class="btn-toolbar" role="toolbar" aria-label="..." style="padding: 10px 0px">
@@ -500,33 +507,34 @@
             }
 
             clinicalAnalysisObserver() {
-                let _samples = [];
+                const _samples = [];
 
-                if (UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis) && UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis.family) && UtilsNew.isNotEmptyArray(this.clinicalAnalysis.family.members)) {
+                if (!!this.clinicalAnalysis && !!this.clinicalAnalysis.family && (this.clinicalAnalysis.family.members || []).length > 0) {
                     this.set("family", this.clinicalAnalysis.family);
-                    this.clinicalAnalysis.family.members.forEach((member) => {
-                        if (UtilsNew.isNotUndefinedOrNull(member.samples)) {
-                            member.samples.map((sample) => {
-                                _samples.push(sample)
-                            });
+                    for (const member of this.clinicalAnalysis.family.members) {
+                        for (const sample of (member.samples || [])) {
+                            sample.individual = member;
+                            _samples.push(sample);
                         }
-                    });
-                } else {
-                    if (UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis) && UtilsNew.isNotEmptyArray(this.clinicalAnalysis.subjects)) {
-                        this.clinicalAnalysis.subjects.forEach((individual) => {
-                            individual.samples.map((sample) => {
-                                _samples.push(sample)
-                            });
-                        });
-                    } else {
-                        console.warn("A Clinical Analysis with no subjects or family has been passed");
                     }
+                } else if (!!this.clinicalAnalysis && (this.clinicalAnalysis.subjects || []).length > 0) {
+                    for (const individual of this.clinicalAnalysis.subjects) {
+                        for (const sample of (individual.samples || [])) {
+                            sample.individual = individual;
+                            _samples.push(sample);
+                        }
+                    }
+                } else {
+                    console.warn("A Clinical Analysis with no subjects or family has been passed");
                 }
-                if (UtilsNew.isNotEmptyArray(_samples)) {
-                    // Set samples array and notify, this must be done using Polymer API
-                    this.set("samples", _samples);
 
-                    // We need a different private property for variant-browser-filter to avoid circular calls
+                if (_samples.length > 0) {
+                    // set samples array and notify
+                    this.samples = _samples;
+                    // this.set("samples", _samples);
+
+                    // HACK!!!
+                    // we need a different private property for variant-browser-filter to avoid circular calls
                     this._initGenotypeSamples(_samples);
                     this.search = Object.assign({}, this.query);
 
@@ -538,15 +546,13 @@
             }
 
             diseasePanelIdObserver() {
-                if (this.diseasePanelId !== undefined && PANELS !== undefined) {
-                    for (let panel of PANELS) {
-                        if (panel.id === this.diseasePanelId) {
-                            this.diseasePanel = panel;
-                            // TODO in theory we should do:
-                            // this.defaultAutomaticQuery.panel = this.diseasePanelId;
-                            this.defaultAutomaticQuery.gene = this.diseasePanel.genes.join(",");
-                            break;
-                        }
+                if (!!this.diseasePanelId && !!PANELS) {
+                    const panel = PANELS.find(panel => this.diseasePanelId === panel.id);
+                    if (!!panel) {
+                        this.diseasePanel = panel;
+                        // TODO in theory we should do:
+                        // this.defaultAutomaticQuery.panel = this.diseasePanelId;
+                        this.defaultAutomaticQuery.gene = this.diseasePanel.genes.join(",");
                     }
                 }
             }

@@ -339,9 +339,11 @@
             }
 
             onClickOkPrioritization() {
-                if (UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysis)) {
-                    if (!this.interactive && UtilsNew.isUndefinedOrNull(this.diseasePanelId)) {
+                if (!!this.clinicalAnalysis) {
+                    if (!this.interactive && !this.diseasePanelId) {
                         this.showMessage("You must select a panel to continue.", UtilsNew.MESSAGE_INFO);
+                    } else if ((this.clinicalAnalysis.subjects||[]).length!==1 || (this.clinicalAnalysis.subjects[0].samples||[]).length!==1 || this.clinicalAnalysis.type!=="SINGLE") {
+                        this.showMessage("Multisample interpretation is disables in this version.");
                     } else {
                         this.activePrioritization = true;
                         $('select.selectpicker').selectpicker('render');

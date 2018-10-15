@@ -121,7 +121,9 @@
                 <!-- <template is="dom-if" if="[[config." -->
                 <opencga-variant-filter-sec-sample
                     samples="[[samples]]"
-                    query="[[query]]"
+                    query="{{query}}"
+                    on-query-changed="onQueryChanged"
+                    modeOfInheritance="{{modeInheritance}}"
                 ></opencga-variant-filter-sec-sample>
                 <div id="FilterMenu"></div>
             </div>
@@ -309,13 +311,14 @@
                     this._reset = true;
                 }
 
-                debugger;
                 // Parameter 'format' has been removed
                 if (!!oldValue && !!oldValue.format && !!newValue && !newValue.format) {
                     for (const sample of this.samples) {
                         delete sample.dp;
                     }
-                    // TODO: I changed the following for the previous; check  no undesired effects
+                    // TODO: I changed the following for the previous;
+                    // check this produces no undesired side effects,
+                    // due to non-propagation of changes
                     // this.samples = this.samples.map(sample => ({ ...sample, dp: undefined }));
                 }
             }
@@ -791,15 +794,16 @@
             }
 
             updateQueryFilters() {
+
                 if (!this._initialised) {
                     return;
                 }
 
-                let _filters = {};
+                const _filters = {};
 
                 console.log("opencga-variant-filter.updateQueryFilters()");
                 console.log(JSON.stringify(this.query));
-                _filters.genotypes = this.query.genotypes;
+                _filters.genotype = this.query.genotype;
 
                 // Adding sample genotypes filter
                 // let selectedGenotypes = $("." + this.prefix + "genotypes:checkbox:checked");
@@ -1073,11 +1077,10 @@
                 }
 
                 // VCF Filter -> PASS, QualByDepth, FisherStrand, RMSMappingQuality,
-                let vcfFilterDropdown = PolymerUtils.getElementById(this.prefix + "vcfFilterSelect");
-                if (UtilsNew.isNotUndefinedOrNull(vcfFilterDropdown) && UtilsNew.isNotEmpty(vcfFilterDropdown.value)) {
-                    let types = PolymerUtils.querySelectorAll("option:checked", vcfFilterDropdown);
-                    let vcfFilters = [];
-                    types.forEach(option => vcfFilters.push(option.value));
+                const vcfFilterDropdown = PolymerUtils.getElementById(this.prefix + "vcfFilterSelect");
+                if (!!vcfFilterDropdown && !!vcfFilterDropdown.value) {
+                    const types = PolymerUtils.querySelectorAll("option:checked", vcfFilterDropdown);
+                    const vcfFilters = Object.keys(types).map(optionKey => types[optionKey].value);
                     _filters["filter"] = vcfFilters.join(",");
                     _filters["files"] = this.samplesFiles.join(",");
                 }
@@ -2060,6 +2063,10 @@
                         delay: 300
                     }
                 });
+            }
+
+            onQueryChanged(e) {
+                this.query = { ...this.query };
             }
         }
 

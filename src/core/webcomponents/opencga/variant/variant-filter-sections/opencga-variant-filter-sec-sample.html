@@ -1,6 +1,5 @@
 <dom-module id="opencga-variant-filter-sec-sample">
     <template>
-        <button on-click="onDebug">debug</button>
         <div class="panel panel-default" style="margin-bottom: 10px">
             <div class="panel-heading" role="tab">
                 <h4 class="panel-title">
@@ -21,7 +20,7 @@
                                     </a>
                             </div>
                         </div>
-                        <select class="form-control input-sm" on-change="onModeOfInheritanceChanged">
+                        <select id="[[modesOfInheritanceId]]" class="form-control input-sm" on-change="onModeOfInheritanceChanged">
                             <option value="none">Select...</option>
                             <template is="dom-repeat" items="[[modesOfInheritance]]" as="mode">
                                 <option value="[[mode.id]]">[[mode.text]]</option>
@@ -55,7 +54,7 @@
                                     <tr>
                                         <td>[[sample.name]]</td>
                                         <template is="dom-repeat" items="[[potentialGenotypes]]" as="genotype">
-                                            <td><input id="[[prefix]]-sgcb-[[sample.name]]-[[genotype]]" type="checkbox" on-click="onGenotypeCheckboxClick" data-sample="[[sample.name]]" data-genotype="[[genotype]]"></td>
+                                            <td><input id="[[prefix]]-sgcb-[[sample.name]]-[[genotype]]" type="checkbox" on-click="onGenotypeCheckboxClick" data-sample="[[sample.name]]" data-genotype="[[genotype]]" checked$="[[isGenotypeIncluded(sample.name, genotype)]]"></td>
                                         </template>
                                     </tr>
                                 </template>
@@ -68,6 +67,7 @@
         </template>
     </template>
     <script>
+
         class OpencgaVariantFilterSecSample extends Polymer.Element {
 
             constructor() {
@@ -76,9 +76,9 @@
                 // set read-only properties
                 this._setPrefix(`ovfss${Utils.randomString(8)}`);
                 this._setCollapsibleId(`${this.prefix}-collapsible-id`);
+                this._setModesOfInheritanceId(`${this.prefix}-moh-id`);
                 this._setModesOfInheritanceTooltipId(`${this.prefix}-moh-tooltip-id`);
                 this._setSampleGenotypesTooltipId(`${this.prefix}-sag-tooltip-id`);
-                this.sampleGenotypeMap = {};
             }
 
             static get is() {
@@ -120,19 +120,23 @@
                         type: String,
                         readOnly: true,
                     },
-                    sampleGenotypesTooltipId: {
+                    modesOfInheritanceId: {
                         type: String,
                         readOnly: true,
                     },
-                    sampleGenotypeMap: {
-                        type: Object,
-                        // value: () => {},
+                    sampleGenotypesTooltipId: {
+                        type: String,
+                        readOnly: true,
                     },
                     potentialGenotypes: {
                         type: Array,
                         readOnly: true,
                         value: ['0/0', '0/1', '1/1', './.'],
-                    }
+                    },
+                    modeOfInheritance: {
+                        type: String,
+                        notify: true,
+                    },
                 };
             }
 
@@ -176,80 +180,107 @@
                 const value = (!!e && !!e.target && e.target.value) || "none";
                 switch (value) {
                     case 'autoDominant':
-                        for (const sample of this.samples) {
-                            this.setSampleGenotypes(sample.name, ['1/1']);
-                        }
-                        this.computeFilterGenotypeString();
-                        this.updateSampleGenotypeCheckboxes();
-                        break;
-                    case 'autoRecessive':
+                        this.removeRegion();
                         for (const sample of this.samples) {
                             this.setSampleGenotypes(sample.name, ['0/1', '1/1']);
                         }
-                        this.computeFilterGenotypeString();
                         this.updateSampleGenotypeCheckboxes();
+                        this.notifyQueryUpdate();
+                        break;
+                    case 'autoRecessive':
+                        this.removeRegion();
+                        for (const sample of this.samples) {
+                            this.setSampleGenotypes(sample.name, ['1/1']);
+                        }
+                        this.updateSampleGenotypeCheckboxes();
+                        this.notifyQueryUpdate();
                         break;
                     case 'xLinked':
+                        this.setRegion("X");
                         for (const sample of this.samples) {
                             this.setSampleGenotypes(sample.name, ['1/1']);
                         }
-                        this.computeFilterGenotypeString();
                         this.updateSampleGenotypeCheckboxes();
+                        this.notifyQueryUpdate();
                         break;
                     case 'yLinked':
+                        this.setRegion("Y");
                         for (const sample of this.samples) {
-                            this.setSampleGenotypes(sample.name, ['1/1']);
+                            if (!!sample.individual && !!sample.individual.karyotypicSex) {
+                                const numYs = (sample.individual.karyotypicSex.match(/Y/g) || []).length;
+                                if (0 === numYs)    this.setSampleGenotypes(sample.name, []);
+                                else this.setSampleGenotypes(sample.name, ['1/1']);
+                            } else {
+                                this.setSampleGenotypes(sample.name, []);
+                            }
                         }
-                        this.computeFilterGenotypeString();
                         this.updateSampleGenotypeCheckboxes();
+                        this.notifyQueryUpdate();
                         break;
                 }
             }
 
             isGenotypeIncluded(sample, genotype) {
-                const sampleGenotypes = this.sampleGenotypeMap[sample] || [];
-                return sampleGenotypes.includes(genotype);
+                const genos = this.parseGenotypeString();
+                const xs = genos[sample] || [];
+                return xs.includes(genotype);
             }
 
             addSampleGenotype(sample, genotype) {
-                const sampleGenotype = this.sampleGenotypeMap[sample];
-                if (!sampleGenotype) {
-                    this.sampleGenotypeMap[sample] = [ genotype ];
-                } else if (!sampleGenotype.includes(genotype)) {
-                    sampleGenotype.push(genotype);
-                    sampleGenotype.sort();
+                const genos = this.parseGenotypeString();
+                const xs = genos[sample] || [];
+                if (!xs.includes(genotype)) {
+                    xs.push(genotype);
+                    xs.sort();
+                    genos[sample] = xs;
+                    this.setQueryGenotypes(this.stringigyGenotypes(genos));
                 }
             }
 
             removeSampleGenotype(sample, genotype) {
-                const sampleGenotype = this.sampleGenotypeMap[sample];
-                const idx = !!sampleGenotype ? sampleGenotype.indexOf(genotype) : -1;
-                if (-1 !== idx) {
-                    sampleGenotype.splice(idx, 1);
+                const genos = this.parseGenotypeString();
+                const xs = genos[sample] || [];
+                if (xs.includes(genotype)) {
+                    genos[sample] = xs.filter(x => x !== genotype);
+                    this.setQueryGenotypes(this.stringigyGenotypes(genos));
                 }
+            }
+
+            getSampleGenotypes(sampleName) {
+                const genos = this.parseGenotypeString();
+                return genos[sample] || [];
             }
 
             setSampleGenotypes(sample, genotypes) {
-                this.sampleGenotypeMap[sample] = genotypes;
+                const genos = this.parseGenotypeString();
+                genos[sample] = genotypes;
+                this.setQueryGenotypes(this.stringigyGenotypes(genos));
             }
 
-            computeFilterGenotypeString() {
-                const samples = Object.keys(this.sampleGenotypeMap);
-                samples.sort();
-                const filterString = samples.map(sample => {
-                    const genotypes = this.sampleGenotypeMap[sample];
-                    return !!genotypes && genotypes.length > 0 ? `${sample}:${genotypes.join(',')};` : '';
-                }).join('');
-                if (!!filterString) {
-                    // this.query = {...this.query, genotype: filterString};
-                    this.query.genotype = filterString;
+            stringigyGenotypes(genotypes) {
+                const sampleNames = Object.keys(genotypes).filter(sampleName => (genotypes[sampleName].length>0));
+                const genoString = sampleNames.map(sampleName => `${sampleName}:${genotypes[sampleName].join(',')}`).join(';');
+                return genoString;
+            }
+
+            parseGenotypeString(genoString) {
+                genoString = genoString || (!!this.query && this.query.genotype);
+                if (!!genoString) {
+                    const samplesString = genoString.split(';').filter(s => !!s);
+                    let res = {};
+                    for (const sampleString of samplesString) {
+                        const parts = sampleString.split(':');
+                        if (parts.length === 2 && this.samples.some(sample => sample.name === parts[0])) {
+                            const sampleName = parts[0];
+                            const sampleGenotypes = parts[1].split(',').filter(geno => this.potentialGenotypes.includes(geno));
+                            sampleGenotypes.sort();
+                            res[sampleName] = sampleGenotypes;
+                        }
+                    }
+                    return res;
                 } else {
-                    delete this.query.genotype;
-                    // const tmpQuery = {...this.query};
-                    // delete tmpQuery.genotype;
-                    // this.query = tmpQuery;
+                    return {};
                 }
-                console.log(`> genotype = ${filterString}`);
             }
 
             onGenotypeCheckboxClick(e) {
@@ -264,10 +295,11 @@
                         } else {
                             this.removeSampleGenotype(sampleName, genotype);
                         }
+                        console.dir(!!this.genotype && this.query.genotype);
+                        document.getElementById(this.modesOfInheritanceId).value = "none";
+                        this.notifyQueryUpdate();
                     }
                 }
-                console.dir(this.sampleGenotypeMap);
-                this.computeFilterGenotypeString();
             }
 
             getSampleGenotypeCheckboxId(sample, genotype) {
@@ -287,10 +319,39 @@
                 }
             }
 
-            onDebug() {
-                console.log("opencga-variant-filter-sec-sample.onDebug");
-                console.dir(this.query);
-                console.log(">> " + JSON.stringify(this.query));
+            setRegion(region) {
+                if (!!region) {
+                    this.query.region = region;
+                } else if (!!this.query) {
+                    delete this.query.region;
+                }
+            }
+
+            removeRegion() {
+                if (!!this.query.region) {
+                    delete this.query.region;
+                }
+            }
+
+            setQueryGenotypes(genoString) {
+                if (!!this.query) {
+                    if (!!genoString) {
+                        this.query.genotype = genoString;
+                    } else {
+                        delete this.query.genotype;
+                    }
+                }
+            }
+
+            notifyQueryUpdate() {
+                const params = {
+                    detail: {
+                        value: this.query,
+                    },
+                    bubbles: false,
+                    composed: true
+                };
+                this.dispatchEvent(new CustomEvent("query-changed", params));
             }
         }
 

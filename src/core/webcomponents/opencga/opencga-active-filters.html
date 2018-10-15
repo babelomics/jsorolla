@@ -200,15 +200,11 @@
                 // We need to init _previousQuery with query in order to work before executing any search
                 this._previousQuery = this.query;
 
-                // If there is any active filter we set the first one in the initialisation
-                if (typeof this.filters !== "undefined") {
-                    for (let filter of this.filters) {
-                        if (filter.active) {
-                            let _queryList = Object.assign({}, filter.query);
-                            this.dispatchEvent(new CustomEvent("filterchange", {detail: _queryList, bubbles: true, composed: true}));
-                            break;
-                        }
-                    }
+                // set the first active one in the initialisation if there is no active filter
+                const filter = !!this.filters && this.filters.find(filter => filter.active);
+                if (!!filter) {
+                    const queryList = { ...filter.query };
+                    this.dispatchEvent(new CustomEvent("filterchange", {detail: queryList, bubbles: true, composed: true}));
                 }
             }
 
