@@ -54,7 +54,7 @@
                                     <tr>
                                         <td>[[sample.name]]</td>
                                         <template is="dom-repeat" items="[[potentialGenotypes]]" as="genotype">
-                                            <td><input id="[[prefix]]-sgcb-[[sample.name]]-[[genotype]]" type="checkbox" on-click="onGenotypeCheckboxClick" data-sample="[[sample.name]]" data-genotype="[[genotype]]" checked$="[[isGenotypeIncluded(sample.name, genotype)]]"></td>
+                                            <td><input id="[[prefix]]-sgcb-[[sample.name]]-[[genotype]]" type="checkbox" on-click="onGenotypeCheckboxClick" data-sample="[[sample.name]]" data-genotype="[[genotype]]" checked$="[[isGenotypeIncluded(sample.name, genotype, query.*)]]"></td>
                                         </template>
                                     </tr>
                                 </template>
@@ -140,6 +140,12 @@
                 };
             }
 
+            static get observers() {
+                return [
+                    'onQueryChanged(query.*)',
+                ];
+            }
+
             _attachDom(dom) {
                 this.appendChild(dom);
             }
@@ -171,18 +177,17 @@
                 });
             }
 
-            onSamplesChanged() {
-                console.log("opencga-variant-filter-sec-sample.samples.changed");
-                console.dir(this.samples);
-            }
-
             onModeOfInheritanceChanged(e) {
                 const value = (!!e && !!e.target && e.target.value) || "none";
                 switch (value) {
                     case 'autoDominant':
                         this.removeRegion();
                         for (const sample of this.samples) {
-                            this.setSampleGenotypes(sample.name, ['0/1', '1/1']);
+                            this.setSampleGenotypes(sample.name,
+                                !!sample.individual && 'AFFECTED' === sample.individual.affectationStatus
+                                ? ['0/1', '1/1']
+                                : ['0/0']
+                            );
                         }
                         this.updateSampleGenotypeCheckboxes();
                         this.notifyQueryUpdate();
@@ -190,7 +195,11 @@
                     case 'autoRecessive':
                         this.removeRegion();
                         for (const sample of this.samples) {
-                            this.setSampleGenotypes(sample.name, ['1/1']);
+                            this.setSampleGenotypes(sample.name,
+                                !!sample.individual && 'AFFECTED' === sample.individual.affectationStatus
+                                ? ['1/1']
+                                : ['0/0', '0/1']
+                            );
                         }
                         this.updateSampleGenotypeCheckboxes();
                         this.notifyQueryUpdate();
@@ -198,7 +207,18 @@
                     case 'xLinked':
                         this.setRegion("X");
                         for (const sample of this.samples) {
-                            this.setSampleGenotypes(sample.name, ['1/1']);
+                            if (!!sample.individual && !!sample.individual.karyotypicSex && !!sample.individual.affectationStatus) {
+                                const numXs = (sample.individual.karyotypicSex.match(/X/g) || []).length;
+                                const diseased = ('AFFECTED' === sample.individual.affectationStatus);
+                                const isFemale = (numXs > 1);
+                                if (isFemale) {
+                                    this.setSampleGenotypes(sample.name, diseased ? ['1/1'] : ['0/0', '0/1']);
+                                } else {
+                                    this.setSampleGenotypes(sample.name, diseased ? ['1/1'] : ['0/0']);
+                                }
+                            } else {
+                                this.setSampleGenotypes(sample.name, []);
+                            }
                         }
                         this.updateSampleGenotypeCheckboxes();
                         this.notifyQueryUpdate();
@@ -206,6 +226,21 @@
                     case 'yLinked':
                         this.setRegion("Y");
                         for (const sample of this.samples) {
+                            if (!!sample.individual && !!sample.individual.karyotypicSex && !!sample.individual.affectationStatus) {
+                                const numYs = (sample.individual.karyotypicSex.match(/Y/g) || []).length;
+                                const diseased = ('AFFECTED' === sample.individual.affectationStatus);
+                                const isMale = (numYs > 1);
+                                if (isMale) {
+                                    this.setSampleGenotypes(sample.name, diseased ? ['1/1'] : ['0/0']);
+                                } else {
+                                    this.setSampleGenotypes(sample.name, []);
+                                }
+                            } else {
+                                this.setSampleGenotypes(sample.name, []);
+                            }
+
+
+
                             if (!!sample.individual && !!sample.individual.karyotypicSex) {
                                 const numYs = (sample.individual.karyotypicSex.match(/Y/g) || []).length;
                                 if (0 === numYs)    this.setSampleGenotypes(sample.name, []);
@@ -260,7 +295,8 @@
             stringigyGenotypes(genotypes) {
                 const sampleNames = Object.keys(genotypes).filter(sampleName => (genotypes[sampleName].length>0));
                 const genoString = sampleNames.map(sampleName => `${sampleName}:${genotypes[sampleName].join(',')}`).join(';');
-                return genoString;
+                return !!genoString ? genoString + ";" : genoString;
+                // return genoString;
             }
 
             parseGenotypeString(genoString) {
@@ -295,7 +331,6 @@
                         } else {
                             this.removeSampleGenotype(sampleName, genotype);
                         }
-                        console.dir(!!this.genotype && this.query.genotype);
                         document.getElementById(this.modesOfInheritanceId).value = "none";
                         this.notifyQueryUpdate();
                     }
@@ -352,6 +387,39 @@
                     composed: true
                 };
                 this.dispatchEvent(new CustomEvent("query-changed", params));
+            }
+
+            onSamplesChanged() {
+                this.onQueryChanged();
+            }
+
+            onQueryChanged() {
+                // if query is externally changed,
+                // check if region changed, so we change mode of inheritance
+                if (!!this.query && this.query.region) {
+                    const region = this.query.region;
+                    const moiElement = document.getElementById(this.modesOfInheritanceId);
+                    const moiValue = !!moiElement && moiElement.value;
+                    if (!!moiValue) {
+                        if (('yLinked' === moiValue && region !== 'Y') || ('xLinked' === moiValue && region !== 'X')) {
+                            moiElement.value = "none";
+                        }
+                    }
+                }
+                // make checkboxes congruent
+                for (const sample of this.samples) {
+                    for (const genotype of this.potentialGenotypes) {
+                        const checkboxId = this.getSampleGenotypeCheckboxId(sample.name, genotype);
+                        const checkbox = !!checkboxId && document.getElementById(checkboxId);
+                        if (!!checkbox) {
+                            const checkboxActualValue = checkbox.checked;
+                            const checkboxExpectedValue = this.isGenotypeIncluded(sample.name, genotype);
+                            if (checkboxExpectedValue !== checkboxActualValue) {
+                                checkbox.checked = checkboxExpectedValue;
+                            }
+                        }
+                    }
+                }
             }
         }
 
