@@ -265,6 +265,9 @@
                 params.query = this.query;
                 params.options = {};
                 let _this = this;
+
+                debugger;
+
                 this.opencgaClient.users().getFilters({name: filterName}, {serverVersion: this.opencgaClient._config.serverVersion})
                     .then(function (response) {
                         if (response.response[0].result.length > 0) {
@@ -280,9 +283,15 @@
                                     PolymerUtils.setValue(_this.prefix + "filterDescription", "");
                                 });
                         } else {
-                            if (_this.opencgaClient._config.serverSession !== undefined && _this.opencgaClient._config.serverSession === "1.3") {
-                                _this.opencgaClient.users().create(params, {})
+                            // HACK!!!!!!
+                            // this.opencgaClient._config.serverSession does not exist
+                            // so this path is never taken
+                            // which is the path we actually need
+                            // if (_this.opencgaClient._config.serverSession !== undefined && _this.opencgaClient._config.serverSession === "1.3") {
+                            if (true) {
+                                _this.opencgaClient.users().createFilter(params, {})
                                     .then(function (response) {
+                                        debugger;
                                         _this.push("filters", params);
                                         PolymerUtils.setValue("filterName", "");
                                         PolymerUtils.setValue(_this.prefix + "filterDescription", "");

@@ -721,19 +721,25 @@
                     }
                 }
 
-                // Consequence Type (rewritten)
+                // consequence Type
                 if (!!this.query["annot-ct"]) {
                     const types = this.query['annot-ct'].split(",");
-                    const checkBoxes = PolymerUtils.querySelectorAll("li input", `${this.prefix}consequenceTypeFilter`);
-                    const ct = types.filter(type => {
-                        const ctBoxes = checkBoxes.filter(checkbox => !!checkbox && checkbox.getAttribute("data-id") === type);
-                        for (const checkbox of ctBoxes) checkbox.checked = true;
-                        return (ctBoxes.length > 0);
-                    });
-                    this.set('ct', ct);
+                    const checkboxes = PolymerUtils.querySelectorAll("li input", `${this.prefix}consequenceTypeFilter`);
+                    const checkedTypes = [];
+                    for (const checkbox of checkboxes) {
+                        const boxtype = checkbox.getAttribute('data-id');
+                        if (!!boxtype && types.includes(boxtype)) {
+                            checkbox.checked = true;
+                            if (!checkedTypes.includes(type)) {
+                                checkedTypes.push(type);
+                            }
+                        }
+                    }
+                    this.set('ct', checkedTypes);
                 } else {
                     this.set('ct', []);
                 }
+
 
                 // Gene Ontology and Human Phenotype Ontology
                 if (typeof this.query["annot-go"] !== "undefined") {
