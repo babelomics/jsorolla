@@ -1,0 +1,87 @@
+<link rel="import" href="./genomic/variant-filter-chromosomal-locator.html">
+<link rel="import" href="./genomic/variant-filter-feature-selector.html">
+<link rel="import" href="./genomic/mmp-panel-selector.html">
+<link rel="import" href="./genomic/variant-filter-biotype-selector.html">
+<link rel="import" href="./genomic/variant-filter-variant-type-selector.html">
+
+
+<dom-module id="opencga-variant-filter-sec-genomic">
+    <template>
+        <div class="panel panel-default" style="margin-bottom: 10px">
+            <div class="panel-heading" role="tab">
+                <h4 class="panel-title">
+                    <a class="collapsed" role="button" data-toggle="collapse" href="#[[collapsibleId]]" aria-expanded="true" aria-controls="[[collapsibleId]]">
+                        Genomic
+                    </a>
+                </h4>
+            </div>
+
+            <div id="[[collapsibleId]]" class="panel-collapse collapse" role="tabpanel">
+                <div class="panel-body">
+
+                    <variant-filter-chromosomal-locator query="{{query}}"></variant-filter-chromosomal-locator>
+                    <variant-filter-feature-selector cellbase-client="[[cellbaseClient]]" query="{{query}}"></variant-filter-feature-selector>
+                    <mmp-panel-selector query="{{query}}"></variant-filter-chromosomal-locator>
+                    <variant-filter-biotype-selector query="{{query}}"></variant-filter-biotype-selector>
+                    <variant-filter-variant-type-selector query="{{query}}"></variant-filter-variant-type-selector>
+
+
+                    <!-- <div class="form-group">
+                        <div class="browser-subsection">
+                            Mode of Inheritance
+                            <div style="float: right" class="tooltip-div">
+                                    <a>
+                                        <i class="fa fa-info-circle" aria-hidden="true" id="[[modesOfInheritanceTooltipId]]"></i>
+                                    </a>
+                            </div>
+                        </div>
+                        <select id="[[modesOfInheritanceId]]" class="form-control input-sm" on-change="onModeOfInheritanceChanged">
+                            <option value="none">Select...</option>
+                            <template is="dom-repeat" items="[[modesOfInheritance]]" as="mode">
+                                <option value="[[mode.id]]">[[mode.text]]</option>
+                            </template>
+                        </select>
+                    </div> -->
+                </div>
+            </div>
+        </template>
+    </template>
+    <script>
+
+        class OpencgaVariantFilterSecGenomic extends Polymer.Element {
+
+            constructor() {
+                super();
+                const prefix = `ovfss${Utils.randomString(8)}`;
+                this._setCollapsibleId(`${prefix}-collapsible-id`);
+            }
+
+            static get is() {
+                return "opencga-variant-filter-sec-genomic";
+            }
+
+            static get properties() {
+                return {
+                    cellbaseClient: {
+                        type: Object,
+                    },
+                    query: {
+                        type: Object,
+                        notify: true,
+                    },
+                    collapsibleId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                };
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+        }
+
+        customElements.define(OpencgaVariantFilterSecGenomic.is, OpencgaVariantFilterSecGenomic);
+
+    </script>
+</dom-module>

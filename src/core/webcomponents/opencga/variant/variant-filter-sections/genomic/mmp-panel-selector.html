@@ -1,0 +1,142 @@
+<dom-module id="mmp-panel-selector">
+    <template>
+        <div class="form-group">
+            <div class="browser-subsection">
+                MMP Panels
+                <div style="float: right" class="tooltip-div">
+                    <a>
+                        <i class="fa fa-info-circle" aria-hidden="true" id="[[mmpPanelTooltipId]]"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <input  id="[[searchBoxId]]"
+                            type="text"
+                            class="form-control"
+                            placeholder="Search a panel..."
+                            list$="[[dataListId]]"
+                            style="width: 100%"
+                            value="{{searchBoxText::input}}"
+                            >
+                    <datalist id="[[dataListId]]">
+                        <template is="dom-repeat" items="[[panels]]" as="panel">
+                            <option value="[[panel.title]]"></option>
+                        </template>
+                    </datalist>
+                </div>
+            </div>
+
+            <div style="padding-top: 5px">
+                <textarea readonly
+                        class="form-control clearable"
+                        rows="5"
+                        placeholder="No panel selected"
+                        value="{{geneListText::input}}"
+                        style="resize: none; font-size: smaller"
+                        >
+                </textarea>
+            </div>
+        </div>
+    </template>
+    <script>
+
+        class MmpPanelSelector extends Polymer.Element {
+
+            constructor() {
+                super();
+
+                const prefix = `mmpps-${Utils.randomString(8)}`;
+                this._setSearchBoxId(`${prefix}-sb-id`);
+                this._setDataListId(`${prefix}-dl-id`);
+                this._setTooltipId(`${prefix}-mmp-tooltip-id`);
+
+                // for some reason, there are panels with no genes
+                const panels = (PANELS || [])
+                    .filter(panel => !!panel.genes && panel.genes.length > 0)
+                    .sort((x, y) => {
+                        const xName = x.name.toLowerCase();
+                        const yName = y.name.toLowerCase();
+                        return xName < yName ? -1 : (xName > yName ? 1 : 0)
+                    });
+
+                this._setPanels(panels);
+            }
+
+            static get is() {
+                return "mmp-panel-selector";
+            }
+
+            static get properties() {
+                return {
+                    query: {
+                        type: Object,
+                    },
+                    searchBoxId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    dataListId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    tooltipId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    panels: {
+                        type: Array,
+                        readOnly: true,
+                    },
+                    searchBoxText: {
+                        type: String,
+                        value: "",
+                        observer: "onSearchBoxTextChanged",
+                    },
+                    geneListText: {
+                        type: String,
+                        value: "",
+                    }
+
+                };
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+
+                // tooltips
+                const tooltipDesc = {
+                    content: { title: "", text: "" },
+                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
+                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
+                    show: { delay: 200 },
+                    hide: { fixed: true, delay: 300 },
+                };
+                $(`#${this.tooltipId}`).qtip({
+                    ...tooltipDesc,
+                    content: {
+                        title: "MMP Panels",
+                        text: "Filter out variants falling outside the genomic intervals (typically genes) defined by the panel(s) chosen (MMP Panels)",
+                    },
+                });
+            }
+
+            onSearchBoxTextChanged(newValue) {
+                if (!!newValue) {
+                    const panel = this.panels.find(panel => panel.name === newValue);
+                    if (!!panel) {
+                        this.geneListText = panel.genes;
+                    }
+                }
+            }
+
+        }
+
+        customElements.define(MmpPanelSelector.is, MmpPanelSelector);
+
+    </script>
+</dom-module>

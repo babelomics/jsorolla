@@ -1,0 +1,111 @@
+<dom-module id="variant-filter-chromosomal-locator">
+    <template>
+        <div class="form-group">
+            <div class="browser-subsection">
+                Chromosomal Location
+                <div style="float: right" class="tooltip-div">
+                        <a>
+                            <i class="fa fa-info-circle" aria-hidden="true" id="[[tooltipId]]"></i>
+                        </a>
+                </div>
+            </div>
+            <div style="padding-top: 5px">
+                <textarea class="form-control clearable"
+                        rows="3"
+                        placeholder="3:444-55555,1:1-100000"
+                        value="{{locations::input}}"
+                        style="resize: none; font-size: smaller"
+                ></textarea>
+            </div>
+        </div>
+    </template>
+    <script>
+
+        class VariantFilterChromosomalLocator extends Polymer.Element {
+
+            static get is() {
+                return "variant-filter-chromosomal-locator";
+            }
+
+            static get properties() {
+                return {
+                    query: {
+                        type: Object,
+                        notify: true,
+                    },
+                    locations: {
+                        type: String,
+                        value: "",
+                        observer: "onLocationsChanged",
+                    },
+                    tooltipId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                }
+            }
+
+            static get observers() {
+                return [
+                    'onQueryChanged(query.*)',
+                ];
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            constructor() {
+                super();
+                const prefix = `vfcl-${Utils.randomString(12)}`;
+                this._setTooltipId(`${prefix}-tooltip-id`);
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+
+                const tooltipDesc = {
+                    content: { title: "", text: "" },
+                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
+                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
+                    show: { delay: 200 },
+                    hide: { fixed: true, delay: 300 },
+                };
+                $(`#${this.tooltipId}`).qtip({
+                    ...tooltipDesc,
+                    content: {
+                        title: "Chromosomal Location",
+                        text: "Filter out variants falling outside the genomic interval(s) defined",
+                    },
+                });
+            }
+
+            onQueryChanged() {
+                if (!!this.query && !!this.query.region && this.query.region !== this.locations) {
+                    this.locations = this.query.region;
+                }
+            }
+
+            onLocationsChanged() {
+                if (!!this.query) {
+                    this.query.region = this.locations;
+                    this.notifyQueryUpdate();
+                }
+            }
+
+            notifyQueryUpdate() {
+                const params = {
+                    detail: {
+                        value: this.query,
+                    },
+                    bubbles: true,
+                    composed: true
+                };
+                this.dispatchEvent(new CustomEvent("query-changed", params));
+            }
+        }
+
+        customElements.define(VariantFilterChromosomalLocator.is, VariantFilterChromosomalLocator);
+
+    </script>
+</dom-module>

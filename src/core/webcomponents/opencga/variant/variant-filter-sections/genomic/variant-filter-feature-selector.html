@@ -1,0 +1,199 @@
+<dom-module id="variant-filter-feature-selector">
+    <template>
+        <div class="form-group">
+            <div class="browser-subsection">
+                Feature IDs <span style="font-size: smaller">(gene, SNPs, ...)</span>
+                <div style="float: right" class="tooltip-div">
+                    <a>
+                        <i class="fa fa-info-circle" aria-hidden="true" id="[[tooltipId]]"></i>
+                    </a>
+                </div>
+            </div>
+            <div style="padding-top: 5px" style="font-size: smaller">
+                <div class="row">
+                    <div class="col-md-9">
+                        <input
+                            type="text"
+                            class="form-control"
+                            list$="[[optionListId]]"
+                            placeholder="Search for Gene Symbols"
+                            value="{{searchText::input}}"
+                        >
+                        <datalist id="[[optionListId]]"></datalist>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-default btn-sm form-control" on-click="onAddIdClick">
+                            <i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <textarea
+                    name="geneSnp"
+                    class="form-control clearable"
+                    rows="3"
+                    placeholder="BRCA2,ENSG00000139618,ENST00000544455,rs28897700"
+                    style="margin-top: 5px"
+                    value="{{idList::input}}"
+                ></textarea>
+            </div>
+        </div>
+    </template>
+    <script>
+
+        class VariantFilterFeatureSelector extends Polymer.Element {
+
+            static get is() {
+                return "variant-filter-feature-selector";
+            }
+
+            static get properties() {
+                return {
+                    cellbaseClient: {
+                        type: Object,
+                    },
+                    query: {
+                        type: Object,
+                        notify: true,
+                    },
+                    searchText: {
+                        type: String,
+                        value: "",
+                        observer: "onSearchTextChanged",
+                    },
+                    idList: {
+                        type: String,
+                        value: "",
+                        observer: "onIdListChanged",
+                    },
+                    tooltipId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    optionListId: {
+                        type: String,
+                        readOnly: true,
+                    }
+                }
+            }
+
+            static get observers() {
+                return [
+                    'onQueryChanged(query.*)',
+                ];
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            constructor() {
+                super();
+                const prefix = `vfcl-${Utils.randomString(12)}`;
+                this._setTooltipId(`${prefix}-tooltip-id`);
+                this._setOptionListId(`${prefix}-options-id`);
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+
+                const tooltipDesc = {
+                    content: { title: "", text: "" },
+                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
+                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
+                    show: { delay: 200 },
+                    hide: { fixed: true, delay: 300 },
+                };
+                $(`#${this.tooltipId}`).qtip({
+                    ...tooltipDesc,
+                    content: {
+                        title: "Feature IDs (gene, SNPs, ...)",
+                        text: "Filter out variants falling outside the genomic features (gene, transcript, SNP, etc.) defined",
+                    },
+                });
+            }
+
+            onSearchTextChanged(newValue) {
+                // only gene symbols are going to be searched and not Ensembl IDs
+                const featureId = this.searchText;
+                const optionList = document.getElementById(this.optionListId);
+                if (!!optionList && !!featureId && featureId.length > 2 && !featureId.startsWith("ENS")) {
+                    this.cellbaseClient
+                        .get('feature', 'id', featureId.toUpperCase(), 'starts_with', {}, {})
+                        .then(response => {
+                            const options = (
+                                !!response &&
+                                !!response.response &&
+                                response.response.length === 1 &&
+                                response.response[0].result
+                            ) || [];
+                            optionList.innerHTML = options.map(option => `<option value="${option.name}">`).join('');
+                        });
+                }
+            }
+
+            onAddIdClick() {
+                const featureId = this.searchText;
+                const featureIds = (this.idList || "").split(',');
+                if (!featureIds.includes(featureId)) {
+                    featureIds.push(featureId);
+                    featureIds.sort();
+                    this.searchText = "";
+                    this.idList = featureIds.join(',');
+                    this.notifyQueryUpdate();
+                }
+            }
+
+            onQueryChanged() {
+                const xrefs = (this.idList || "").split(",").filter(id => !!id).map(id => (
+                    id.toLowerCase().startsWith("rs") || id.split(":").length > 2 ? id : id.toUpperCase()
+                )).join(",");
+                if (!!this.query && !!this.query["annot-xref"] && this.query["annot-xref"] != xrefs) {
+                    this.idList = this.query["annot-xref"];
+                }
+            }
+
+            onIdListChanged() {
+                if (!!this.query) {
+                    const xrefs = (this.idList || "").split(",").filter(id => !!id).map(id => (
+                        id.toLowerCase().startsWith("rs") || id.split(":").length > 2 ? id : id.toUpperCase()
+                    )).join(",");
+                    this.query["annot-xref"] = this.xrefs;
+                    this.notifyQueryUpdate();
+                }
+            }
+
+            notifyQueryUpdate() {
+                const params = {
+                    detail: {
+                        value: this.query,
+                    },
+                    bubbles: true,
+                    composed: true
+                };
+                this.dispatchEvent(new CustomEvent("query-changed", params));
+            }
+
+            // en set
+            // XRefs, Gene and Variant Ids
+            // if (typeof this.query["annot-xref"] !== "undefined") {
+            //     PolymerUtils.setValue(this.prefix + "FeatureTextarea", this.query["annot-xref"]);
+            // } else if (typeof this.query.ids !== "undefined") {
+            //     PolymerUtils.setValue(this.prefix + "FeatureTextarea", this.query.ids);
+            // }
+
+            // en update
+            // Features: Gene, SNP ID
+            // let featureTextArea = PolymerUtils.getElementById(this.prefix + "FeatureTextarea");
+            // if (UtilsNew.isNotUndefinedOrNull(featureTextArea) && UtilsNew.isNotEmpty(featureTextArea.value)) {
+            //     if (featureTextArea.value.startsWith("rs") || featureTextArea.value.split(':').length > 2) {
+            //         _filters["annot-xref"] = featureTextArea.value;
+            //     } else {
+            //         _filters["annot-xref"] = featureTextArea.value.toUpperCase();
+            //     }
+            // }
+        }
+
+        customElements.define(VariantFilterFeatureSelector.is, VariantFilterFeatureSelector);
+
+    </script>
+</dom-module>

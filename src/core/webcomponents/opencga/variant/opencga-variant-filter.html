@@ -21,6 +21,7 @@
 <link rel="import" href="../../commons/variant-modal-ontology.html">
 
 <link rel="import" href="./variant-filter-sections/opencga-variant-filter-sec-sample.html">
+<link rel="import" href="./variant-filter-sections/opencga-variant-filter-sec-genomic.html">
 
 
 <dom-module id="opencga-variant-filter">
@@ -125,6 +126,7 @@
                     on-query-changed="onQueryChanged"
                     modeOfInheritance="{{modeInheritance}}"
                 ></opencga-variant-filter-sec-sample>
+                <opencga-variant-filter-sec-genomic cellbase-client="[[cellbaseClient]]" query="{{query}}" on-query-changed="onQueryChanged"></opencga-variant-filter-sec-genomic>
                 <div id="FilterMenu"></div>
             </div>
         </div>
@@ -153,8 +155,16 @@
             constructor() {
                 super();
 
-                // Set status and init private properties
-                this._init();
+                this.prefix = "ovf" + Utils.randomString(12);
+
+                this._initialised = false;
+                this._reset = true;
+                if (typeof PANELS !== "undefined") {
+                    this.set('panelList', PANELS);
+                }
+
+                this.modalHpoActive = false;
+                this.modalGoActive = false;
             }
 
             static get is() {
@@ -194,14 +204,6 @@
                     consequenceTypes: {
                         type: Object
                     },
-                    // segregation: {
-                    //     type: String,
-                    //     value: "Select ..."
-                    // },
-//                    analysisSelected: {
-//                        type: Object,
-//                        notify: true
-//                    },
                     config: {
                         type: Object
                     },
@@ -225,7 +227,9 @@
             }
 
             static get observers() {
-                return ["samplesObserver(samples.*)"]
+                return [
+                    "samplesObserver(samples.*)",
+                ]
             }
 
             _attachDom(dom) {
@@ -241,19 +245,6 @@
 
                 this._initialised = true;
                 this.setQueryFilters();
-            }
-
-            _init() {
-                this.prefix = "ovf" + Utils.randomString(6);
-
-                this._initialised = false;
-                this._reset = true;
-                if (typeof PANELS !== "undefined") {
-                    this.set('panelList', PANELS);
-                }
-
-                this.modalHpoActive = false;
-                this.modalGoActive = false;
             }
 
             studyObserver() {
@@ -347,66 +338,6 @@
                     }
                 });
             }
-
-            // familyObserver() {
-            //     if (UtilsNew.isNotUndefinedOrNull(this.family)) {
-            // Display family segregation dropdown
-            // PolymerUtils.show(this.prefix + "SampleSegregation");
-            //     }
-            // }
-
-
-            // removed for 20180924 course
-//             _autocompleteSampleSearch(e) {
-//                 // Only gene symbols are going to be searched and not Ensembl IDs
-//                 let sampleNamePrefix = PolymerUtils.getElementById(this.prefix  + "AutocompleteSampleSearchInput").value;
-//                 if (UtilsNew.isNotUndefinedOrNull(sampleNamePrefix) && sampleNamePrefix.length >= 4) {
-//                     let _this = this;
-//                     this.opencgaClient.samples()
-//                         .search({
-//                             study: _this.opencgaSession.project.alias + ":" + _this.opencgaSession.study.alias,
-//                             name: "~^" + sampleNamePrefix,
-//                             include: "id,name,source",
-//                             includeIndividual: true,
-//                             limit: 20}, {})
-//                         .then(function (response) {
-// //                            _this.autocompleteSampleData = response.response[0].result;
-//                             let options = "";
-//                             for (let sample of response.response[0].result) {
-//                                 let sampleStr = JSON.stringify(sample);
-//                                 options += `<option id="${_this.prefix}Sample${sample.name}" value="${sample.name}" data-sample='` + sampleStr + "'>";
-//                             }
-//                             PolymerUtils.innerHTML(_this.prefix + "AutocompleteSampleSearchDataList", options);
-//                         });
-//                 }
-//             }
-
-            // TODO: this functions seems to be orphaned
-            // onSampleChange(e) {
-            //         let sampleSearchInput = PolymerUtils.getElementById(this.prefix + "AutocompleteSampleSearchInput");
-            //         let sampleHtmlObj = PolymerUtils.getElementById(this.prefix + "Sample" + sampleSearchInput.value);
-            //         let sample = JSON.parse(sampleHtmlObj.dataset.sample);
-
-            //         if (UtilsNew.isNotUndefinedOrNull(sample)) {
-            //             // This triggers the call to samplesObserver()
-            //             if (UtilsNew.isUndefinedOrNull(this.samples)) {
-            //                 this.samples = [];
-            //             }
-            //             this.push("samples", sample);
-
-            //             // Empty previous Sample selection
-            //             this.autocompleteSampleData = [];
-            //             sampleSearchInput.value = "";
-
-            //             // Notify the sample change
-            //             this.dispatchEvent(new CustomEvent("samplechange", {
-            //                 detail: {samples: this.samples}, bubbles: true, composed: true
-            //             }));
-            //             this.dispatchEvent(new CustomEvent("inheritancemode", {
-            //                 detail: {decisionTreeInheritance: this.decisionTreeInheritance}, bubbles: true, composed: true
-            //             }));
-            //         }
-            // }
 
             propagateOkHPO(e) {
                 if (this.openHPO) {
@@ -518,14 +449,6 @@
                 this.updateQueryFilters();
             }
 
-            // clear() {
-            //     // This will trigger the event that call to setQueryFilters
-            //     this.query = {};
-            //
-            //     // This refresh the variant main grid
-            //     this.search = {};
-            // }
-
             setQueryFilters() {
                 // Empty everything before rendering
                 this._clearHtmlDom();
@@ -571,23 +494,6 @@
                     }
                 }
 
-                // Position
-                if (typeof this.query.region !== "undefined") {
-                    $("#" + this.prefix + "LocationTextarea").val(this.query.region);
-                }
-
-                // XRefs, Gene and Variant Ids
-                if (typeof this.query["annot-xref"] !== "undefined") {
-                    PolymerUtils.setValue(this.prefix + "FeatureTextarea", this.query["annot-xref"]);
-                } else if (typeof this.query.ids !== "undefined") {
-                    PolymerUtils.setValue(this.prefix + "FeatureTextarea", this.query.ids);
-                }
-
-                // Biotype
-                if (typeof this.query["biotype"] !== "undefined") {
-                    $("#" + this.prefix + "GeneBiotypes").selectpicker('val', this.query["biotype"].split(","));
-                }
-
                 // Panel - annot-panel
                 if (!!this.query["gene"]) {
 
@@ -612,19 +518,6 @@
                     // if (UtilsNew.isNotUndefinedOrNull(geneTextarea)) {
                     //     geneTextarea.value = this.query.gene;
                     // }
-                }
-
-                // Type
-                if (typeof this.query.type !== "undefined") {
-                    let types = this.query.type.split(",");
-                    let checkBoxes = PolymerUtils.querySelectorAll("input", this.prefix + "Type");
-                    for (let i = 0; i < types.length; i++) {
-                        for (let j = 0; j < checkBoxes.length; j++) {
-                            if (checkBoxes[j].value === types[i]) {
-                                checkBoxes[j].checked = true;
-                            }
-                        }
-                    }
                 }
 
                 // Population Freqs
@@ -896,22 +789,6 @@
                     }
                 }
 
-                // Regions
-                let locationTextArea = PolymerUtils.getElementById(this.prefix + "LocationTextarea");
-                if (UtilsNew.isNotUndefinedOrNull(locationTextArea) && UtilsNew.isNotEmpty(locationTextArea.value)) {
-                    _filters.region = locationTextArea.value;
-                }
-
-                // Features: Gene, SNP ID
-                let featureTextArea = PolymerUtils.getElementById(this.prefix + "FeatureTextarea");
-                if (UtilsNew.isNotUndefinedOrNull(featureTextArea) && UtilsNew.isNotEmpty(featureTextArea.value)) {
-                    if (featureTextArea.value.startsWith("rs") || featureTextArea.value.split(':').length > 2) {
-                        _filters["annot-xref"] = featureTextArea.value;
-                    } else {
-                        _filters["annot-xref"] = featureTextArea.value.toUpperCase();
-                    }
-                }
-
                 // Panel - annot-panel
                 let panelsDropdown = PolymerUtils.getElementById(this.prefix + "PanelApps");
                 let panelsTextArea = PolymerUtils.getElementById(this.prefix + "PanelAppsTextarea");
@@ -923,28 +800,6 @@
                 let externalPanelsTextArea = PolymerUtils.getElementById(this.prefix + "ExternalPanelAppsTextarea");
                 if (UtilsNew.isNotUndefinedOrNull(externalPanelsTextArea) && externalPanelsTextArea.value !== "") {
                     _filters["gene"] = externalPanelsTextArea.value;
-                }
-
-                // Biotype
-                let biotypeDropdown = PolymerUtils.getElementById(this.prefix + "GeneBiotypes");
-                if (UtilsNew.isNotUndefinedOrNull(biotypeDropdown) && UtilsNew.isNotEmpty(biotypeDropdown.value)) {
-                    let types = PolymerUtils.querySelectorAll("option:checked", biotypeDropdown);
-                    let biotypes = [];
-                    types.forEach(option => biotypes.push(option.value));
-                    _filters["biotype"] = biotypes.join(",");
-                }
-
-                // Type
-                let typeCheckbox = PolymerUtils.getElementById(this.prefix + "Type");
-                if (UtilsNew.isNotUndefinedOrNull(typeCheckbox)) {
-                    let types = PolymerUtils.querySelectorAll("input:checked", typeCheckbox);
-                    let typesAux = [];
-                    if (types.length > 0) {
-                        for (let i = 0; i < types.length; i++) {
-                            typesAux.push(types[i].value);
-                        }
-                        _filters.type = typesAux.join(',');
-                    }
                 }
 
                 // Population Frequencies
@@ -1096,39 +951,6 @@
                 this._reset = true;
             }
 
-            callAutocomplete(e) {
-                // Only gene symbols are going to be searched and not Ensembl IDs
-                let featureId = PolymerUtils.getElementById(this.prefix  + "FeatureIdText").value;
-                if (UtilsNew.isNotUndefinedOrNull(featureId) && featureId.length >= 3 && !featureId.startsWith("ENS")) {
-                    let _this = this;
-                    _this.cellbaseClient.get('feature', 'id', featureId.toUpperCase(), 'starts_with', {}, {})
-                        .then(function (response) {
-                            let options = "";
-                            for (let id of response.response[0].result) {
-                                options += `<option value="${id.name}">`;
-                            }
-                            PolymerUtils.innerHTML(_this.prefix + "FeatureDatalist", options);
-                        });
-                }
-            }
-
-            addFeatureId(e) {
-                let allIds = [];
-                let featureTextArea = PolymerUtils.getElementById(this.prefix + "FeatureTextarea");
-                if (UtilsNew.isNotUndefinedOrNull(featureTextArea) && UtilsNew.isNotEmpty(featureTextArea.value)) {
-                    allIds = featureTextArea.value.split(',');
-                }
-
-                let featureIdText = PolymerUtils.getElementById(this.prefix + "FeatureIdText");
-                if (allIds.indexOf(featureIdText.value) === -1) {
-                    allIds.push(featureIdText.value);
-                }
-                featureIdText.value = "";
-                featureTextArea.value = allIds;
-
-                this.updateQueryFilters();
-            }
-
             _clearHtmlDom() {
                 // Empty everything before rendering
                 $("." + this.prefix + "FilterSelect").prop('selectedIndex', 0);
@@ -1142,7 +964,6 @@
 
                 // Deselect bootstrap-select dropdowns
                 $("#" + this.prefix + "PanelApps").selectpicker('val', []);
-                $("#" + this.prefix + "GeneBiotypes").selectpicker('val', []);
                 $("#" + this.prefix + "vcfFilterSelect").selectpicker('val', []);
             }
 
@@ -1222,20 +1043,8 @@
                     case "study":
                         content = this._getStudyHtml(this.prefix);
                         break;
-                    case "location":
-                        content = this._getLocationHtml(this.prefix);
-                        break;
-                    case "feature":
-                        content = this._getFeatureHtml(this.prefix);
-                        break;
                     case "geneDiseasePanels":
                         content = this._getGeneDiseasePanelsHtml(this.prefix);
-                        break;
-                    case "biotype":
-                        content = this._getBiotypeHtml(subsection.biotypes, this.prefix);
-                        break;
-                    case "type":
-                        content = this._getVariantTypeHtml(this.prefix);
                         break;
                     case "populationFrequency":
                         content = this._getPopulationFrequencyHtml(this.prefix);
@@ -1269,6 +1078,7 @@
                         break;
                     case "externalPanels":
                         content = this._getExternalPanelsHTML(this.prefix);
+                        break;
                 }
 
                 // Add subsection footer
@@ -1345,34 +1155,6 @@
                             ${this.opencgaSession.study.alias}
                         </span>
                         ${options}
-                    </div>
-                `;
-            }
-
-            _getLocationHtml(prefix) {
-                return `
-                    <textarea id="${prefix}LocationTextarea" name="location" class="form-control clearable ${prefix}FilterTextInput"
-                        rows="3" placeholder="3:444-55555,1:1-100000"></textarea>
-                `;
-            }
-
-            _getFeatureHtml(prefix) {
-                return `
-                    <div class="row">
-                        <div class="col-md-9">
-                            <input id="${prefix}FeatureIdText" type="text" class="form-control" list="${prefix}FeatureDatalist"
-                                    placeholder="Search for Gene Symbols" value="">
-                                <datalist id="${prefix}FeatureDatalist"></datalist>
-                        </div>
-                        <div class="col-md-3">
-                            <button id="${prefix}FeatureAddButton" type="button" class="btn btn-default btn-sm form-control">
-                                <i class="fa fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                            <textarea id="${prefix}FeatureTextarea" name="geneSnp" class="form-control clearable ${prefix}FilterTextInput"
-                                rows="3" placeholder="BRCA2,ENSG00000139618,ENST00000544455,rs28897700" style="margin-top: 5px"></textarea>
                     </div>
                 `;
             }
@@ -1485,31 +1267,6 @@
                     // `;
                     return `<div id="${prefix}DiseasePanelDropdown"></div>`;
                 }
-            }
-
-            _getBiotypeHtml(biotypes, prefix) {
-                let options = "";
-                for (let biotype of biotypes) {
-                    options += `<option value="${biotype}">${biotype}</option>`;
-                }
-                return `
-                    <select class="selectpicker" id="${prefix}GeneBiotypes" data-size="10" data-live-search="true"
-                            data-selected-text-format="count" multiple>
-                        ${options}
-                    </select>
-                `;
-            }
-
-            _getVariantTypeHtml(prefix) {
-                return `
-                    <div id="${prefix}Type">
-                        <input type="checkbox" value="SNV,SNP" class="${prefix}FilterCheckBox"> SNV<br>
-                        <input type="checkbox" value="MNV" class="${prefix}FilterCheckBox"> MNV<br>
-                        <input type="checkbox" value="CNV" class="${prefix}FilterCheckBox"> CNV<br>
-                        <input type="checkbox" value="SV" class="${prefix}FilterCheckBox"> SV<br>
-                        <input type="checkbox" value="INDEL" class="${prefix}FilterCheckBox"> INDEL
-                    </div>
-                `;
             }
 
             _getPopulationFrequencyHtml(prefix) {
@@ -1869,7 +1626,7 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <input id="${prefix}AutocompleteExternalPanelSearchInput" type="text" class="form-control" placeholder="Search name..."
-                                    list="${prefix}AutocompleteExternalPanelSearchDataList"">
+                                    list="${prefix}AutocompleteExternalPanelSearchDataList">
                                 <datalist id="${prefix}AutocompleteExternalPanelSearchDataList"></datalist>
                             </div>
 
@@ -1885,21 +1642,21 @@
 
 
             _addEventListeners() {
-                let keyupEvents = ["LocationTextarea", "FeatureTextarea", "PanelAppsTextarea", "FilterTextInput", "CaddRawInput", "CaddScaledInput", "SiftInput",
+                const keyupEvents = ["PanelAppsTextarea", "FilterTextInput", "CaddRawInput", "CaddScaledInput", "SiftInput",
                     "PolyphenInput", "PhylopInput", "PhastconsInput", "GerpInput", "GeneOntologyTextarea", "HumanPhenotypeOntologyTextarea", "ClinVarTextarea", "TraitsTextarea"];
-                for (let id of keyupEvents) {
-                    let element = PolymerUtils.getElementById(this.prefix + id);
-                    if (UtilsNew.isNotUndefinedOrNull(element)) {
+                for (const id of keyupEvents) {
+                    const element = PolymerUtils.getElementById(this.prefix + id);
+                    if (!!element) {
                         element.addEventListener('keyup', this.updateQueryFilters.bind(this));
                     }
                 }
 
-                let changeEvents = ["includeOtherStudy", "GenotypeQueryOptions", "GeneBiotypes", "Type", "CaddRawOperator", "CaddScaledOperator", "SiftOperator", "PolyphenOperator",
+                const changeEvents = ["includeOtherStudy", "GenotypeQueryOptions", "GeneBiotypes", "Type", "CaddRawOperator", "CaddScaledOperator", "SiftOperator", "PolyphenOperator",
                     "pssOrRadio", "pssAndRadio", "PhylopOperator", "PhastconsOperator", "GerpOperator", "conservationAndRadio", "conservationOrRadio", "vcfFilterSelect",
                     "hpoOrRadio", "hpoAndRadio"];
-                for (let id of changeEvents) {
-                    let element = PolymerUtils.getElementById(this.prefix + id);
-                    if (UtilsNew.isNotUndefinedOrNull(element)) {
+                for (const id of changeEvents) {
+                    const element = PolymerUtils.getElementById(this.prefix + id);
+                    if (!!element) {
                         element.addEventListener('change', this.updateQueryFilters.bind(this));
                     }
                 }
@@ -1959,10 +1716,6 @@
                         }
                     }
                 }
-
-                // Add events for Feature IDs
-                PolymerUtils.getElementById(this.prefix + "FeatureIdText").addEventListener('keyup', this.callAutocomplete.bind(this));
-                PolymerUtils.getElementById(this.prefix + "FeatureAddButton").addEventListener('click', this.addFeatureId.bind(this));
 
                 // Add events for gene disease panels
                 let element = PolymerUtils.getElementById(this.prefix + "PanelApps");
