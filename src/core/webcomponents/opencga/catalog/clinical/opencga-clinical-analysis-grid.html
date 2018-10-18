@@ -26,6 +26,7 @@
                data-detail-formatter="detailFormatter"  data-icons-prefix="fa" data-icons="icons" data-show-refresh="true">
             <thead style="background-color: #eee"></thead>
         </table>
+
     </template>
 
     <script>
@@ -126,7 +127,7 @@
                 $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable('destroy');
                 $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable({
                     url: urlQueryParams.host,
-                    columns: _this._getTableColumns(),
+                    columns: this._getTableColumns(),
                     method: 'get',
                     sidePagination: 'server',
 
@@ -153,10 +154,9 @@
                     onLoadSuccess: function (data) {
                         if (UtilsNew.isUndefinedOrNull(_this.analysis)) {
                             // The first time we mark as selected the first row
-                            let _table = $('#' + _this.prefix + 'tableAnalysis');
-                            if (UtilsNew.isNotUndefinedOrNull(_table) && data.total > 0) {
-                                _table.bootstrapTable('check', 0);
-                            }
+                            const _table = $('#' + _this.prefix + 'tableAnalysis');
+                            _table.bootstrapTable('check', 0);
+
                         } else {
                             _this.analysisObserver();
                         }

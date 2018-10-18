@@ -1,0 +1,305 @@
+<dom-module id="variant-filter-consequence-selector">
+    <template>
+        <style include="jso-styles">
+            span + span {
+                margin-left: 10px;
+            }
+
+            .browser-ct-tree-view {
+                overflow-x: scroll;
+                padding: 0;
+                margin: 0;
+                list-style: none;
+                font-size: small;
+            }
+
+            .browser-ct-tree-view * {
+                padding: 0;
+                margin: 0;
+                list-style: none;
+            }
+
+            .browser-ct-tree-view li ul {
+                margin: 0 0 0 22px;
+            }
+
+            .browser-ct-tree-view * {
+                vertical-align: middle;
+            }
+
+            .browser-ct-tree-view {
+                /*font-size: 14px;*/
+            }
+
+            .browser-ct-tree-view input[type="checkbox"] {
+                cursor: pointer;
+            }
+
+            .browser-ct-item {
+                white-space: nowrap;
+                display: inline
+            }
+
+            div.block {
+                overflow: hidden;
+            }
+
+            div.block label {
+                width: 80px;
+                display: block;
+                float: left;
+                text-align: left;
+                font-weight: normal;
+            }
+
+            select + select {
+                margin-left: 10px;
+            }
+
+            select + input {
+                margin-left: 10px;
+            }
+
+            .browser-subsection {
+                font-size: 1.35rem;
+                font-weight: bold;
+                padding: 5px 0px;
+                color: #444444;
+                border-bottom: 1px solid rgba(221, 221, 221, 0.8);
+            }
+
+            .subsection-content {
+                margin: 5px 5px;
+            }
+
+            span.searchingSpan{
+                background-color: #286090;
+            }
+            .searchingButton{
+                color: #fff;
+            }
+            .notbold{
+                font-weight: normal;
+            }
+            .bootstrap-select {
+                width: 100%!important;
+            }
+        </style>
+        <div class="form-group">
+            <div class="browser-subsection">
+                [[title]]
+                <div style="float: right" class="tooltip-div">
+                        <a>
+                            <i class="fa fa-info-circle" aria-hidden="true" id="[[tooltipId]]"></i>
+                        </a>
+                </div>
+            </div>
+            <!-- subsection specific -->
+
+            <div style="padding-top: 15px">Loss-of-Function (LoF) terms:</div>
+            <div class="form-check" style="margin-top: 5px;">
+                <div class="form-check-label">
+                    <label class="notbold">
+                        <input type="checkbox" class="form-check-input" on-click="onLofCheckboxClick">
+                        LoF terms
+                    </label>
+                </div>
+            </div>
+
+            <div style="padding-top: 15px">Consequence Type terms:</div>
+            <div style="overflow-x: scroll">
+                <div class="browser-ct-tree-view browser-ct-item">
+                    <!-- <ul id="${prefix}consequenceTypeFilter">` -->
+                    <ul>
+                        <template is="dom-repeat" items="[[consequenceTypes.categories]]" as="category">
+                            <li class="form-check" style="margin-top: 10px;">
+                                <!-- has terms -->
+                                <template is="dom-if" if="[[category.terms]]">
+                                    <label class="form-check-label notbold">
+                                        <input type="checkbox" data-id="[[category.title]]" checked="[[isSoCategorySelected(category.title, consequences)]]" on-click="onSoCategoryClick">
+                                        [[category.title]]
+                                    </label>
+                                    <ul style="margin: 0 0 0 22px;">
+                                        <template is="dom-repeat" items="[[category.terms]]" as="term">
+                                            <li class="form-check">
+                                                <label class="form-check-label notbold">
+                                                    <input type="checkbox" class="soTermCheckBox" data-id="[[term.name]]" checked="[[isSoTermSelected(term.name, consequences)]]" on-click="onSoTermClick">
+                                                    <span title="[[term.description]]">
+                                                        [[term.name]] (
+                                                        <a href="http://www.sequenceontology.org/browser/current_svn/term/[[term.id]]" target="_blank">[[term.id]]</a>
+                                                        )
+                                                    </span>
+                                                </label>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <!-- has no terms -->
+                                <template is="dom-if" if="[[!category.terms]]">
+                                    <input type="checkbox" class="soTermCheckBox" data-id="[[category.name]]" checked="[[isSoTermSelected(category.name, consequences)]]" on-click="onSoTermClick">
+                                    <span title="[[category.description]]">
+                                        [[category.name]] (
+                                        <a href="http://www.sequenceontology.org/browser/current_svn/term/[[category.id]]" target="_blank">
+                                            [[category.id]]
+                                        </a>
+                                        )
+                                    </span>
+                                </template>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </div>
+
+
+            <!-- end of subsection specific-->
+        </div>
+    </template>
+    <script src="../variant-filter-subsection-base.js"></script>
+    <script>
+
+        class VariantFilterConsequenceSelector extends VariantFilterSubsectionBase {
+
+            static get is() {
+                return "variant-filter-consequence-selector";
+            }
+
+            static get properties() {
+                return {
+                    ...VariantFilterSubsectionBase.properties,
+                    consequenceTypes: {
+                        type: Object,
+                        value: () => [],
+                    },
+                    consequences: {
+                        type: Object,
+                        value: () => [],
+                        observer: "onConsequencesChanged",
+                    },
+                };
+            }
+
+            static get observers() {
+                return [
+                    ...VariantFilterSubsectionBase.observers,
+                    "onQueryChanged(query.*)",
+                ];
+            }
+
+            constructor() {
+                super();
+
+                this._setTitle("SO terms");
+                this._setTooltip("Filter out variants falling outside the genomic features (gene, transcript, SNP, etc.) defined.");
+            }
+
+            // set query filters
+            // consequence Type
+            // if (!!this.query["annot-ct"]) {
+            //     const types = this.query['annot-ct'].split(",");
+            //     const checkboxes = PolymerUtils.querySelectorAll("li input", `${this.prefix}consequenceTypeFilter`);
+            //     const checkedTypes = [];
+            //     for (const checkbox of checkboxes) {
+            //         const boxtype = checkbox.getAttribute('data-id');
+            //         if (!!boxtype && types.includes(boxtype)) {
+            //             checkbox.checked = true;
+            //             if (!checkedTypes.includes(type)) {
+            //                 checkedTypes.push(type);
+            //             }
+            //         }
+            //     }
+            //     this.set('ct', checkedTypes);
+            // } else {
+            //     this.set('ct', []);
+            // }
+
+            // update query filters
+            // Consequence Type
+            // if (UtilsNew.isNotEmptyArray(this.ct)) {
+            //     _filters["annot-ct"] = this.ct.join(',');
+            // }
+
+            onLofCheckboxClick(e) {
+                if (!!e && !!e.target && !!this.consequenceTypes && !!this.consequenceTypes.lof) {
+                    if (!!e.target.checked) {
+                        const toAdd = this.consequenceTypes.lof.filter(consequence => !this.consequences.includes(consequence));
+                        if (toAdd.length > 0) {
+                            this.consequences = this.consequences.concat(toAdd);
+                        }
+                    } else {
+                        const newConsequences = this.consequences.filter(consequence => !this.consequenceTypes.lof.includes(consequence));
+                        if (newConsequences.length < this.consequences.length) {
+                            this.consequences = newConsequences;
+                        }
+                    }
+                }
+            }
+
+            onSoTermClick(e) {
+                if (!!e && !!e.target && !!e.target.dataId) {
+                    const term = e.target.dataId;
+                    if (!!e.target.checked && !this.consequences.includes(term)) {
+                        this.consequences = [...this.consequences, term];
+                    } else if (!e.target.checked && this.consequences.includes(term)) {
+                        this.consequences = this.consequences.filter(x => x != term);
+                    }
+                }
+            }
+
+            onSoCategoryClick(e) {
+                if (!!e && !!e.target && !!e.target.dataId) {
+                    const categoryName = e.target.dataId;
+                    const category = !!this.consequenceTypes && !!this.consequenceTypes.categories && this.consequenceTypes.categories.find(category => category.title === categoryName);
+                    if (!!category && !!category.terms) {
+                        if (!!e.target.checked) {
+                            const toAdd = category.terms.map(term => term.name).filter(term => !this.consequences.includes(term));
+                            if (toAdd.length > 0) {
+                                this.consequences = this.consequences.concat(toAdd);
+                            }
+                        } else {
+                            const newConsequences = this.consequences.filter(consequence => !category.terms.some(term => term.name === consequence));
+                            if (newConsequences.length < this.consequences.length) {
+                                this.consequences = newConsequences;
+                            }
+                        }
+                    }
+                }
+            }
+
+            isSoTermSelected(consequence) {
+                return this.consequences.includes(consequence);
+            }
+
+            isSoCategorySelected(categoryName) {
+                const category = !!this.consequenceTypes && !!this.consequenceTypes.categories && this.consequenceTypes.categories.find(category => category.title === categoryName);
+                if (!!category && !!category.terms) {
+                    return category.terms.every(term => this.consequences.includes(term.name));
+                } else {
+                    return true;
+                }
+            }
+
+            onQueryChanged(newValue, oldValue) {
+                this.consequences = (!!this.query && !!this.query['annot-ct'] && this.query['annot-ct'].split(",")) || [];
+            }
+
+            onConsequencesChanged() {
+                if (this.consequences.length > 0) {
+                    const filter = this.consequences.join(',');
+                    if (!this.query || !this.query['annot-ct'] || this.query['annot-ct'] != filter) {
+                        this.query['annot-ct'] = filter;
+                        this.notifyQueryUpdate();
+                    }
+                } else {
+                    if (!!this.query && this.query['annot-ct']) {
+                        delete this.query['annot-ct'];
+                        this.notifyQueryUpdate();
+                    }
+                }
+            }
+        }
+
+        customElements.define(VariantFilterConsequenceSelector.is, VariantFilterConsequenceSelector);
+
+    </script>
+</dom-module>

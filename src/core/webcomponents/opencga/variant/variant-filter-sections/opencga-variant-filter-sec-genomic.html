@@ -3,6 +3,7 @@
 <link rel="import" href="./genomic/mmp-panel-selector.html">
 <link rel="import" href="./genomic/variant-filter-biotype-selector.html">
 <link rel="import" href="./genomic/variant-filter-variant-type-selector.html">
+<link rel="import" href="./genomic/variant-filter-consequence-selector.html">
 
 
 <dom-module id="opencga-variant-filter-sec-genomic">
@@ -18,30 +19,12 @@
 
             <div id="[[collapsibleId]]" class="panel-collapse collapse" role="tabpanel">
                 <div class="panel-body">
-
                     <variant-filter-chromosomal-locator query="{{query}}"></variant-filter-chromosomal-locator>
                     <variant-filter-feature-selector cellbase-client="[[cellbaseClient]]" query="{{query}}"></variant-filter-feature-selector>
-                    <mmp-panel-selector query="{{query}}"></variant-filter-chromosomal-locator>
+                    <mmp-panel-selector query="{{query}}"></mmp-panel-selector>
                     <variant-filter-biotype-selector query="{{query}}"></variant-filter-biotype-selector>
                     <variant-filter-variant-type-selector query="{{query}}"></variant-filter-variant-type-selector>
-
-
-                    <!-- <div class="form-group">
-                        <div class="browser-subsection">
-                            Mode of Inheritance
-                            <div style="float: right" class="tooltip-div">
-                                    <a>
-                                        <i class="fa fa-info-circle" aria-hidden="true" id="[[modesOfInheritanceTooltipId]]"></i>
-                                    </a>
-                            </div>
-                        </div>
-                        <select id="[[modesOfInheritanceId]]" class="form-control input-sm" on-change="onModeOfInheritanceChanged">
-                            <option value="none">Select...</option>
-                            <template is="dom-repeat" items="[[modesOfInheritance]]" as="mode">
-                                <option value="[[mode.id]]">[[mode.text]]</option>
-                            </template>
-                        </select>
-                    </div> -->
+                    <variant-filter-consequence-selector query="{{query}}" consequence-types="[[consequenceTypes]]"></variant-filter-consequence-selector>
                 </div>
             </div>
         </template>
@@ -68,6 +51,9 @@
                     query: {
                         type: Object,
                         notify: true,
+                    },
+                    consequenceTypes: {
+                        type: Object,
                     },
                     collapsibleId: {
                         type: String,

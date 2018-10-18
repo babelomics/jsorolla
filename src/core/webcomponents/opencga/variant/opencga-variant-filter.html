@@ -109,6 +109,11 @@
             .bootstrap-select {
                 width: 100%!important;
             }
+
+            .selectpicker {
+                width: 100%!important;
+            }
+
         </style>
 
         <div>
@@ -126,7 +131,12 @@
                     on-query-changed="onQueryChanged"
                     modeOfInheritance="{{modeInheritance}}"
                 ></opencga-variant-filter-sec-sample>
-                <opencga-variant-filter-sec-genomic cellbase-client="[[cellbaseClient]]" query="{{query}}" on-query-changed="onQueryChanged"></opencga-variant-filter-sec-genomic>
+                <opencga-variant-filter-sec-genomic
+                    cellbase-client="[[cellbaseClient]]"
+                    query="{{query}}"
+                    consequence-types="[[consequenceTypes]]"
+                    on-query-changed="onQueryChanged"
+                ></opencga-variant-filter-sec-genomic>
                 <div id="FilterMenu"></div>
             </div>
         </div>
@@ -165,6 +175,8 @@
 
                 this.modalHpoActive = false;
                 this.modalGoActive = false;
+
+                this.onQueryChanged = this.onQueryChanged.bind(this);
             }
 
             static get is() {
@@ -398,42 +410,6 @@
                 });
             }
 
-
-            updateConsequenceTypeFilter(e) {
-                // select LoF term checkboxes
-                const lofCheckBox = PolymerUtils.getElementById(this.prefix + "LossOfFunctionCheckBox");
-                if (e.target.id === (this.prefix + "LossOfFunctionCheckBox")) {
-                    const checkBoxes = PolymerUtils.querySelectorAll("li input", this.prefix + "consequenceTypeFilter");
-                    for (const checkbox of checkBoxes) {
-                        const checkboxId = checkbox.getAttribute('data-id');
-                        if (this.consequenceTypes.lof.includes(checkboxId)) {
-                            checkbox.checked = lofCheckBox.checked;
-                        }
-                    }
-                }
-
-                // Select/Unselect the items from one category
-                if (!!e.target.parentNode.parentNode.id) {
-                    $("#" + e.target.parentNode.parentNode.id).children('ul').children('li').children('label').children('input').each(function(){
-                        $(this).prop("checked", e.target.checked);
-                    });
-                }
-
-                const soTerms = [];
-                const selected = PolymerUtils.querySelectorAll("li input", this.prefix + "consequenceTypeFilter");
-                for (const sel of selected) {
-                    if (sel.checked && !!sel.dataset && !!sel.dataset.id) {
-                        soTerms.push(sel.dataset.id);
-                    } else if (lofCheckBox.checked && this.consequenceTypes.lof.includes(sel.getAttribute("data-id"))) {
-                        // if one of terms from LoF is not selected, remove LoF check
-                        lofCheckBox.checked = false;
-                    }
-                }
-
-                this.set('ct', soTerms);
-                this.updateQueryFilters();
-            }
-
             checkScore(e) {
                 const inputElement = $(`#${this.prefix}${e.target.name}Input`);
                 const operatorElement = $(`#${this.prefix}${e.target.name}Operator`);
@@ -612,25 +588,6 @@
                                 break;
                         }
                     }
-                }
-
-                // consequence Type
-                if (!!this.query["annot-ct"]) {
-                    const types = this.query['annot-ct'].split(",");
-                    const checkboxes = PolymerUtils.querySelectorAll("li input", `${this.prefix}consequenceTypeFilter`);
-                    const checkedTypes = [];
-                    for (const checkbox of checkboxes) {
-                        const boxtype = checkbox.getAttribute('data-id');
-                        if (!!boxtype && types.includes(boxtype)) {
-                            checkbox.checked = true;
-                            if (!checkedTypes.includes(type)) {
-                                checkedTypes.push(type);
-                            }
-                        }
-                    }
-                    this.set('ct', checkedTypes);
-                } else {
-                    this.set('ct', []);
                 }
 
                 // Gene Ontology and Human Phenotype Ontology
@@ -899,11 +856,6 @@
                     }
                 }
 
-                // Consequence Type
-                if (UtilsNew.isNotEmptyArray(this.ct)) {
-                    _filters["annot-ct"] = this.ct.join(',');
-                }
-
                 // Gene Ontology and Human Phenotype Ontology
                 let inputTextArea = PolymerUtils.getElementById(this.prefix + "GeneOntologyTextarea");
                 if (UtilsNew.isNotUndefinedOrNull(inputTextArea) && UtilsNew.isNotEmpty(inputTextArea.value)) {
@@ -972,7 +924,7 @@
             _renderFilterMenu() {
 
                 // This set the generated HTML in the DIV element
-                const sections = this.config.menu.sections.filter(section => section.title!=="Study");
+                const sections = this.config.menu.sections.filter(section => !["Study", "Genomic"].includes(section.title));
                 const html = sections.map(section => this._createSection(section, this.prefix)).join('');
                 this.$.FilterMenu.innerHTML = html;
 
@@ -1017,8 +969,6 @@
             }
 
             _createSubSection(subsection) {
-                // ConsequenceType needs horizontal scroll
-                const ctScroll = (subsection.id === "consequenceType") ? "browser-ct-scroll" : "";
 
                 // Add subsection header
                 const header = `
@@ -1028,7 +978,7 @@
                                 <a><i class="fa fa-info-circle" aria-hidden="true" id="${subsection.id}Tooltip"></i></a>
                             </div>
                         </div>
-                        <div id="${this.prefix}${subsection.id}" class="subsection-content ${ctScroll}">
+                        <div id="${this.prefix}${subsection.id}" class="subsection-content">
                 `;
 
                 let content = "";
@@ -1057,9 +1007,6 @@
                         break;
                     case "conservation":
                         content = this._getConservationHtml(this.prefix);
-                        break;
-                    case "consequenceType":
-                        content = this._getConsequenceTypeHtml(this.prefix);
                         break;
                     case "go":
                         content = this._getGoAccessionsHtml(this.prefix);
@@ -1539,72 +1486,6 @@
                 `;
             }
 
-            _getConsequenceTypeHtml(prefix) {
-                let categoriesStart = `
-                    <div style="padding-top: 15px">Loss-of-Function (LoF) terms:</div>
-                    <div class="form-check" style="margin-top: 5px;">
-                        <div class="form-check-label">
-                            <label id="${prefix}LossOfFunctionCheckBoxLabel" class="notbold">
-                                <input id="${prefix}LossOfFunctionCheckBox" type="checkbox" class="${prefix}FilterCheckBox form-check-input">
-                                LoF terms
-                            </label>
-                        </div>
-                    </div>
-
-                    <div style="padding-top: 15px">Consequence Type terms:</div>
-                    <div class="browser-ct-tree-view browser-ct-item">
-                        <ul id="${prefix}consequenceTypeFilter">`;
-
-                let categoriesCheckbox = "";
-                if (UtilsNew.isNotEmptyArray(consequenceTypes.categories)) {
-
-                    consequenceTypes.categories.forEach((category) => {
-                        let id = (category.title !== undefined) ? category.title : category.name;
-                        categoriesCheckbox += `<li id="${id}" class="form-check" style="margin-top: 10px;">`;
-                        if (UtilsNew.isNotEmptyArray(category.terms)) {
-                            categoriesCheckbox += `<label class="form-check-label notbold">
-                                                       <input id="${prefix}${category.title}input" type="checkbox" class="${prefix}FilterCheckBox"> ${category.title}
-                                                   </label>`;
-                        } else {
-                            categoriesCheckbox += `<input id="${prefix}${category.name}input" type="checkbox"
-                                                        data-id="${category.name}" class="soTermCheckBox ${prefix}FilterCheckBox">
-                                                    <span title="${category.description}">
-                                                        ${category.name} (<a href="http://www.sequenceontology.org/browser/current_svn/term/${category.id}"
-                                                        target="_blank">${category.id}</a>)
-                                                    </span>`;
-                        }
-
-                        if (UtilsNew.isNotEmptyArray(category.terms)) {
-                            categoriesCheckbox += "<ul>";
-                            category.terms.forEach((item) => {
-                                categoriesCheckbox += `<li class="form-check">
-                                                            <label class="form-check-label notbold">
-                                                                <input id="${prefix}${item.id}checkbox" type="checkbox" data-id="${item.name}"
-                                                                    class="soTermCheckBox ${prefix}FilterCheckBox">
-                                                                <span title="${item.description}">${item.name} (<a
-                                                                    href="http://www.sequenceontology.org/browser/current_svn/term/${item.id}"
-                                                                    target="_blank">${item.id}</a>)
-                                                                </span>
-                                                            </label>
-                                                        </li>
-                                                   `;
-                            });
-                            categoriesCheckbox += "</ul>";
-                        }
-
-                        categoriesCheckbox += `</li>`;
-                    });
-                }
-
-                let categoriesEnd = `
-                                </ul>
-                            </div>
-                        </div>
-               `;
-
-                return categoriesStart + categoriesCheckbox + categoriesEnd;
-            }
-
             _getVCFFilterHTML(filterValues, prefix) {
                 let options = "";
                 for (let val of filterValues) {
@@ -1745,20 +1626,6 @@
                 // Add events Protein substitution score
                 PolymerUtils.getElementById(this.prefix + "SiftValues").addEventListener('change', this.checkScore.bind(this));
                 PolymerUtils.getElementById(this.prefix + "PolyphenValues").addEventListener('change', this.checkScore.bind(this));
-
-                // Add events consequence type
-                PolymerUtils.getElementById(this.prefix + "LossOfFunctionCheckBox").addEventListener('change', this.updateConsequenceTypeFilter.bind(this));
-                if (UtilsNew.isNotEmptyArray(consequenceTypes.categories)) {
-                    consequenceTypes.categories.forEach((category) => {
-                        let title = (category.title !== undefined) ? category.title : category.name;
-                        PolymerUtils.getElementById(this.prefix + title + "input").addEventListener('change', this.updateConsequenceTypeFilter.bind(this));
-                        if (UtilsNew.isNotEmptyArray(category.terms)) {
-                            category.terms.forEach((item) => {
-                                PolymerUtils.getElementById(this.prefix + item.id + "checkbox").addEventListener('change', this.updateConsequenceTypeFilter.bind(this));
-                            });
-                        }
-                    });
-                }
 
                 // Add events GO accessions
                 PolymerUtils.getElementById(this.prefix + "buttonOpenGoAccesions").addEventListener('click', this.openModalGo.bind(this));

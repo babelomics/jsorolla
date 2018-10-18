@@ -1,5 +1,10 @@
 <dom-module id="variant-filter-biotype-selector">
     <template>
+        <style include="jso-styles">
+            .selectpicker {
+                width: 100%!important;
+            }
+        </style>
         <div class="form-group">
             <div class="browser-subsection">
                 [[title]]
@@ -9,20 +14,16 @@
                         </a>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <select class="selectpicker"
-                        style="width: 80%"
-                        on-change="onSelectionChanged"
-                        data-size="10"
-                        data-live-search="true"
-                        data-selected-text-format="count"
-                        multiple>
-                        <template is="dom-repeat" items="[[biotypes]]" as="biotype">
-                            <option value="[[biotype]]">[[biotype]]</option>
-                        </template>
-                    </select>
-                </div>
+            <div style="padding-top: 5px; font-size: x-small">
+                <select
+                    class="form-control"
+                    style="font-size: small"
+                    on-change="onSelectionChanged"
+                    multiple>
+                    <template is="dom-repeat" items="[[biotypes]]" as="biotype">
+                        <option value="[[biotype]]">[[biotype]]</option>
+                    </template>
+                </select>
             </div>
         </div>
     </template>
@@ -53,7 +54,7 @@
                     },
                     tooltip: {
                         type: String,
-                        value: "Filter out variants falling outside the genomic features (gene, transcript, SNP, etc.) defined",
+                        value: "Filter out variants falling outside the genomic features (gene, transcript, SNP, etc.) defined. To select multiple options, hold CTRL down while clicking.",
                         readOnly: true,
                     },
                     biotypes: {
