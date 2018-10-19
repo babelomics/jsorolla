@@ -21,7 +21,7 @@
                     on-change="onSelectionChanged"
                     multiple>
                     <template is="dom-repeat" items="[[biotypes]]" as="biotype">
-                        <option value="[[biotype]]">[[biotype]]</option>
+                        <option value="[[biotype]]" selected="[[isBiotypeSelected(biotype, query.*)]]">[[biotype]]</option>
                     </template>
                 </select>
             </div>
@@ -30,8 +30,6 @@
     <script>
 
         class VariantFilterBiotypeSelector extends Polymer.Element {
-
-            // font-size: smaller; padding-left: 1rem; padding-right: 1rem
 
             static get is() {
                 return "variant-filter-biotype-selector";
@@ -69,12 +67,6 @@
                         ],
                     },
                 }
-            }
-
-            static get observers() {
-                return [
-                    'onQueryChanged(query.*)',
-                ];
             }
 
             _attachDom(dom) {
@@ -120,9 +112,9 @@
                 this.notifyQueryUpdate();
             }
 
-            onQueryChanged() {
-                // programmatically select this
-                // TODO
+            isBiotypeSelected(biotype) {
+                const queryBiotypes = (this.query.biotype || "").split(',');
+                return queryBiotypes.includes(biotype);
             }
 
             notifyQueryUpdate() {

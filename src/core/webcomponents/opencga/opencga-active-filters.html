@@ -264,9 +264,7 @@
                 params.bioformat = this.filterBioformat;
                 params.query = this.query;
                 params.options = {};
-                let _this = this;
-
-                debugger;
+                const _this = this;
 
                 this.opencgaClient.users().getFilters({name: filterName}, {serverVersion: this.opencgaClient._config.serverVersion})
                     .then(function (response) {

@@ -461,9 +461,12 @@
             _init() {
                 this.prefix = "varPrior-" + Utils.randomString(6);
 
+                this.defaultFilterClass = "col-md-2";
+                this.defaultGridClass = "col-md-10";
+
                 this.interactive = true;
-                this.filterClass = "col-md-2";
-                this.gridClass = "col-md-10";
+                this.filterClass = this.defaultFilterClass;
+                this.gridClass = this.defaultGridClass;
 
 
                 this._collapsed = true;
@@ -581,8 +584,8 @@
 
             unCollapseFilter() {
                 if (this.interactive) {
-                    this.filterClass = "col-md-2";
-                    this.gridClass = "col-md-10";
+                    this.filterClass = this.defaultFilterClass;
+                    this.gridClass = this.defaultGridClass;
                     this._collapsed = false;
                 }
             }

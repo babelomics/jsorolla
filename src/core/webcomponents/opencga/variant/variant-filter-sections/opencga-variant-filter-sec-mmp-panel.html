@@ -1,0 +1,283 @@
+<dom-module id="opencga-variant-filter-sec-mmp-panel">
+    <template>
+        <div class="panel panel-default" style="margin-bottom: 10px">
+            <div class="panel-heading" role="tab">
+                <h4 class="panel-title">
+                    <a class="collapsed" role="button" data-toggle="collapse" href="#[[collapsibleId]]" aria-expanded="true"
+                        aria-controls="[[collapsibleId]]">
+                        MMP Panel
+                    </a>
+                </h4>
+            </div>
+
+            <div id="[[collapsibleId]]" class="panel-collapse collapse" role="tabpanel">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <div class="browser-subsection">
+                            Search
+                            <div style="float: right" class="tooltip-div">
+                                <a>
+                                    <i class="fa fa-info-circle" aria-hidden="true" id="[[searchTextTooltipId]]"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Search panels..." style="width: 100%" value="{{searchBoxText::input}}">
+                    </div>
+                    <div class="form-group">
+                        <div class="browser-subsection">
+                            Results
+                            <div style="float: right" class="tooltip-div">
+                                <a>
+                                    <i class="fa fa-info-circle" aria-hidden="true" id="[[searchResultsTooltipId]]"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <select id="[[selectorId]]" class="form-control" style="font-size: small" on-change="onSelectionChanged" multiple size="8">
+                            <template is="dom-repeat" items="[[panels]]" as="panel">
+                                <option value="[[panel.name]]">[[panel.name]]</option>
+                            </template>
+                        </select>
+                    </div>
+                    <template is="dom-if" if="[[panelName]]">
+                        <div class="form-group">
+                            <div class="browser-subsection">
+                                Selected panel
+                                <div style="float: right" class="tooltip-div">
+                                    <a>
+                                        <i class="fa fa-info-circle" aria-hidden="true" id="[[panelNameTooltipId]]"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            [[panelName]]
+                        </div>
+                        <div class="form-group">
+                            <div class="browser-subsection">
+                                Genes
+                                <div style="float: right" class="tooltip-div">
+                                    <a>
+                                        <i class="fa fa-info-circle" aria-hidden="true" id="[[genesTooltipId]]"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <textarea
+                                    class="form-control clearable"
+                                    rows="5"
+                                    style="margin-top: 5px"
+                                    readonly
+                                    value="[[genes]]"
+                            ></textarea>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </template>
+    <script>
+
+        class OpencgaVariantFilterSecMmpPanel extends Polymer.Element {
+
+            static get is() {
+                return "opencga-variant-filter-sec-mmp-panel";
+            }
+
+            static get properties() {
+                return {
+                    cellbaseClient: {
+                        type: Object,
+                    },
+                    query: {
+                        type: Object,
+                        notify: true,
+                    },
+                    collapsibleId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    searchTextTooltipId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    searchResultsTooltipId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    panelNameTooltipId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    genesTooltipId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    selectorId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    mmpExtensionConfig: {
+                        type: Object,
+                        readOnly: true,
+                    },
+                    searchBoxText: {
+                        type: String,
+                        value: "",
+                        observer: "onSearchBoxTextChanged",
+                    },
+                    panels: {
+                        type: Array,
+                        value: [],
+                    },
+                    panelName: {
+                        type: String,
+                        value: "",
+                    },
+                    genes: {
+                        type: String,
+                        value: "",
+                        observer: "onGenesChanged",
+                    },
+                };
+            }
+
+            static get observers() {
+                return [
+                    'onQueryChanged(query.*)',
+                ];
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            constructor() {
+                super();
+                const prefix = `ovfsmmp${Utils.randomString(8)}`;
+                this._setCollapsibleId(`${prefix}-collapsible-id`);
+                this._setSelectorId(`${prefix}-selector-id`);
+                this._setSelectorId(`${prefix}-selector-id`);
+                this._setSearchTextTooltipId(`${prefix}-sttt-id`);
+                this._setSearchResultsTooltipId(`${prefix}-srtt-id`);
+                this._setPanelNameTooltipId(`${prefix}-pntt-id`);
+                this._setGenesTooltipId(`${prefix}-gtt-id`);
+
+                this._setMmpExtensionConfig({
+                    // root: "http://10.233.7.23:1688/api/",
+                    root: "http://localhost:3000/api/",
+                    panel: "panel/",
+                    gene: "gene/"
+                });
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+
+                const tooltipDesc = {
+                    content: { title: "", text: "" },
+                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
+                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
+                    show: { delay: 200 },
+                    hide: { fixed: true, delay: 300 },
+                };
+                $(`#${this.searchTextTooltipId}`).qtip({
+                    ...tooltipDesc,
+                    content: {
+                        title: "Search panel",
+                        text: "Use this box to search for diagnostic panels by name",
+                    },
+                });
+                $(`#${this.searchResultsTooltipId}`).qtip({
+                    ...tooltipDesc,
+                    content: {
+                        title: "Search results",
+                        text: "This list shows the panels whose name is compatible with your search. Select one.",
+                    },
+                });
+                $(`#${this.panelNameTooltipId}`).qtip({
+                    ...tooltipDesc,
+                    content: {
+                        title: "Selected panel",
+                        text: "The name of the selected panel, which will be used to filter the variants during interpretation.",
+                    },
+                });
+                $(`#${this.genesTooltipId}`).qtip({
+                    ...tooltipDesc,
+                    content: {
+                        title: "Panel genes",
+                        text: "This box shows the list of genes in the selected panel.",
+                    },
+                });
+            }
+
+            onSearchBoxTextChanged(searchText) {
+                if (!searchText) {
+                    if (this.panels.length > 0) {
+                        this.panels = [];
+                    }
+                } else if (searchText.length > 2) {
+                    const searchParams = {
+                        limit: 10,
+                        query: searchText,
+                    };
+                    // const paramsText = Object.keys(params).map(key => `${key}:${params[key]}`).join("&");
+                    // const url = new URL(`${this.mmpExtensionConfig.root}${this.mmpExtensionConfig.panel}searchPanel?${paramsText}`);
+                    const url = new URL(`${this.mmpExtensionConfig.root}${this.mmpExtensionConfig.panel}searchPanel`);
+                    for (const key in searchParams) {
+                        url.searchParams.append(key, searchParams[key]);
+                    }
+                    const params = { method: 'get', headers: { 'Accept': 'application/json'}};
+                    fetch(url, params).then(response => response.json()).then(response => {
+                        if (!!response.ok) {
+                            this.panels = response.data;
+                        } else {
+                            this.panels = [];
+                        }
+                    }).catch(err => {
+                        this.panels = [];
+                    })
+                }
+            }
+
+            onSelectionChanged(e) {
+                const selectedOptions = (!!e && !!e.target && e.target.selectedOptions) || [];
+                if (0 === selectedOptions.length) {
+                    this.panelName = "";
+                    this.genes = "";
+                } else if (1 === selectedOptions.length) {
+                    const panel = this.panels.find(panel => panel.name === selectedOptions[0].value);
+                    this.panelName = panel.name;
+                    this.genes = panel.genes.map(gene => gene._id.cellbaseId).join(',');
+                } else {
+                    $(`#${this.selectorId}`).val([selectedOptions[0].value]);
+                }
+            }
+
+            onGenesChanged() {
+                if (!!this.query && !!this.genes && this.genes !== this.query.gene) {
+                    this.query.gene = this.genes;
+                    this.notifyQueryUpdate();
+                }
+            }
+
+            onQueryChanged() {
+                if (!!this.query && this.query.gene !== this.genes) {
+                    this.panelName = "";
+                    this.genes = "";
+                    $(`#${this.selectorId}`).val([]);
+                }
+            }
+
+            notifyQueryUpdate() {
+                const params = {
+                    detail: {
+                        value: this.query,
+                    },
+                    bubbles: false,
+                    composed: true
+                };
+                this.dispatchEvent(new CustomEvent("query-changed", params));
+            }
+        }
+
+        customElements.define(OpencgaVariantFilterSecMmpPanel.is, OpencgaVariantFilterSecMmpPanel);
+
+    </script>
+</dom-module>

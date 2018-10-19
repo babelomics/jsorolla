@@ -21,6 +21,7 @@
 <link rel="import" href="../../commons/variant-modal-ontology.html">
 
 <link rel="import" href="./variant-filter-sections/opencga-variant-filter-sec-sample.html">
+<link rel="import" href="./variant-filter-sections/opencga-variant-filter-sec-mmp-panel.html">
 <link rel="import" href="./variant-filter-sections/opencga-variant-filter-sec-genomic.html">
 
 
@@ -131,6 +132,10 @@
                     on-query-changed="onQueryChanged"
                     modeOfInheritance="{{modeInheritance}}"
                 ></opencga-variant-filter-sec-sample>
+                <opencga-variant-filter-sec-mmp-panel
+                    query="{{query}}"
+                    on-query-changed="onQueryChanged"
+                ></opencga-variant-filter-sec-mmp-panel>
                 <opencga-variant-filter-sec-genomic
                     cellbase-client="[[cellbaseClient]]"
                     query="{{query}}"

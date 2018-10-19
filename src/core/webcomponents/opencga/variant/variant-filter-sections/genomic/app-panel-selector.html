@@ -1,8 +1,8 @@
-<dom-module id="mmp-panel-selector">
+<dom-module id="app-panel-selector">
     <template>
         <div class="form-group">
             <div class="browser-subsection">
-                MMP Panels
+                Gene Panels
                 <div style="float: right" class="tooltip-div">
                     <a>
                         <i class="fa fa-info-circle" aria-hidden="true" id="[[mmpPanelTooltipId]]"></i>
@@ -41,7 +41,7 @@
     </template>
     <script>
 
-        class MmpPanelSelector extends Polymer.Element {
+        class AppPanelSelector extends Polymer.Element {
 
             constructor() {
                 super();
@@ -64,7 +64,7 @@
             }
 
             static get is() {
-                return "mmp-panel-selector";
+                return "app-panel-selector";
             }
 
             static get properties() {
@@ -136,7 +136,7 @@
 
         }
 
-        customElements.define(MmpPanelSelector.is, MmpPanelSelector);
+        customElements.define(AppPanelSelector.is, AppPanelSelector);
 
     </script>
 </dom-module>
