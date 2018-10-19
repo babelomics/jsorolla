@@ -161,8 +161,9 @@
                         on-backtoselectanalysis="onBackToSelectAnalysis"
                         event-notify-name="{{eventNotifyName}}"
                         interactive="{{interactive}}"
-                        panel-examples="{{panelExamples}}">
-                </opencga-variant-interpretation>
+                        panel-examples="{{panelExamples}}"
+                        mmp-extension-config="[[mmpExtensionConfig]]"
+                ></opencga-variant-interpretation>
             </div>
         </template>
 
@@ -257,7 +258,10 @@
                     activePrioritization: {
                         type: Boolean,
                         value: false,
-                    }
+                    },
+                    mmpExtensionConfig: {
+                        type: Object,
+                    },
                 };
             }
 

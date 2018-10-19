@@ -74,6 +74,7 @@
                                                 on-inheritancemode="_onInheritanceMode"
                                                 mode-inheritance="{{modeInheritance}}"
                                                 samples="[[samples]]"
+                                                mmp-extension-config="[[mmpExtensionConfig]]"
                         ></opencga-variant-filter>
                     </div>
                     <!--</template>-->
@@ -434,7 +435,10 @@
                     },
                     config: {
                         type: Object
-                    }
+                    },
+                    mmpExtensionConfig: {
+                        type: Object,
+                    },
                 }
             }
 

@@ -115,7 +115,6 @@
                     },
                     mmpExtensionConfig: {
                         type: Object,
-                        readOnly: true,
                     },
                     searchBoxText: {
                         type: String,
@@ -158,13 +157,6 @@
                 this._setSearchResultsTooltipId(`${prefix}-srtt-id`);
                 this._setPanelNameTooltipId(`${prefix}-pntt-id`);
                 this._setGenesTooltipId(`${prefix}-gtt-id`);
-
-                this._setMmpExtensionConfig({
-                    // root: "http://10.233.7.23:1688/api/",
-                    root: "http://localhost:3000/api/",
-                    panel: "panel/",
-                    gene: "gene/"
-                });
             }
 
             connectedCallback() {

@@ -135,6 +135,7 @@
                 <opencga-variant-filter-sec-mmp-panel
                     query="{{query}}"
                     on-query-changed="onQueryChanged"
+                    mmp-extension-config="[[mmpExtensionConfig]]"
                 ></opencga-variant-filter-sec-mmp-panel>
                 <opencga-variant-filter-sec-genomic
                     cellbase-client="[[cellbaseClient]]"
@@ -234,6 +235,9 @@
                     samples: {
                         type: Array,
                         observer: "onSamplesChanged",
+                    },
+                    mmpExtensionConfig: {
+                        type: Object,
                     },
                 }
             }
