@@ -96,17 +96,17 @@
             </div>
             <!-- subsection specific -->
 
-            <div style="padding-top: 15px">Loss-of-Function (LoF) terms:</div>
+            <div style="padding-top: 15px; font-size: small">Loss-of-Function (LoF) terms:</div>
             <div class="form-check" style="margin-top: 5px;">
                 <div class="form-check-label">
                     <label class="notbold">
-                        <input type="checkbox" class="form-check-input" on-click="onLofCheckboxClick">
+                        <input type="checkbox" style="font-size: small" class="form-check-input" checked="[[isLoFSelected(consequences)]]" on-click="onLofCheckboxClick">
                         LoF terms
                     </label>
                 </div>
             </div>
 
-            <div style="padding-top: 15px">Consequence Type terms:</div>
+            <div style="padding-top: 15px; font-size: small">Consequence Type terms:</div>
             <div style="overflow-x: scroll">
                 <div class="browser-ct-tree-view browser-ct-item">
                     <!-- <ul id="${prefix}consequenceTypeFilter">` -->
@@ -276,6 +276,14 @@
                     return category.terms.every(term => this.consequences.includes(term.name));
                 } else {
                     return true;
+                }
+            }
+
+            isLoFSelected() {
+                if (!!this.consequenceTypes && !!this.consequenceTypes.lof) {
+                    return this.consequenceTypes.lof.every(consequence => this.consequences.includes(consequence));
+                } else {
+                    return false;
                 }
             }
 

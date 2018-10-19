@@ -72,7 +72,7 @@
                     optionListId: {
                         type: String,
                         readOnly: true,
-                    }
+                    },
                 }
             }
 
@@ -132,32 +132,33 @@
             }
 
             onAddIdClick() {
+                debugger;
                 const featureId = this.searchText;
-                const featureIds = (this.idList || "").split(',');
-                if (!featureIds.includes(featureId)) {
-                    featureIds.push(featureId);
-                    featureIds.sort();
-                    this.searchText = "";
-                    this.idList = featureIds.join(',');
-                    this.notifyQueryUpdate();
+                if (!!featureId) {
+                    const normFeatureId = featureId.toLowerCase().startsWith('rs') || featureId.split(':').length > 2
+                        ? featureId.toLowerCase() : featureId.toUpperCase();
+                    const featureIds = (!!this.idList && this.idList.split(',').filter(id => !!id)) || [];
+                    if (!featureIds.includes(featureId)) {
+                        featureIds.push(featureId);
+                        featureIds.sort();
+                        this.searchText = "";
+                        this.idList = featureIds.join(',');
+                        this.notifyQueryUpdate();
+                    }
                 }
             }
 
             onQueryChanged() {
-                const xrefs = (this.idList || "").split(",").filter(id => !!id).map(id => (
-                    id.toLowerCase().startsWith("rs") || id.split(":").length > 2 ? id : id.toUpperCase()
-                )).join(",");
-                if (!!this.query && !!this.query["annot-xref"] && this.query["annot-xref"] != xrefs) {
-                    this.idList = this.query["annot-xref"];
+                const xrefs = this.query['annot-xref'] || "";
+                if (xrefs !== this.idList) {
+                    this.idList = xrefs;
                 }
             }
 
             onIdListChanged() {
-                if (!!this.query) {
-                    const xrefs = (this.idList || "").split(",").filter(id => !!id).map(id => (
-                        id.toLowerCase().startsWith("rs") || id.split(":").length > 2 ? id : id.toUpperCase()
-                    )).join(",");
-                    this.query["annot-xref"] = this.xrefs;
+                const xrefs = this.query['annot-xref'] || "";
+                if (xrefs !== this.idList) {
+                    this.query['annot-xref'] = this.idList;
                     this.notifyQueryUpdate();
                 }
             }
