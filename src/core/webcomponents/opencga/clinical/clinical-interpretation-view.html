@@ -538,7 +538,6 @@
             }
 
             onCreateReport() {
-                debugger;
                 // Make a deep copy object
                 const copy = JSON.parse(JSON.stringify(this.interpretation));
                 copy.reportedVariants = this.interpretation.reportedVariants.filter(variant => (

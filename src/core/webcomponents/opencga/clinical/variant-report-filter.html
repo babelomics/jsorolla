@@ -308,7 +308,7 @@
         <!--</div>-->
         <!--</div>-->
         <div style="width: 60%;margin: 0 auto">
-            <button type="button" class="btn btn-primary btn-md" style="width: 100%" on-click="onSave">
+            <button type="button" class="btn btn-primary btn-md" style="width: 100%" on-click="onSave" disabled>
                 <i class="fa fa-floppy-o" aria-hidden="true" style="padding: 0px 5px 0px 5px"></i>
                 Save report
             </button>
@@ -446,7 +446,7 @@
 
             loadi18n(key) {
                 // HACK!!! i18n exists as a global variable; no need to pass it
-                return i18n.es.clinical.report[key] || `Key does not exists: ${key}`;
+                return !!key ? (i18n.es.clinical.report[key] || `Key does not exists: ${key}`) : "-";
                 // return (!!this.i18n && this.i18n[key]) || `Key does not exists: ${key}`;
             };
 

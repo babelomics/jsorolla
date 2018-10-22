@@ -344,7 +344,7 @@
                         <table id="resultTable" class="table hover" style="border: 1px solid #dadada;
                                 border-collapse: collapse;">
                             <tbody>
-                                <template is="dom-if" if="{{!interpretation.attributes.panelInfo.positive}}">
+                                <template is="dom-if" if="{{!isPositive(interpretation)}}">
                                     <tr class="active">
                                         <td>
                                             <strong class="fontBody">{{loadi18n('result')}}</strong>
@@ -357,10 +357,10 @@
                                     <td>
                                         <strong class="fontBody">{{loadi18n('summary')}}</strong>
                                     </td>
-                                    <template is="dom-if" if="{{!interpretation.attributes.panelInfo.positive}}">
+                                    <template is="dom-if" if="{{!isPositive(interpretation)}}">
                                         <td class="fontBody">{{loadi18n('textSummaryNegative')}}</td>
                                     </template>
-                                    <template is="dom-if" if="{{interpretation.attributes.panelInfo.positive}}">
+                                    <template is="dom-if" if="{{isPositive(interpretation)}}">
                                         <td class="fontBody">
                                             <template is="dom-repeat" items="{{interpretation.reportedVariants}}">
                                                 <!--let variantId  = data[j].chromosome + ":" + data[j].start + ":" + data[j].reference + ":" + data[j].alternate;-->
@@ -404,7 +404,7 @@
                     </div>
 
                 <!-- Interpretation -->
-                <template is="dom-if" if="{{!interpretation.attributes.panelInfo.positive}}">
+                <template is="dom-if" if="{{!isPositive(interpretation)}}">
                     <div class="divSection other-information posContent col-sm-12" id="{{prefix}}interpretationDiv" style="margin-top:20px;">
                         <h3 class="titlesAnalysis">{{loadi18n('interpretationHeader')}}</h3>
                         <ul>
@@ -420,7 +420,7 @@
                 </template>
 
                 <!-- Info positive -->
-                <template is="dom-if" if="{{interpretation.attributes.panelInfo.positive}}">
+                <template is="dom-if" if="{{isPositive(interpretation)}}">
                     <div class="divSection other-information posContent col-sm-12 marginbreak" id="{{prefix}}interpretationDiv">
 
                         <h3 class="titlesAnalysis" style="padding-top: 12px;">{{loadi18n('interpretationHeader')}}</h3>
@@ -703,6 +703,10 @@
                 this.appendChild(dom);
             }
 
+            isPositive() {
+                return (!!this.interpretation && !!this.interpretation.reportedVariants && this.interpretation.reportedVariants.length > 0) || false;
+            }
+
             ready() {
                 super.ready();
                 if (UtilsNew.isEmpty(this.prefix)) {
@@ -726,7 +730,7 @@
 
             loadi18n(key) {
                 // HACK!!! i18n exists as a global variable; no need to pass it
-                return i18n.es.clinical.report[key] || `Key does not exists: ${key}`;
+                return !!key ? (i18n.es.clinical.report[key] || `Key does not exists: ${key}`) : "-";
                 // // TODO: this is a copy of variant-report-filter.loadi18n
                 // // the duplication smells very bad
                 // return (!!this.i18n && this.i18n[key]) || `Key does not exists: ${key}`;
@@ -746,7 +750,6 @@
             }
 
             loadData() {
-                debugger;
                 // Load data into report
                 this.dataFieldsFixed = {};
                 if (!!this.selection && !!this.selection.analysisSelected) {
@@ -768,19 +771,13 @@
                         this.dataFieldsFixed.sampleType = sampleType;
                         this.dataFieldsFixed.sampleName = dnaNumber;
 
-                        let patientSex = this.dataFieldsFixed.sex = sex;
-                        this.patientArticle = "";
-                        this.patientArticleTxt = "";
+                        this.dataFieldsFixed.sex = sex;
+                        const patientSex = this.dataFieldsFixed.sex;
+                        this.patientArticle = this.loadi18n(patientSex === "MALE" ? 'articleM' : 'articleF');
+                        this.patientArticleTxt = this.loadi18n(patientSex === "MALE" ? 'articleMtxt' : 'articleFtxt');
+                        this.patientArticleTxtde = this.loadi18n(patientSex === "MALE" ? 'articleMtxtdel' : 'articleFtxtdela');
 
-                        if (patientSex == "MALE") {
-                            this.patientArticle = this.loadi18n('articleM');
-                            this.patientArticleTxt = this.loadi18n('articleMtxt');
-                            this.patientArticleTxtde = this.loadi18n('articleMtxtdel');
-                        } else {
-                            this.patientArticle = this.loadi18n('articleF');
-                            this.patientArticleTxt = this.loadi18n('articleFtxt');
-                            this.patientArticleTxtde = this.loadi18n('articleFtxtdela');
-                        }
+
 
                         // Analysis ID and analysis resume
                         PolymerUtils.setPropertyById(this.prefix + "analysisID", "innerText", this.interpretation.clinicalAnalysis.id);
@@ -1105,7 +1102,7 @@
                     }
                 }
 
-                if (!!this.interpretation && this.interpretation.attributes && this.interpretation.attributes.panelInfo && this.interpretation.attributes.panelInfo.positive) {
+                if (this.isPositive()) {
                     document.getElementById(`${this.prefix}variantsTableDiv`).removeAttribute('hidden');
                     // PolymerUtils.removeAttribute(this.prefix + "variantsTableDiv", "hidden");
                 }
