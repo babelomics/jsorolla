@@ -746,130 +746,123 @@
 
             _createInterpretation() {
                 try {
-                    let userID = this.opencgaClient._config.userId;
-                    let interpretation = {};
-                    interpretation.id = this.clinicalAnalysis.id + "_" + PolymerUtils.getValue(this.prefix + "IDInterpretation");
-                    interpretation.name = PolymerUtils.getValue(this.prefix + "NameInterpretation");
-                    interpretation.description = PolymerUtils.getValue(this.prefix + "DescriptionInterpretation");
-                    // FIX: clinicalAnalysis has cycles!!! we needed subjects in interpret
-                    // interpretation.clinicalAnalysis = this.clinicalAnalysis;
-                    interpretation.clinicalAnalysis = { id: this.clinicalAnalysis.id, name: this.clinicalAnalysis.name, interpretations: this.clinicalAnalysis.interpretations };
-                    interpretation.clinicalAnalysis = {
-                        ...this.clinicalAnalysis,
-                        subjects: this.clinicalAnalysis.subjects.map(subject => ({
-                            ...subject,
-                            samples: subject.samples.map(sample => ({
-                                ...sample,
-                                individual: { id: sample.individual.id, name: sample.individual.name },
-                            }))
-                        })),
-                    };
-                    interpretation.software = {
-                        name: "TEAM",
-                        version: "2.0",
-                        website: "https://www.ncbi.nlm.nih.gov/pubmed/24861626",
-                        repository: "https://github.com/opencb/opencga",
-                        commit: "f43372aa",
-                        params: {}
-                    };
-                    interpretation.analyst = {
-                        name: userID,
-                        email: "",
-                        company: ""
-                    };
-                    interpretation.versions = [
-                        {
+                    const userID = this.opencgaClient._config.userId;
+                    const interpretation = {
+                        id: this.clinicalAnalysis.id + "_" + PolymerUtils.getValue(this.prefix + "IDInterpretation"),
+                        name: PolymerUtils.getValue(this.prefix + "NameInterpretation"),
+                        description: PolymerUtils.getValue(this.prefix + "DescriptionInterpretation"),
+                        // FIX: clinicalAnalysis has cycles!!! we needed subjects in interpret
+                        // interpretation.clinicalAnalysis = this.clinicalAnalysis;
+                        clinicalAnalysis: {
+                           ...this.clinicalAnalysis,
+                            subjects: this.clinicalAnalysis.subjects.map(subject => ({
+                                ...subject,
+                                samples: subject.samples.map(sample => ({
+                                    ...sample,
+                                    individual: { id: sample.individual.id, name: sample.individual.name },
+                                }))
+                            })),
+                        },
+                        software: {
+                            name: "TEAM",
+                            version: "2.0",
+                            website: "https://www.ncbi.nlm.nih.gov/pubmed/24861626",
+                            repository: "https://github.com/opencb/opencga",
+                            commit: "f43372aa",
+                            params: {}
+                        },
+                        analyst: {
+                            name: userID,
+                            email: "",
+                            company: ""
+                        },
+                        versions: [{
                             id: "cellbase", name: "CellBase", type: "DDBB", version: this.cellbaseVersion
-                        }
-                    ];
-                    interpretation.filters = this.query;
-                    //                interpretation.creationDate = Date();
-                    interpretation.comments = PolymerUtils.getValue(this.prefix + "CommentInterpretation");
-                    interpretation.reportedVariants = this.checkedVariants;
-                    interpretation.attributes = {};
-                    interpretation.creationDate = moment(new Date(), "YYYYMMDDHHmmss").format('D MMM YY');
-
-
-                    let params = {
+                        }],
+                        filters: this.query,
+                        comments: PolymerUtils.getValue(this.prefix + "CommentInterpretation"),
+                        reportedVariants: this.checkedVariants,
+                        attributes: {},
+                        creationDate: moment(new Date(), "YYYYMMDDHHmmss").format('D MMM YY'),
+                    };
+                    const params = {
                         study: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias
                     };
 
-                    let body = {
+                    const body = {
                         path: "analysis/" + interpretation.clinicalAnalysis.id + "/" + interpretation.name + "/interpretation.json",
                         content: JSON.stringify(interpretation),
                         parents: true
                     };
-
-                    let _this = this;
-                    this.opencgaClient.files().create(params, body)
-                        .then((response) => {
-                            // TODO We should update here clinicalAnalysis and add to interpretation list this file with its name from save interpertation form.
-                            if (UtilsNew.isNotUndefinedOrNull(interpretation) && UtilsNew.isNotUndefinedOrNull(interpretation.clinicalAnalysis)) {
-                                if (UtilsNew.isEmptyArray(interpretation.clinicalAnalysis.interpretations)) {
-                                    interpretation.clinicalAnalysis.interpretations = [];
-                                } else {
-                                    interpretation.clinicalAnalysis.interpretations = interpretation.clinicalAnalysis.interpretations.map((interpretation) => {
-                                        return { id: interpretation.id, name: interpretation.name, file:  interpretation.file.id };
-                                    });
-                                }
-                                interpretation.clinicalAnalysis.interpretations.push({
-                                    id: interpretation.id,
-                                    name: interpretation.name,
-                                    file: response.response[0].result[0].id
+                    const _this = this;
+                    this.opencgaClient.files().create(params, body).then(response => {
+                        // TODO We should update here clinicalAnalysis and add to interpretation list this file with its name from save interpertation form.
+                        if (UtilsNew.isNotUndefinedOrNull(interpretation) && UtilsNew.isNotUndefinedOrNull(interpretation.clinicalAnalysis)) {
+                            if (UtilsNew.isEmptyArray(interpretation.clinicalAnalysis.interpretations)) {
+                                interpretation.clinicalAnalysis.interpretations = [];
+                            } else {
+                                interpretation.clinicalAnalysis.interpretations = interpretation.clinicalAnalysis.interpretations.map((interpretation) => {
+                                    return { id: interpretation.id, name: interpretation.name, file:  interpretation.file.id };
                                 });
                             }
-
-                            params = {
-                                study: _this.opencgaSession.project.alias + ":" + _this.opencgaSession.study.alias
+                            interpretation.clinicalAnalysis.interpretations.push({
+                                id: interpretation.id,
+                                name: interpretation.name,
+                                file: response.response[0].result[0].id
+                            });
+                        }
+                        const params = {
+                            study: _this.opencgaSession.project.alias + ":" + _this.opencgaSession.study.alias
+                        };
+                        const interpretations =  { interpretations: interpretation.clinicalAnalysis.interpretations };
+                        _this.opencgaClient.clinical().update(interpretation.clinicalAnalysis.id, params, interpretations).then(response => {
+                            const params = {
+                                detail: {
+                                    message:  interpretation.id + " interpretation has been created correctly.",
+                                    type: UtilsNew.MESSAGE_SUCCESS
+                                },
+                                bubbles: true,
+                                composed: true
                             };
-                            let interpretations =  { interpretations: interpretation.clinicalAnalysis.interpretations };
-                            _this.opencgaClient.clinical().update(interpretation.clinicalAnalysis.id, params, interpretations)
-                                .then((response) => {
-                                    this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                                        detail: {
-                                            message:  interpretation.id + " interpretation has been created correctly.",
-                                            type: UtilsNew.MESSAGE_SUCCESS
-                                        },
-                                        bubbles: true,
-                                        composed: true
-                                    }));
-
-                                    _this.cleanSaveInterpretation();
-                                    console.log(response);
-                                    // Update analysis with new interpretations
-                                    _this.getAnalysisInterpretations();
-                                })
-                                .catch((err) => {
-                                    this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                                        detail: {
-                                            message:  err.error,
-                                            type: UtilsNew.MESSAGE_ERROR
-                                        },
-                                        bubbles: true,
-                                        composed: true
-                                    }));
-                                });
-                        })
-                        .catch((err) => {
-                            this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
+                            _this.dispatchEvent(new CustomEvent(_this.eventNotifyName, params));
+                            _this.cleanSaveInterpretation();
+                            console.log(response);
+                            // Update analysis with new interpretations
+                            _this.getAnalysisInterpretations();
+                        }).catch(err => {
+                            const params = {
                                 detail: {
                                     message:  err.error,
                                     type: UtilsNew.MESSAGE_ERROR
                                 },
                                 bubbles: true,
                                 composed: true
-                            }));
+                            };
+                            _this.dispatchEvent(new CustomEvent(_this.eventNotifyName, params));
                         });
+                    })
+                    .catch((err) => {
+                        const params = {
+                            detail: {
+                                message:  err.error,
+                                type: UtilsNew.MESSAGE_ERROR
+                            },
+                            bubbles: true,
+                            composed: true
+                        };
+                        _this.dispatchEvent(new CustomEvent(_this.eventNotifyName, params));
+                    });
 
                 } catch (err) {
-                    this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
+                    const params = {
                         detail: {
                             message:  err,
                             type: UtilsNew.MESSAGE_ERROR
                         },
                         bubbles: true,
                         composed: true
-                    }));
+                    };
+                    this.dispatchEvent(new CustomEvent(this.eventNotifyName, params));
                 }
             }
 
