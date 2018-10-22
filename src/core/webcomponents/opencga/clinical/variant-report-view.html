@@ -746,10 +746,10 @@
             }
 
             loadData() {
+                debugger;
                 // Load data into report
-                this.dataFieldsFixed = {
-                };
-                if (UtilsNew.isNotUndefined(this.selection && this.selection.analysisSelected)) {
+                this.dataFieldsFixed = {};
+                if (!!this.selection && !!this.selection.analysisSelected) {
                     if (UtilsNew.isNotUndefined(this.interpretation.clinicalAnalysis)) {
                         let patientId = this.interpretation.clinicalAnalysis.subjects[0].name;
                         let birthYear = this.interpretation.clinicalAnalysis.subjects[0].dateOfBirth;

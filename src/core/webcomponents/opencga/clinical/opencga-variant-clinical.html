@@ -547,10 +547,7 @@
             }
 
             isCheckedDefaultAnalysis(clinicalAnalysisId) {
-                if (UtilsNew.isNotUndefinedOrNull(this.clinicalAnalysisId) && this.clinicalAnalysisId === clinicalAnalysisId) {
-                    return true;
-                }
-                return false
+                return (!!this.clinicalAnalysisId && this.clinicalAnalysisId === clinicalAnalysisId) || false;
             }
 
             isCheckedDefaultInterpretation(currentIndex, interpretationId) {

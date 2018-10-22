@@ -751,10 +751,19 @@
                     interpretation.id = this.clinicalAnalysis.id + "_" + PolymerUtils.getValue(this.prefix + "IDInterpretation");
                     interpretation.name = PolymerUtils.getValue(this.prefix + "NameInterpretation");
                     interpretation.description = PolymerUtils.getValue(this.prefix + "DescriptionInterpretation");
-                    // FIX
+                    // FIX: clinicalAnalysis has cycles!!! we needed subjects in interpret
                     // interpretation.clinicalAnalysis = this.clinicalAnalysis;
                     interpretation.clinicalAnalysis = { id: this.clinicalAnalysis.id, name: this.clinicalAnalysis.name, interpretations: this.clinicalAnalysis.interpretations };
-
+                    interpretation.clinicalAnalysis = {
+                        ...this.clinicalAnalysis,
+                        subjects: this.clinicalAnalysis.subjects.map(subject => ({
+                            ...subject,
+                            samples: subject.samples.map(sample => ({
+                                ...sample,
+                                individual: { id: sample.individual.id, name: sample.individual.name },
+                            }))
+                        })),
+                    };
                     interpretation.software = {
                         name: "TEAM",
                         version: "2.0",
