@@ -541,7 +541,7 @@
 
 
             selectInterpretationRecent(e) {
-                if (UtilsNew.isNotUndefinedOrNull(this.recentAnalysis) && UtilsNew.isNotUndefinedOrNull(e.target.value)) {
+                if (!!e && !!e.target && !!e.target.value) {
                     this.interpretationId = e.target.value;
                 }
             }

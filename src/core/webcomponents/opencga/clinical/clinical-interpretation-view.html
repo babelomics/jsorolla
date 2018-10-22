@@ -604,17 +604,16 @@
             }
 
             onChangeId(e){
-                 let params = {
-                    study: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias
-                 };
-                 let _this = this;
-                if (UtilsNew.isNotUndefinedOrNull(this.interpretationId)) {
-                    this.opencgaClient.files().content(this.interpretationId, params)
-                        .then((response) => {
-                            _this.interpretation = JSON.parse(response);
-                            console.log("end");
-                            this._render();
-                        });
+                const params = {
+                    study: `${this.opencgaSession.project.alias}:${this.opencgaSession.study.alias}`
+                };
+                const pthis = this;
+                if (!!this.interpretationId) {
+                    this.opencgaClient.files().content(this.interpretationId, params).then(response => {
+                        pthis.interpretation = JSON.parse(response);
+                        pthis._render();
+                    });
+
                 }
             }
 
