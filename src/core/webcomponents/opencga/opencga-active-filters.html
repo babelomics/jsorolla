@@ -237,19 +237,13 @@
             }
 
             checkFilters(config) {
-                let _this = this;
-                if (this.opencgaClient instanceof OpenCGAClient && UtilsNew.isNotUndefined(config.value.sessionId)) {
-                    this.opencgaClient.users().getFilters({}, {serverVersion: this.opencgaClient._config.serverVersion})
-                        .then(function (response) {
-                            let result = response.response[0].result;
-                            if (result.length > 0) {
-                                if (UtilsNew.isUndefined(_this.filters)) {
-                                    _this.filters = [];
-                                }
-                                for (let obj of result) {
-                                    _this.push("filters", obj);
-                                }
-                            }
+                if (this.opencgaClient instanceof OpenCGAClient && !!config.value.sessionId) {
+                    const pthis = this;
+                    this.opencgaClient.users()
+                        .getFilters({}, {serverVersion: this.opencgaClient._config.serverVersion})
+                        .then(response => {
+                            const result = (!!response && !!response.response && 1 === response.response.length && response.response[0].result) || [];
+                            pthis.filters = result.length > 0 ? result : [];
                         });
                 }
             }
