@@ -170,7 +170,8 @@
                                 id="{{prefix}}PrenatalMode"
                                 name="{{prefix}}PrenatalMode"
                                 class$="form-control input-sm {{prefix}}PrenatalMode"
-                                value="{{dataFields.inheritancePrenatal::input}}">
+                                value="{{dataFields.inheritancePrenatal::input}}"
+                                disabled="[[!isParentalModeEnabled(dataFields.inheritance)]]">
                             <option value="">Select...</option>
                             <template is="dom-repeat" items="{{prenatalModes}}" as="mode">
                                 <option value="{{mode.id}}">{{mode.value}}</option>
@@ -373,7 +374,8 @@
                         notify: true
                     },
                     interpretation: {
-                        type: Object
+                        type: Object,
+                        observer: 'onInterpretationChanged',
                     },
                     i18n: {
                         type: Object
@@ -385,6 +387,7 @@
             static get observers() {
                 return [
                     'updateDataFields(dataFields.*)',
+                    'onModeOfInheritanceChanged(dataFields.inheritance)',
                 ]
             }
 
@@ -431,22 +434,6 @@
                     this.dataFields.reasonConsultation = this.interpretation.attributes.panelInfo.panel;
                     this.dataFields.diseaseHeader = this.interpretation.attributes.panelInfo.panel;
                     this.dataFields = Object.assign({},this.dataFields);
-                    this.prenatalModes = [];
-                    if (UtilsNew.isNotUndefinedOrNull(this.interpretation.attributes.inheritance)) {
-                        switch(this.interpretation.attributes.inheritance) {
-                            case "autoRecessive":
-                                this.prenatalModes = [{id: "recessive_1", value: "Diagnóstico Prenatal, autosómico recesivo (no se conoce el estado de portador de ambos miembros de la pareja)"},
-                                    {id: "recessive_2", value: "Diagnóstico Prenatal, autosómico recesivo (se conoce el estado de portador de ambos miembros de la pareja)"}]
-                                break;
-                            case "xLinked":
-                                this.prenatalModes = [{id: "xlinked_1", value: "Diagnóstico Prenatal, ligado al X"},
-                                    {id: "xlinked_2", value: "Diagnóstico Prenatal, ligado al X, madre no portadora"}]
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-
                 }
                 this.showReportOptions();
             }
@@ -458,6 +445,32 @@
             };
 
             updateDataFields(newValue, oldValue) {
+                if (!!this.dataFields.inheritance) {
+                    switch(this.dataFields.inheritance) {
+                        case "autoDominant":
+                            this.prenatalModes = [
+                                { id: "dominant", value: "Diagnóstico Prenatal, autosómico dominante" },
+                            ];
+                            break;
+                        case "autoRecessive":
+                            this.prenatalModes = [
+                                { id: "recessive_1", value: "Diagnóstico Prenatal, autosómico recesivo (no se conoce el estado de portador de ambos miembros de la pareja)"} ,
+                                { id: "recessive_2", value: "Diagnóstico Prenatal, autosómico recesivo (se conoce el estado de portador de ambos miembros de la pareja)" }
+                            ];
+                            break;
+                        case "xLinked":
+                            this.prenatalModes = [
+                                { id: "xlinked_1", value: "Diagnóstico Prenatal, ligado al X" },
+                                { id: "xlinked_2", value: "Diagnóstico Prenatal, ligado al X, madre no portadora" }
+                            ];
+                            break;
+                        default:
+                            this.prenatalModes = [];
+                            break;
+                    }
+                } else {
+                    this.prenatalModes = [];
+                }
                 if (!!newValue && !!oldValue && JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
                     this.dataFields = { ...this.dataFields };
                 }
@@ -663,6 +676,21 @@
 //                //TODO Refactor
 //                $(PolymerUtils.getElementById(this.prefix + "AnalysisBrowser")).modal('show');
 //            }
+
+            isParentalModeEnabled() {
+                return !!this.dataFields.inheritance && ["autoRecessive", "xLinked"].includes(this.dataFields.inheritance);
+            }
+
+            onInterpretationChanged() {
+                if (!!this.interpretation && !!this.interpretation.attributes && !!this.interpretation.attributes.inheritance) {
+                    this.dataFields.inheritance = this.interpretation.attributes.inheritance;
+                }
+            }
+
+            onModeOfInheritanceChanged() {
+                $(`#${this.prefix}PrenatalMode`).val("");
+                delete this.dataFields.inheritancePrenatal;
+            }
         }
 
         customElements.define(VariantReportFilter.is, VariantReportFilter);
