@@ -600,7 +600,7 @@
             if (!header.length)
                 return;
 
-            let headerHeight = header.outerHeight();
+            const headerHeight = header.outerHeight();
             header = header.detach();
 
             let splitIndices = [0];
@@ -644,7 +644,6 @@
                     interpretation: {
                         type: Object,
                         observer: 'updateReport'
-
                     },
                     opencgaSession: {
                         type: Object
@@ -685,8 +684,7 @@
                     },
                     dataFields: {
                         type: Object,
-                        observer: 'loadDataFields'
-
+                        observer: 'loadDataFields',
                     },
                     mmpExtensionConfig: {
                         type: Object
@@ -703,17 +701,13 @@
                 this.appendChild(dom);
             }
 
-            isPositive() {
-                return (!!this.interpretation && !!this.interpretation.reportedVariants && this.interpretation.reportedVariants.length > 0) || false;
-            }
-
             ready() {
                 super.ready();
                 if (UtilsNew.isEmpty(this.prefix)) {
                 }
-                let date = new Date();
-                let fecha = date.toLocaleString('es-ES', { timeZone: 'UTC' });
-                this.requestDate = fecha.substring(0, fecha.length - 8);
+                const date = new Date();
+                const dateStr = date.toLocaleString('es-ES', { timeZone: 'UTC' });
+                this.requestDate = dateStr.substring(0, dateStr.length - 8);
                 this.fitlerPrioritization = {};
             }
 
@@ -721,6 +715,10 @@
                 super.connectedCallback();
                 this.updateReport();
 
+            }
+
+            isPositive() {
+                return (!!this.interpretation && !!this.interpretation.reportedVariants && this.interpretation.reportedVariants.length > 0) || false;
             }
 
             updateReport() {
@@ -753,16 +751,16 @@
                 // Load data into report
                 this.dataFieldsFixed = {};
                 if (!!this.selection && !!this.selection.analysisSelected) {
-                    if (UtilsNew.isNotUndefined(this.interpretation.clinicalAnalysis)) {
-                        let patientId = this.interpretation.clinicalAnalysis.subjects[0].name;
-                        let birthYear = this.interpretation.clinicalAnalysis.subjects[0].dateOfBirth;
-                        let affectationStatus = this.interpretation.clinicalAnalysis.subjects[0].affectationStatus;
-                        let sex = this.interpretation.clinicalAnalysis.subjects[0].sex;
-                        let sampleType = this.interpretation.clinicalAnalysis.subjects[0].samples[0].type;
-                        let sampleName = this.interpretation.clinicalAnalysis.subjects[0].samples[0].name;
+                    if (!!this.interpretation && !!this.interpretation.clinicalAnalysis) {
+                        const patientId = this.interpretation.clinicalAnalysis.subjects[0].name;
+                        const birthYear = this.interpretation.clinicalAnalysis.subjects[0].dateOfBirth;
+                        const affectationStatus = this.interpretation.clinicalAnalysis.subjects[0].affectationStatus;
+                        const sex = this.interpretation.clinicalAnalysis.subjects[0].sex;
+                        const sampleType = this.interpretation.clinicalAnalysis.subjects[0].samples[0].type;
+                        const sampleName = this.interpretation.clinicalAnalysis.subjects[0].samples[0].name;
 
-                        let resFormat = sampleName.split("-");
-                        let dnaNumber = resFormat[1]; //DNA sample number correct format
+                        const resFormat = sampleName.split("-");
+                        const dnaNumber = resFormat[1]; //DNA sample number correct format
 
                         this.dataFieldsFixed.hospital = this.getValueVariableSet('hospital');
                         this.dataFieldsFixed.birthYear = birthYear;
@@ -776,8 +774,6 @@
                         this.patientArticle = this.loadi18n(patientSex === "MALE" ? 'articleM' : 'articleF');
                         this.patientArticleTxt = this.loadi18n(patientSex === "MALE" ? 'articleMtxt' : 'articleFtxt');
                         this.patientArticleTxtde = this.loadi18n(patientSex === "MALE" ? 'articleMtxtdel' : 'articleFtxtdela');
-
-
 
                         // Analysis ID and analysis resume
                         PolymerUtils.setPropertyById(this.prefix + "analysisID", "innerText", this.interpretation.clinicalAnalysis.id);
@@ -802,15 +798,17 @@
                         PolymerUtils.setPropertyById(this.prefix + "birthPlace", "innerText", this.interpretation.clinicalAnalysis.subjects[0].population.name);
                         PolymerUtils.setPropertyById(this.prefix + "SampleID", "innerText", sampleName);
 
-                        let HPODiseases = this.interpretation.clinicalAnalysis.subjects[0].phenotypes.filter((hpo) => {
-                            return hpo.source === "HPO";
-                        }).map((hpo) => hpo.name).join(",");
+                        const HPODiseases = this.interpretation.clinicalAnalysis.subjects[0].phenotypes
+                            .filter(hpo => hpo.source === "HPO")
+                            .map(hpo => hpo.name)
+                            .join(",");
                         PolymerUtils.innerHTML(this.prefix + "HPO", HPODiseases);
-                        let ICD10Diseases = this.interpretation.clinicalAnalysis.subjects[0].phenotypes.filter((icd) => {
-                            return icd.source === "ICD10";
-                        }).map((icd) => icd.name).join(",");
+                        const ICD10Diseases = this.interpretation.clinicalAnalysis.subjects[0].phenotypes
+                            .filter(icd => icd.source === "ICD10")
+                            .map(icd => icd.name)
+                            .join(",");
                         PolymerUtils.innerHTML(this.prefix + "Diagnosis", ICD10Diseases);
-                        //
+
                         PolymerUtils.setPropertyById(this.prefix + "cellLine", "innerText", this.interpretation.clinicalAnalysis.subjects[0].samples[0].somatic ? "Somatic" : "Germline");
                         PolymerUtils.setPropertyById(this.prefix + "sampleType", "innerText", sampleType);
 
@@ -825,35 +823,29 @@
                         //                        querySelector.appendChild(this.pedigreeRender(this.interpretation.clinicalAnalysis.family));
                         //                    }
                         // Prioritization information (variants)
-                        if (UtilsNew.isNotUndefined(this.interpretation.reportedVariants)) {
+                        if (!!this.interpretation && !!this.interpretation.reportedVariants) {
                             this.loadVariantTable(this.interpretation.reportedVariants);
                         }
 
                         // Load attached genes/reference
                         this.sequenceGeneTablebody();
                         //  let _prioritization = this.interpretation.clinicalAnalysis.family.children[0].samples[0].attributes.PRIORITIZATION;
-                        let _dataTable = [];
-                        let _query = undefined;
-                        if (UtilsNew.isNotUndefined(this.interpretation)) {
-                            _dataTable = this.interpretation.reportedVariants;
-                            _query = this.interpretation.filters;
-                        }
-
-                        let _this = this;
+                        const dataTable = (this.interpretation && this.interpretation.reportedVariants) || [];
+                        const _this = this;
                         $(PolymerUtils.getElementById(this.prefix + "variantTable")).bootstrapTable('destroy');
                         $(PolymerUtils.getElementById(this.prefix + "variantTable")).bootstrapTable({
                             columns: _this._getTableColumns(),
-                            data: _dataTable
+                            data: dataTable
                         });
 
                         // Filter information
-                        if (UtilsNew.isNotUndefined(_query)) {
-                            let _filters = $.map(_query, function (value, key) {
+                        const _query = !!this.interpretation && this.interpretation.filters;
+                        if (!!_query) {
+                            this.filterPrioritization = $.map(_query, (value, key) => {
                                 if (value !== "") {
                                     return [{ id: key, value: value }];
                                 }
                             });
-                            this.filterPrioritization = _filters;
                             this.filters = true;
                         } else {
                             this.filterPrioritization = "No filters were selected";
@@ -881,16 +873,16 @@
             }
 
             loadTextInheritanceMode(inheritance) {
-                if (UtilsNew.isNotUndefinedOrNull(inheritance)) {
+                if (!!inheritance) {
                     switch (inheritance) {
                         case "autoDominant":
-                            this.inheritanceText = this.dataFields.diseaseHeader + this.loadi18n('interpretationText5_1_1') + this.patientArticleTxtde + this.loadi18n('interpretationText5_2_1');
+                            this.inheritanceText = this.dataFields.diseaseHeader + i18nTranslate('interpretationText_moi_dominant', 'es', this.patientArticleTxtde);
                             break;
                         case "autoRecessive":
-                            this.inheritanceText = this.dataFields.diseaseHeader + this.loadi18n('interpretationText5_1_2') + this.patientArticleTxtde + this.loadi18n('interpretationText5_2_2');
+                            this.inheritanceText = this.dataFields.diseaseHeader + i18nTranslate('interpretationText_moi_recessive', 'es', this.patientArticleTxtde);
                             break;
                         case "xLinked":
-                            this.inheritanceText = this.dataFields.diseaseHeader +  this.loadi18n('interpretationText5_1_3') + this.patientArticleTxtde + this.loadi18n('interpretationText5_2_3');
+                            this.inheritanceText = this.dataFields.diseaseHeader + i18nTranslate('interpretationText_moi_xlinked', 'es', this.patientArticleTxtde);
                             break;
                         default:
                             break;
