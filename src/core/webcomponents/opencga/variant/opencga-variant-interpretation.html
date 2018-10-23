@@ -753,16 +753,13 @@
                         description: PolymerUtils.getValue(this.prefix + "DescriptionInterpretation"),
                         // FIX: clinicalAnalysis has cycles!!! we needed subjects in interpret
                         // interpretation.clinicalAnalysis = this.clinicalAnalysis;
-                        clinicalAnalysis: {
-                           ...this.clinicalAnalysis,
-                            subjects: this.clinicalAnalysis.subjects.map(subject => ({
-                                ...subject,
-                                samples: subject.samples.map(sample => ({
-                                    ...sample,
-                                    individual: { id: sample.individual.id, name: sample.individual.name },
+                        clinicalAnalysis: Object.assign({}, this.clinicalAnalysis, {
+                            subjects: this.clinicalAnalysis.subjects.map(subject => Object.assign({}, subject, {
+                                samples: subject.samples.map(sample => Object.assign({}, sample, {
+                                    individual: { id: sample.individual.id, name: sample.individual.name }
                                 }))
-                            })),
-                        },
+                            }))
+                        }),
                         software: {
                             name: "TEAM",
                             version: "2.0",
@@ -826,7 +823,7 @@
                             };
                             _this.dispatchEvent(new CustomEvent(_this.eventNotifyName, params));
                             _this.cleanSaveInterpretation();
-                            console.log(response);
+                            // console.log(response);
                             // Update analysis with new interpretations
                             _this.getAnalysisInterpretations();
                         }).catch(err => {

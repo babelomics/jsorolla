@@ -169,34 +169,30 @@
                     show: { delay: 200 },
                     hide: { fixed: true, delay: 300 },
                 };
-                $(`#${this.searchTextTooltipId}`).qtip({
-                    ...tooltipDesc,
+                $(`#${this.searchTextTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
                     content: {
                         title: "Search panel",
                         text: "Use this box to search for diagnostic panels by name",
                     },
-                });
-                $(`#${this.searchResultsTooltipId}`).qtip({
-                    ...tooltipDesc,
+                }));
+                $(`#${this.searchResultsTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
                     content: {
                         title: "Search results",
                         text: "This list shows the panels whose name is compatible with your search. Select one.",
                     },
-                });
-                $(`#${this.panelNameTooltipId}`).qtip({
-                    ...tooltipDesc,
+                }));
+                $(`#${this.panelNameTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
                     content: {
                         title: "Selected panel",
                         text: "The name of the selected panel, which will be used to filter the variants during interpretation.",
                     },
-                });
-                $(`#${this.genesTooltipId}`).qtip({
-                    ...tooltipDesc,
+                }));
+                $(`#${this.genesTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
                     content: {
                         title: "Panel genes",
                         text: "This box shows the list of genes in the selected panel.",
                     },
-                });
+                }));
             }
 
             onSearchBoxTextChanged(searchText) {

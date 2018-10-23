@@ -472,7 +472,7 @@
                     this.prenatalModes = [];
                 }
                 if (!!newValue && !!oldValue && JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
-                    this.dataFields = { ...this.dataFields };
+                    this.dataFields = Object.assign({}, this.dataFields);
                 }
             }
 

@@ -71,13 +71,12 @@
                     show: { delay: 200 },
                     hide: { fixed: true, delay: 300 },
                 };
-                $(`#${this.tooltipId}`).qtip({
-                    ...tooltipDesc,
+                $(`#${this.tooltipId}`).qtip(Object.assign({}, tooltipDesc, {
                     content: {
                         title: "Chromosomal Location",
                         text: "Filter out variants falling outside the genomic interval(s) defined",
                     },
-                });
+                }));
             }
 
             onQueryChanged() {

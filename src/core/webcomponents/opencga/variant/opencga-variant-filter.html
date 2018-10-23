@@ -243,8 +243,8 @@
             }
 
             onSamplesChanged() {
-                console.log("> opencga-variant-filter.onSamplesChanged()");
-                console.dir(this.samples);
+                // console.log("> opencga-variant-filter.onSamplesChanged()");
+                // console.dir(this.samples);
             }
 
             static get observers() {
@@ -315,8 +315,6 @@
             }
 
             queryObserver(newValue, oldValue) {
-                console.log("opencga-variant-filter.queryObserver()");
-
                 if (this._reset) {
                     this.setQueryFilters();
                 } else {
@@ -644,7 +642,7 @@
                 });
                 if (UtilsNew.isNotUndefinedOrNull(optionSelected)) {
                     let panel = JSON.parse(optionSelected.dataset.panel);
-                    console.log("Prueba: "+ panel);
+                    // console.log("Prueba: "+ panel);
                     let genes = panel.genes.map((gene) => {
                         return gene._id.cellbaseId;
                     }).join(",");
@@ -665,8 +663,8 @@
 
                 const _filters = {};
 
-                console.log("opencga-variant-filter.updateQueryFilters()");
-                console.log(JSON.stringify(this.query));
+                // console.log("opencga-variant-filter.updateQueryFilters()");
+                // console.log(JSON.stringify(this.query));
                 _filters.genotype = this.query.genotype;
 
                 // Adding sample genotypes filter
@@ -1700,7 +1698,7 @@
             }
 
             onQueryChanged(e) {
-                this.query = { ...this.query };
+                this.query = Object.assign({}, this.query);
             }
         }
 

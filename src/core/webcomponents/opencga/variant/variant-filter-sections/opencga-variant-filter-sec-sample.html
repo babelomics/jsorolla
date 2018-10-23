@@ -160,20 +160,18 @@
                     show: { delay: 200 },
                     hide: { fixed: true, delay: 300 },
                 };
-                $(`#${this.modesOfInheritanceTooltipId}`).qtip({
-                    ...tooltipDesc,
+                $(`#${this.modesOfInheritanceTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
                     content: {
                         title: "Mode of Inheritance",
                         text: "Filter by disease mode of inheritance",
                     },
-                });
-                $(`#${this.sampleGenotypesTooltipId}`).qtip({
-                    ...tooltipDesc,
+                }));
+                $(`#${this.sampleGenotypesTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
                     content: {
                         title: "Samples & Genotypes",
                         text: "Filter by sample genotypes",
                     },
-                });
+                }));
             }
 
             onModeOfInheritanceChanged(e) {

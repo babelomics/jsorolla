@@ -49,13 +49,12 @@ class VariantFilterSubsectionBase extends Polymer.Element {
             show: { delay: 200 },
             hide: { fixed: true, delay: 300 },
         };
-        $(`#${this.tooltipId}`).qtip({
-            ...tooltipDesc,
+        $(`#${this.tooltipId}`).qtip(Object.assign({}, tooltipDesc, {
             content: {
                 title: this.title,
                 text: this.tooltip,
             },
-        });
+        }));
     }
 
     notifyQueryUpdate() {

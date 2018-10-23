@@ -165,8 +165,7 @@
             }
 
             static get properties() {
-                return {
-                    ...VariantFilterSubsectionBase.properties,
+                return Object.assign({}, VariantFilterSubsectionBase.properties, {
                     consequenceTypes: {
                         type: Object,
                         value: () => [],
@@ -176,7 +175,7 @@
                         value: () => [],
                         observer: "onConsequencesChanged",
                     },
-                };
+                });
             }
 
             static get observers() {
@@ -239,7 +238,7 @@
                 if (!!e && !!e.target && !!e.target.dataId) {
                     const term = e.target.dataId;
                     if (!!e.target.checked && !this.consequences.includes(term)) {
-                        this.consequences = [...this.consequences, term];
+                        this.consequences = Object.assign({}, this.consequences, term);
                     } else if (!e.target.checked && this.consequences.includes(term)) {
                         this.consequences = this.consequences.filter(x => x != term);
                     }
