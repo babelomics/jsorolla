@@ -127,46 +127,47 @@
             </div>
 
             <div class="col-md-12">
-                <div class="col-md-6" style="float: none;margin: auto">
-                    <template is="dom-if" if="{{config.upload.visible}}">
-                        <!--
-                        <button id="{{prefix}}UploadButton" type="button" data-id="UploadButton"
-                                class$="analysis-button btn {{computedClassTabs(activesTab.uploadTab)}} btn-arrow-right"
-                                on-click="changeTool" data-toggle="tooltip" data-placement="top" title="Upload sample">
-                            <i class="fa fa-upload"  data-id="UploadButton" aria-hidden="true"></i> Upload
-                        </button>
-                        -->
-                    </template>
-                    <template is="dom-if" if="{{config.analysis.visible}}">
-                        <button id="{{prefix}}SamplesButton" type="button" data-id="SamplesButton"
-                                class$="analysis-button btn {{computedClassTabs(activesTab.analysisTab)}} btn-arrow-right"
-                                on-click="changeTool" data-toggle="tooltip" data-placement="top"
-                                title="Connect, link & choose analysis of samples" >
-                            <i class="fa fa-sitemap" data-id="SamplesButton" aria-hidden="true"></i> Analysis
-                        </button>
-                    </template>
-                    <template is="dom-if" if="{{config.interpretation.visible}}">
-                        <button id="{{prefix}}PrioritizationButton" type="button" data-id="PrioritizationButton"
-                                class$="analysis-button btn {{computedClassTabs(activesTab.prioritizationTab)}} btn-arrow-right"
-                                on-click="changeTool"
-                                data-toggle="tooltip" data-placement="top" title="Filter & Prioritization">
-                            <i class="fa fa-filter" data-id="PrioritizationButton" aria-hidden="true"></i> {{config.interpretation.title}}
-                        </button>
-                    </template>
-                    <template is="dom-if" if="{{config.report.visible}}">
-                        <button
-                                id="{{prefix}}ReportButton"
-                                type="button"
-                                title="Generate report"
-                                class$="analysis-button btn {{computedClassTabs(activesTab.reportTab)}} btn-arrow-right"
-                                on-click="changeTool"
-                                data-id="ReportButton"
-                                data-toggle="tooltip"
-                                data-placement="top"
-                                disabled>
-                            <i class="fa fa-file-text"  data-id="ReportButton" aria-hidden="true"></i> Report
-                        </button>
-                    </template>
+                <div class="row">
+                    <div class="col-md-6" style="float: none;margin: auto">
+                        <!-- <template is="dom-if" if="{{config.upload.visible}}">
+
+                            <button id="{{prefix}}UploadButton" type="button" data-id="UploadButton"
+                                    class$="analysis-button btn {{computedClassTabs(activesTab.uploadTab)}} btn-arrow-right"
+                                    on-click="changeTool" data-toggle="tooltip" data-placement="top" title="Upload sample">
+                                <i class="fa fa-upload"  data-id="UploadButton" aria-hidden="true"></i> Upload
+                            </button>
+                        </template> -->
+                        <template is="dom-if" if="{{config.analysis.visible}}">
+                            <button id="{{prefix}}SamplesButton" type="button" data-id="SamplesButton"
+                                    class$="analysis-button btn {{computedClassTabs(activesTab.analysisTab)}} btn-arrow-right"
+                                    on-click="changeTool" data-toggle="tooltip" data-placement="top"
+                                    title="Connect, link & choose analysis of samples" >
+                                <i class="fa fa-sitemap" data-id="SamplesButton" aria-hidden="true"></i> Analysis
+                            </button>
+                        </template>
+                        <template is="dom-if" if="{{config.interpretation.visible}}">
+                            <button id="{{prefix}}PrioritizationButton" type="button" data-id="PrioritizationButton"
+                                    class$="analysis-button btn {{computedClassTabs(activesTab.prioritizationTab)}} btn-arrow-right"
+                                    on-click="changeTool"
+                                    data-toggle="tooltip" data-placement="top" title="Filter & Prioritization">
+                                <i class="fa fa-filter" data-id="PrioritizationButton" aria-hidden="true"></i> {{config.interpretation.title}}
+                            </button>
+                        </template>
+                        <template is="dom-if" if="{{config.report.visible}}">
+                            <button
+                                    id="{{prefix}}ReportButton"
+                                    type="button"
+                                    title="Generate report"
+                                    class$="analysis-button btn {{computedClassTabs(activesTab.reportTab)}} btn-arrow-right"
+                                    on-click="changeTool"
+                                    data-id="ReportButton"
+                                    data-toggle="tooltip"
+                                    data-placement="top"
+                                    disabled>
+                                <i class="fa fa-file-text"  data-id="ReportButton" aria-hidden="true"></i> Report
+                            </button>
+                        </template>
+                    </div>
                 </div>
             </div>
 
@@ -394,8 +395,8 @@
                 this.checkExistsRecentInterpretations = false;
                 this.checkExistsRecentAnalysis = false;
                 this.activesTab = {
-                    uploadTab: true,
-                    analysisTab: false,
+                    uploadTab: false,
+                    analysisTab: true,
                     prioritizationTab: false,
                     reportTab: false
                 };
