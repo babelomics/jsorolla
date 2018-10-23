@@ -171,7 +171,7 @@
                         value: () => [],
                     },
                     consequences: {
-                        type: Object,
+                        type: Array,
                         value: () => [],
                         observer: "onConsequencesChanged",
                     },
@@ -238,7 +238,7 @@
                 if (!!e && !!e.target && !!e.target.dataId) {
                     const term = e.target.dataId;
                     if (!!e.target.checked && !this.consequences.includes(term)) {
-                        this.consequences = Object.assign({}, this.consequences, term);
+                        this.consequences = [...this.consequences, term];
                     } else if (!e.target.checked && this.consequences.includes(term)) {
                         this.consequences = this.consequences.filter(x => x != term);
                     }
