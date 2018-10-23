@@ -116,7 +116,7 @@
                         <div class="form-group row">
                             <label for="filterName" class="col-xs-2 col-form-label">Name</label>
                             <div class="col-xs-10">
-                                <input class="form-control" type="text" id="filterName">
+                                <input class="form-control" type="text" id="filterName" value="{{saveDialogFilterName::input}}">
                             </div>
                         </div>
                         <div class="form-group row">
@@ -177,12 +177,11 @@
                     },
                     config: {
                         type: Object,
-                        value: function () {
-                            return {
-                                complexFields: []
-                            };
-                        }
-                    }
+                        value: () => ({ complexFields: []} ),
+                    },
+                    saveDialogFilterName: {
+                        type: String,
+                    },
                 }
             }
 
@@ -249,7 +248,7 @@
             }
 
             save() {
-                let filterName = PolymerUtils.getValue("filterName");
+                const filterName = this.saveDialogFilterName;
                 let filterDescription = PolymerUtils.getValue(this.prefix + "filterDescription");
 
                 let params = {};
@@ -262,6 +261,7 @@
 
                 this.opencgaClient.users().getFilters({name: filterName}, {serverVersion: this.opencgaClient._config.serverVersion})
                     .then(function (response) {
+                        debugger;
                         if (response.response[0].result.length > 0) {
                             delete params.name;
                             _this.opencgaClient.users().updateFilter(filterName, params, {})
