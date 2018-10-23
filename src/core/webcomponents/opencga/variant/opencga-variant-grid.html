@@ -666,26 +666,18 @@
             }
 
             geneFormatter(value, row, index) {
-                if (typeof row !== "undefined" && typeof row.annotation !== "undefined") {
-                    if (typeof row.annotation !== "undefined" && typeof row.annotation.consequenceTypes !== "undefined" && row.annotation.consequenceTypes.length > 0) {
-                        let visited = {};
-                        let geneLinks = [];
-                        for (let i = 0; i < row.annotation.consequenceTypes.length; i++) {
-                            if (typeof row.annotation.consequenceTypes[i].geneName !== "undefined" && row.annotation.consequenceTypes[i].geneName !== ""
-                                && typeof visited[row.annotation.consequenceTypes[i].geneName] === "undefined") {
-                                if (typeof this.field.context.opencgaSession.project !== "undefined" && typeof this.field.context.opencgaSession.study !== "undefined") {
-                                    geneLinks.push('<a style="cursor: pointer;white-space: nowrap" href="#gene/' + this.field.context.opencgaSession.project.alias +'/' +
-                                        this.field.context.opencgaSession.study.alias + '/' + row.annotation.consequenceTypes[i].geneName + '">' + row.annotation.consequenceTypes[i].geneName + '</a>');
-                                } else {
-                                    geneLinks.push('<a style="cursor: pointer;white-space: nowrap">' + row.annotation.consequenceTypes[i].geneName + '</a>')
-                                }
-                                visited[row.annotation.consequenceTypes[i].geneName] = true;
-                            }
-                        }
-                        return geneLinks.join(',');
-                    }
+                if (!!row && !!row.annotation && !!row.annotation.consequenceTypes && row.annotation.consequenceTypes.length > 0) {
+                    const genes = row.annotation.consequenceTypes.map(consequenceType => consequenceType.geneName)
+                    const uniqueGenes = genes.filter((gene, idx) => !!gene && genes.indexOf(gene)===idx);
+                    const links = uniqueGenes.map(gene => (
+                        !!this.field.context.opencgaSession.project && !!this.field.context.opencgaSession.study
+                            ? `<a style="cursor: pointer;white-space: nowrap" href="#gene/${this.field.context.opencgaSession.project.alias}/${this.field.context.opencgaSession.study.alias}/${gene}">${gene}</a>`
+                            : `<a style="cursor: pointer;white-space: nowrap">${gene}</a>`
+                    )).join(',');
+                    return links;
+                } else {
+                    return "";
                 }
-                return '-';
             }
 
             consequenceTypeFormatter(value, row, index) {

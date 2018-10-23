@@ -271,8 +271,16 @@
             }
 
             showBrowser() {
-                let hash = window.location.hash.split('/');
-                let newHash = '#browser/' + hash[1] + '/' + hash[2];
+                const hash = window.location.hash.split('/');
+                // TODO:
+                // under IVA architecture there is no elegant way to return to the caller
+                // in fact, the return URL was hardcoded (#borwser), making this fail when called from clinical
+                // the return hash should be parametrizable, never hardcoded, and better it should be automatic
+                // stack-based. But we are just fixing bugs, so I change #browser for #clinical and hope no state is
+                // lost, this is, the browser not to unmount any component
+                // this requires an architectural fix
+                // HACK!!!
+                const newHash = '#clinical/' + hash[1] + '/' + hash[2];
                 window.location.hash = newHash;
             }
 
@@ -280,7 +288,7 @@
                 this.variant = e.detail.id;
             }
         }
-        
+
         customElements.define(OpencgaGeneView.is, OpencgaGeneView);
     </script>
 </dom-module>

@@ -665,18 +665,6 @@
 
             }
 
-//            showClinicalSelector(e) {
-//                e.preventDefault();
-//                if (UtilsNew.isUndefined(this.analysisModal)) {
-//                    this.analysisModal = true;
-//                }
-//                else {
-//                    this.analysisModal = !this.analysisModal;
-//                }
-//                //TODO Refactor
-//                $(PolymerUtils.getElementById(this.prefix + "AnalysisBrowser")).modal('show');
-//            }
-
             isParentalModeEnabled() {
                 return !!this.dataFields.inheritance && ["autoRecessive", "xLinked"].includes(this.dataFields.inheritance);
             }
