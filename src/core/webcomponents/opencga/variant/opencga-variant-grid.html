@@ -448,19 +448,14 @@
 
 
                 // Init queryParams with default and config values plus query object
-                let queryParams;
-                if (UtilsNew.isNotUndefinedOrNull(this.config) && UtilsNew.isNotUndefinedOrNull(this.config.grid)
-                    && UtilsNew.isNotUndefinedOrNull(this.config.grid.queryParams)) {
-                    queryParams = Object.assign({sid: this.opencgaClient._config.sessionId}, this.config.grid.queryParams, this.query);
-                } else {
-                    queryParams = Object.assign({sid: this.opencgaClient._config.sessionId}, this.query);
+                const queryParams = { sid: this.opencgaClient._config.sessionId };
+                if (!!this.congrid && !!this.config.grid && !!this.config.grid.queryParams) {
+                    Object.assign(queryParams, this.config.grid.queryParams);
                 }
+                Object.assign(queryParams, this.query);
 
-                if (UtilsNew.isNotEmptyArray(this.samples)) {
-                    let sampleNames = [];
-                    this.samples.forEach((sample) => {
-                        sampleNames.push(sample.name);
-                    });
+                if (!!this.samples && this.samples.length>0) {
+                    const sampleNames = this.samples.map(sample => sample.name);
                     queryParams.summary = false;
                     queryParams.includeSample = sampleNames.join(",");
                     queryParams.exclude = "annotation.geneExpression";
@@ -468,20 +463,19 @@
                     queryParams.summary = true;
                 }
 
-                if (typeof this.config !== "undefined" && UtilsNew.isNotUndefinedOrNull(this.config.grid)
-                    && typeof this.config.grid.includeMissing !== "undefined" && this.config.grid.includeMissing) {
-                    let keys = Object.keys(queryParams);
-                    for (let i = 0; i < keys.length; i++) {
-                        let val = queryParams[keys[i]];
+                if (!!this.config && !!this.config.grid && !!this.config.grid.includeMissing) {
+                    for (const key in queryParams) {
+                        const val = queryParams[key];
                         if (typeof val === "string") {
-                            val = val.replace(/</g, "<<");
-                            val = val.replace(/>/g, ">>");
-                            queryParams[keys[i]] = val;
+                            queryParams[key] = val.replace(/</g, "<<").replace(/>/g, ">>");
                         }
                     }
                 }
 
-                return {host: host, queryParams: queryParams};
+                // let's try to sort this
+                queryParams.sort = true;
+
+                return { host: host, queryParams: queryParams };
             }
 
             _onSelectVariant(row) {
