@@ -88,14 +88,9 @@
         <div class="form-group">
             <div class="browser-subsection">
                 [[title]]
-                <div style="float: right" class="tooltip-div">
-                        <a>
-                            <i class="fa fa-info-circle" aria-hidden="true" id="[[tooltipId]]"></i>
-                        </a>
-                </div>
+                <jsorolla-tooltip header="[[title]]" content="[[tooltip]]"></jsorolla-tooltip>
             </div>
             <!-- subsection specific -->
-
             <div style="padding-top: 15px; font-size: small">Loss-of-Function (LoF) terms:</div>
             <div class="form-check" style="margin-top: 5px;">
                 <div class="form-check-label">
@@ -158,14 +153,18 @@
     <script src="../variant-filter-subsection-base.js"></script>
     <script>
 
-        class VariantFilterConsequenceSelector extends VariantFilterSubsectionBase {
+        class VariantFilterConsequenceSelector extends Polymer.Element {
 
             static get is() {
                 return "variant-filter-consequence-selector";
             }
 
             static get properties() {
-                return Object.assign({}, VariantFilterSubsectionBase.properties, {
+                return {
+                    query: {
+                        type: Object,
+                        notify: true,
+                    },
                     consequenceTypes: {
                         type: Object,
                         value: () => [],
@@ -175,21 +174,23 @@
                         value: () => [],
                         observer: "onConsequencesChanged",
                     },
-                });
+                    title: {
+                        type: String,
+                        readOnly: true,
+                        value: "SO terms",
+                    },
+                    tooltip: {
+                        type: String,
+                        readOnly: true,
+                        value: "Filter out variants falling outside the genomic features (gene, transcript, SNP, etc.) defined.",
+                    },
+                };
             }
 
             static get observers() {
                 return [
-                    ...VariantFilterSubsectionBase.observers,
-                    "onQueryChanged(query.*)",
+                    'onQueryChanged(query.*)',
                 ];
-            }
-
-            constructor() {
-                super();
-
-                this._setTitle("SO terms");
-                this._setTooltip("Filter out variants falling outside the genomic features (gene, transcript, SNP, etc.) defined.");
             }
 
             // set query filters
@@ -303,6 +304,17 @@
                         this.notifyQueryUpdate();
                     }
                 }
+            }
+
+            notifyQueryUpdate() {
+                const params = {
+                    detail: {
+                        value: this.query,
+                    },
+                    bubbles: true,
+                    composed: true
+                };
+                this.dispatchEvent(new CustomEvent("query-changed", params));
             }
         }
 

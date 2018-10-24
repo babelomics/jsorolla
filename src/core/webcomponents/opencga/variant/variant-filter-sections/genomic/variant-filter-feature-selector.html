@@ -3,11 +3,10 @@
         <div class="form-group">
             <div class="browser-subsection">
                 Feature IDs <span style="font-size: smaller">(gene, SNPs, ...)</span>
-                <div style="float: right" class="tooltip-div">
-                    <a>
-                        <i class="fa fa-info-circle" aria-hidden="true" id="[[tooltipId]]"></i>
-                    </a>
-                </div>
+                <jsorolla-tooltip
+                    header="Feature IDs (gene, SNPs, ...)"
+                    content="Filter out variants falling outside the genomic features (gene, transcript, SNP, etc.) defined"
+                ></jsorolla-tooltip>
             </div>
             <div style="padding-top: 5px" style="font-size: smaller">
                 <div class="row">
@@ -65,10 +64,6 @@
                         value: "",
                         observer: "onIdListChanged",
                     },
-                    tooltipId: {
-                        type: String,
-                        readOnly: true,
-                    },
                     optionListId: {
                         type: String,
                         readOnly: true,
@@ -89,26 +84,7 @@
             constructor() {
                 super();
                 const prefix = `vfcl-${Utils.randomString(12)}`;
-                this._setTooltipId(`${prefix}-tooltip-id`);
                 this._setOptionListId(`${prefix}-options-id`);
-            }
-
-            connectedCallback() {
-                super.connectedCallback();
-
-                const tooltipDesc = {
-                    content: { title: "", text: "" },
-                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
-                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
-                    show: { delay: 200 },
-                    hide: { fixed: true, delay: 300 },
-                };
-                $(`#${this.tooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "Feature IDs (gene, SNPs, ...)",
-                        text: "Filter out variants falling outside the genomic features (gene, transcript, SNP, etc.) defined",
-                    },
-                }));
             }
 
             onSearchTextChanged(newValue) {
@@ -172,25 +148,6 @@
                 };
                 this.dispatchEvent(new CustomEvent("query-changed", params));
             }
-
-            // en set
-            // XRefs, Gene and Variant Ids
-            // if (typeof this.query["annot-xref"] !== "undefined") {
-            //     PolymerUtils.setValue(this.prefix + "FeatureTextarea", this.query["annot-xref"]);
-            // } else if (typeof this.query.ids !== "undefined") {
-            //     PolymerUtils.setValue(this.prefix + "FeatureTextarea", this.query.ids);
-            // }
-
-            // en update
-            // Features: Gene, SNP ID
-            // let featureTextArea = PolymerUtils.getElementById(this.prefix + "FeatureTextarea");
-            // if (UtilsNew.isNotUndefinedOrNull(featureTextArea) && UtilsNew.isNotEmpty(featureTextArea.value)) {
-            //     if (featureTextArea.value.startsWith("rs") || featureTextArea.value.split(':').length > 2) {
-            //         _filters["annot-xref"] = featureTextArea.value;
-            //     } else {
-            //         _filters["annot-xref"] = featureTextArea.value.toUpperCase();
-            //     }
-            // }
         }
 
         customElements.define(VariantFilterFeatureSelector.is, VariantFilterFeatureSelector);

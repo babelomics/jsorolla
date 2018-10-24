@@ -3,11 +3,10 @@
         <div class="form-group">
             <div class="browser-subsection">
                 Gene Panels
-                <div style="float: right" class="tooltip-div">
-                    <a>
-                        <i class="fa fa-info-circle" aria-hidden="true" id="[[mmpPanelTooltipId]]"></i>
-                    </a>
-                </div>
+                <jsorolla-tooltip
+                    header="MMP Panels"
+                    content="Filter out variants falling outside the genomic intervals (typically genes) defined by the panel(s) chosen (MMP Panels)"
+                ></jsorolla-tooltip>
             </div>
             <div class="row">
                 <div class="col-md-12">
@@ -49,7 +48,6 @@
                 const prefix = `mmpps-${Utils.randomString(8)}`;
                 this._setSearchBoxId(`${prefix}-sb-id`);
                 this._setDataListId(`${prefix}-dl-id`);
-                this._setTooltipId(`${prefix}-mmp-tooltip-id`);
 
                 // for some reason, there are panels with no genes
                 const panels = (PANELS || [])
@@ -80,10 +78,6 @@
                         type: String,
                         readOnly: true,
                     },
-                    tooltipId: {
-                        type: String,
-                        readOnly: true,
-                    },
                     panels: {
                         type: Array,
                         readOnly: true,
@@ -103,25 +97,6 @@
 
             _attachDom(dom) {
                 this.appendChild(dom);
-            }
-
-            connectedCallback() {
-                super.connectedCallback();
-
-                // tooltips
-                const tooltipDesc = {
-                    content: { title: "", text: "" },
-                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
-                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
-                    show: { delay: 200 },
-                    hide: { fixed: true, delay: 300 },
-                };
-                $(`#${this.tooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "MMP Panels",
-                        text: "Filter out variants falling outside the genomic intervals (typically genes) defined by the panel(s) chosen (MMP Panels)",
-                    },
-                }));
             }
 
             onSearchBoxTextChanged(newValue) {

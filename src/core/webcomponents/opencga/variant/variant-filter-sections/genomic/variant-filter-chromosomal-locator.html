@@ -3,11 +3,10 @@
         <div class="form-group">
             <div class="browser-subsection">
                 Chromosomal Location
-                <div style="float: right" class="tooltip-div">
-                        <a>
-                            <i class="fa fa-info-circle" aria-hidden="true" id="[[tooltipId]]"></i>
-                        </a>
-                </div>
+                <jsorolla-tooltip
+                    header="Chromosomal Location"
+                    content="Filter out variants falling outside the genomic interval(s) defined"
+                ></jsorolla-tooltip>
             </div>
             <div style="padding-top: 5px">
                 <textarea class="form-control clearable"
@@ -38,10 +37,6 @@
                         value: "",
                         observer: "onLocationsChanged",
                     },
-                    tooltipId: {
-                        type: String,
-                        readOnly: true,
-                    },
                 }
             }
 
@@ -53,30 +48,6 @@
 
             _attachDom(dom) {
                 this.appendChild(dom);
-            }
-
-            constructor() {
-                super();
-                const prefix = `vfcl-${Utils.randomString(12)}`;
-                this._setTooltipId(`${prefix}-tooltip-id`);
-            }
-
-            connectedCallback() {
-                super.connectedCallback();
-
-                const tooltipDesc = {
-                    content: { title: "", text: "" },
-                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
-                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
-                    show: { delay: 200 },
-                    hide: { fixed: true, delay: 300 },
-                };
-                $(`#${this.tooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "Chromosomal Location",
-                        text: "Filter out variants falling outside the genomic interval(s) defined",
-                    },
-                }));
             }
 
             onQueryChanged() {

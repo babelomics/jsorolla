@@ -79,9 +79,9 @@
 
             constructor() {
                 super();
-
-                // Set status and init private properties
-                this._init();
+                this.prefix = "VarBrowserGrid-" + Utils.randomString(6);
+                this.analysisMode = "family";
+                this._config = this.getDefaultConfig();
             }
 
             static get is() {
@@ -163,20 +163,12 @@
                 super.connectedCallback();
 
                 // TODO Refactor
-                this.table = $('#' + this.prefix + 'VariantBrowserGrid');
+                this.variantTable = $('#' + this.prefix + 'VariantBrowserGrid');
                 this.downloadRefreshIcon = $("#" + this.prefix + "DownloadRefresh");
                 this.downloadIcon = $("#" + this.prefix + "DownloadIcon");
 
                 this._refreshTableColumns();
                 this.renderVariantTable();
-            }
-
-            _init() {
-                this.prefix = "VarBrowserGrid-" + Utils.randomString(6);
-
-                this.analysisMode = "family";
-
-                this._config = this.getDefaultConfig();
             }
 
             configObserver() {
@@ -216,7 +208,7 @@
             }
 
             renderVariantTable() {
-                // let _config = Object.assign(this.getDefaultConfig(), this.config.grid);
+                if (!this.variantTable)    return;
 
                 this.variant = ""; // Empty the variant every time the grid is loaded
 
@@ -224,17 +216,14 @@
                 this.to = 10;
                 this.approximateCountResult = false;
 
-                let _table = $('#' + this.prefix + 'VariantBrowserGrid');
-
-                if (typeof this.opencgaClient !== "undefined" && this.opencgaClient instanceof OpenCGAClient && typeof
-                    this.opencgaSession.project !== "undefined" && typeof this.opencgaSession.study !== "undefined" && typeof this.opencgaSession.study.alias !== "undefined") {
+                if (!!this.opencgaClient && this.opencgaClient instanceof OpenCGAClient && !!this.opencgaSession.project && !!this.opencgaSession.study && !!this.opencgaSession.study.alias) {
 
                     let urlQueryParams = this._getUrlQueryParams();
                     let queryParams = urlQueryParams.queryParams;
                     let _numTotal = -1;
-                    let _this = this;
-                    $('#' + this.prefix + 'VariantBrowserGrid').bootstrapTable('destroy');
-                    $('#' + this.prefix + 'VariantBrowserGrid').bootstrapTable({
+                    const _this = this;
+                    this.variantTable.bootstrapTable('destroy');
+                    this.variantTable.bootstrapTable({
                         url: urlQueryParams.host,
                         columns: _this.cols,
                         method: 'get',
@@ -283,14 +272,14 @@
                                     id: _variant,
                                     variant: row,
                                     checkdVariant: true,
-                                    variants: $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('getAllSelections'),
+                                    variants: _this.variantTable.bootstrapTable('getAllSelections'),
                                 }
                             }));
                         },
                         onCheckAll: function (rows) {
                             _this.dispatchEvent(new CustomEvent('checkvariant', {
                                 detail: {
-                                    variants: $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('getAllSelections'),
+                                    variants: _this.variantTable.bootstrapTable('getAllSelections'),
                                 }
                             }));
                         },
@@ -304,14 +293,14 @@
                                     id: variantId,
                                     variant: row,
                                     checkdVariant: false,
-                                    variants: $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('getAllSelections'),
+                                    variants: _this.variantTable.bootstrapTable('getAllSelections'),
                                 }
                             }));
                         },
                         onLoadSuccess: function (data) {
                             // The first time we mark as selected the first row that is rows[2] since the first two rows are the header
-                            if (UtilsNew.isNotUndefinedOrNull(_table)) {
-                                PolymerUtils.querySelector(_table.selector).rows[2].setAttribute('class', 'success');
+                            if (!!_this.variantTable) {
+                                PolymerUtils.querySelector(_this.variantTable.selector).rows[2].setAttribute('class', 'success');
                                 _this._onSelectVariant(data.rows[0]);
 
                                 let elementsByClassName = PolymerUtils.getElementsByClassName("genome-browser-option");
@@ -328,7 +317,7 @@
                             }
                         },
                         onLoadError: function (status, res) {
-                            debugger
+                            _this.variantTable.bootstrapTable('load', []);
                         },
                         onPageChange: function (page, size) {
                             _this.from = (page - 1) * size + 1;
@@ -365,17 +354,12 @@
                         }
                     });
 
-                    // if (!this.showSelect) {
-                    //     $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('hideColumn', "selectForInterpretation");
-                    //     $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('hideColumn', "stateCheckBox");
-                    // }
-
-                    $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('showLoading');
+                    this.variantTable.bootstrapTable('showLoading');
                 }
 
                 // To query from cellbase, 'queryCellbase' property must be set to true explicitly
                 if (typeof this.queryCellbase !== "undefined" && this.queryCellbase && this.cellbaseClient instanceof CellBaseClient) {
-                    $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('destroy');
+                    this.variantTable.bootstrapTable('destroy');
                     let _numTotal = -1;
 
                     let url = "";
@@ -392,7 +376,7 @@
                     Object.assign(queryParams, _this.query); // Important : Adding the query object contents to queryParams
 
                     url = url + '/webservices/rest/v4/' + this.cellbaseClient._config.species + '/feature/variation/search';
-                    $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable({
+                    this.variantTable.bootstrapTable({
                         url: url,
                         method: 'get',
                         sidePagination: 'server',
@@ -411,13 +395,13 @@
                             return {total: _numTotal, rows: res.response[0].result}
                         },
                         columns: _this.cols,
-                        onClickRow: function (row, $element) {
+                        onClickRow: (row, $element) => {
                             _this.variant = row.chromosome + ":" + row.start + ":" + row.reference + ":" + row.alternate;
                             $('.success').removeClass('success');
                             $($element).addClass('success');
                         }
                     });
-                    $('#' + _this.prefix + 'VariantBrowserGrid').bootstrapTable('showLoading');
+                    this.variantTable.bootstrapTable('showLoading');
                 }
 
             }
@@ -486,17 +470,19 @@
             }
 
             renderFromLocal() {
-                let _this = this;
-                $('#' + this.prefix + 'VariantBrowserGrid').bootstrapTable('destroy');
-                $('#' + this.prefix + 'VariantBrowserGrid').bootstrapTable({
-                    data: this.data,
-                    columns: this.cols,
-                    onClickRow: function (row, $element) {
-                        _this.variant = row.chromosome + ":" + row.start + ":" + row.reference + ":" + row.alternate;
-                        $('.success').removeClass('success');
-                        $($element).addClass('success');
-                    }
-                });
+                if (!!this.variantTable) {
+                    const _this = this;
+                    this.variantTable.bootstrapTable('destroy');
+                    this.variantTable.bootstrapTable({
+                        data: this.data,
+                        columns: this.cols,
+                        onClickRow: (row, $element) => {
+                            _this.variant = row.chromosome + ":" + row.start + ":" + row.reference + ":" + row.alternate;
+                            $('.success').removeClass('success');
+                            $($element).addClass('success');
+                        }
+                    });
+                }
             }
             showGene(geneName) {
 //                this.fire('selected', {gene: geneName});

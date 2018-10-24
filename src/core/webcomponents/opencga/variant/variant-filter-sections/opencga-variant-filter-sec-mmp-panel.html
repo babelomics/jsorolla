@@ -15,22 +15,20 @@
                     <div class="form-group">
                         <div class="browser-subsection">
                             Search
-                            <div style="float: right" class="tooltip-div">
-                                <a>
-                                    <i class="fa fa-info-circle" aria-hidden="true" id="[[searchTextTooltipId]]"></i>
-                                </a>
-                            </div>
+                            <jsorolla-tooltip
+                                header="Search panel"
+                                content="Use this box to search for diagnostic panels by name."
+                            ></jsorolla-tooltip>
                         </div>
                         <input type="text" class="form-control" placeholder="Search panels..." style="width: 100%" value="{{searchBoxText::input}}">
                     </div>
                     <div class="form-group">
                         <div class="browser-subsection">
                             Results
-                            <div style="float: right" class="tooltip-div">
-                                <a>
-                                    <i class="fa fa-info-circle" aria-hidden="true" id="[[searchResultsTooltipId]]"></i>
-                                </a>
-                            </div>
+                            <jsorolla-tooltip
+                                header="Search results"
+                                content="This list shows the panels whose name is compatible with your search. Select one."
+                            ></jsorolla-tooltip>
                         </div>
                         <select id="[[selectorId]]" class="form-control" style="font-size: small" on-change="onSelectionChanged" multiple size="8">
                             <template is="dom-repeat" items="[[panels]]" as="panel">
@@ -42,22 +40,20 @@
                         <div class="form-group">
                             <div class="browser-subsection">
                                 Selected panel
-                                <div style="float: right" class="tooltip-div">
-                                    <a>
-                                        <i class="fa fa-info-circle" aria-hidden="true" id="[[panelNameTooltipId]]"></i>
-                                    </a>
-                                </div>
+                                <jsorolla-tooltip
+                                    header="Selected panel"
+                                    content="The name of the selected panel, which will be used to filter the variants during interpretation."
+                                ></jsorolla-tooltip>
                             </div>
                             [[panelName]]
                         </div>
                         <div class="form-group">
                             <div class="browser-subsection">
                                 Genes
-                                <div style="float: right" class="tooltip-div">
-                                    <a>
-                                        <i class="fa fa-info-circle" aria-hidden="true" id="[[genesTooltipId]]"></i>
-                                    </a>
-                                </div>
+                                <jsorolla-tooltip
+                                    header="Panel genes"
+                                    content="This box shows the list of genes in the selected panel."
+                                ></jsorolla-tooltip>
                             </div>
                             <textarea
                                     class="form-control clearable"
@@ -90,22 +86,6 @@
                         notify: true,
                     },
                     collapsibleId: {
-                        type: String,
-                        readOnly: true,
-                    },
-                    searchTextTooltipId: {
-                        type: String,
-                        readOnly: true,
-                    },
-                    searchResultsTooltipId: {
-                        type: String,
-                        readOnly: true,
-                    },
-                    panelNameTooltipId: {
-                        type: String,
-                        readOnly: true,
-                    },
-                    genesTooltipId: {
                         type: String,
                         readOnly: true,
                     },
@@ -153,46 +133,6 @@
                 this._setCollapsibleId(`${prefix}-collapsible-id`);
                 this._setSelectorId(`${prefix}-selector-id`);
                 this._setSelectorId(`${prefix}-selector-id`);
-                this._setSearchTextTooltipId(`${prefix}-sttt-id`);
-                this._setSearchResultsTooltipId(`${prefix}-srtt-id`);
-                this._setPanelNameTooltipId(`${prefix}-pntt-id`);
-                this._setGenesTooltipId(`${prefix}-gtt-id`);
-            }
-
-            connectedCallback() {
-                super.connectedCallback();
-
-                const tooltipDesc = {
-                    content: { title: "", text: "" },
-                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
-                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
-                    show: { delay: 200 },
-                    hide: { fixed: true, delay: 300 },
-                };
-                $(`#${this.searchTextTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "Search panel",
-                        text: "Use this box to search for diagnostic panels by name",
-                    },
-                }));
-                $(`#${this.searchResultsTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "Search results",
-                        text: "This list shows the panels whose name is compatible with your search. Select one.",
-                    },
-                }));
-                $(`#${this.panelNameTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "Selected panel",
-                        text: "The name of the selected panel, which will be used to filter the variants during interpretation.",
-                    },
-                }));
-                $(`#${this.genesTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "Panel genes",
-                        text: "This box shows the list of genes in the selected panel.",
-                    },
-                }));
             }
 
             onSearchBoxTextChanged(searchText) {

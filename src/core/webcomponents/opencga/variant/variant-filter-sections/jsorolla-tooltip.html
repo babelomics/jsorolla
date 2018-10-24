@@ -1,0 +1,62 @@
+<!-- there really should be a tooltip class -->
+
+<dom-module id="jsorolla-tooltip">
+    <template>
+        <div style="float: right" class="tooltip-div">
+            <a>
+                <i class="fa fa-info-circle" aria-hidden="true" id="[[tooltipId]]"></i>
+            </a>
+        </div>
+    </template>
+    <script>
+        class JsorollaTooltip extends Polymer.Element {
+
+            static get is() {
+                return "jsorolla-tooltip";
+            }
+
+            static get properties() {
+                return {
+                    tooltipId: {
+                        type: String,
+                        readOnly: true,
+                    },
+                    header: {
+                        type: String,
+                        value: "",
+                    },
+                    content: {
+                        type: String,
+                        value: "",
+                    },
+                };
+            }
+
+            constructor() {
+                super();
+                const prefix = `jstt-${Utils.randomString(12)}`;
+                this._setTooltipId(`${prefix}-tt-id`);
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+
+                // tooltips
+                const tooltipDesc = {
+                    content: { title: this.header, text: this.content },
+                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
+                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
+                    show: { delay: 200 },
+                    hide: { fixed: true, delay: 300 },
+                };
+                $(`#${this.tooltipId}`).qtip(tooltipDesc);
+            }
+        }
+
+        customElements.define(JsorollaTooltip.is, JsorollaTooltip);
+    </script>
+</dom-module>

@@ -14,11 +14,10 @@
                     <div class="form-group">
                         <div class="browser-subsection">
                             Mode of Inheritance
-                            <div style="float: right" class="tooltip-div">
-                                    <a>
-                                        <i class="fa fa-info-circle" aria-hidden="true" id="[[modesOfInheritanceTooltipId]]"></i>
-                                    </a>
-                            </div>
+                            <jsorolla-tooltip
+                                header="Mode of Inheritance"
+                                content="Filter by disease mode of inheritance"
+                            ></jsorolla-tooltip>
                         </div>
                         <select id="[[modesOfInheritanceId]]" class="form-control input-sm" on-change="onModeOfInheritanceChanged">
                             <option value="none">Select...</option>
@@ -31,14 +30,11 @@
                     <div class="form-group">
                         <div class="browser-subsection">
                             Samples & Genotypes
-                            <div style="float: right" class="tooltip-div">
-                                    <a>
-                                        <i class="fa fa-info-circle" aria-hidden="true" id="[[sampleGenotypesTooltipId]]"></i>
-                                    </a>
-                            </div>
+                            <jsorolla-tooltip
+                                header="Samples & Genotypes"
+                                content="Filter by sample genotypes"
+                            ></jsorolla-tooltip>
                         </div>
-
-
                         <table class="table table-hover" style="margin-bottom: 10px; font-size:smaller; table-layout:fixed;">
                             <thead>
                                 <tr>
@@ -76,8 +72,6 @@
                 this._setPrefix(`ovfss${Utils.randomString(8)}`);
                 this._setCollapsibleId(`${this.prefix}-collapsible-id`);
                 this._setModesOfInheritanceId(`${this.prefix}-moh-id`);
-                this._setModesOfInheritanceTooltipId(`${this.prefix}-moh-tooltip-id`);
-                this._setSampleGenotypesTooltipId(`${this.prefix}-sag-tooltip-id`);
             }
 
             static get is() {
@@ -115,15 +109,7 @@
                         type: String,
                         readOnly: true,
                     },
-                    modesOfInheritanceTooltipId: {
-                        type: String,
-                        readOnly: true,
-                    },
                     modesOfInheritanceId: {
-                        type: String,
-                        readOnly: true,
-                    },
-                    sampleGenotypesTooltipId: {
                         type: String,
                         readOnly: true,
                     },
@@ -147,31 +133,6 @@
 
             _attachDom(dom) {
                 this.appendChild(dom);
-            }
-
-            connectedCallback() {
-                super.connectedCallback();
-
-                // tooltips
-                const tooltipDesc = {
-                    content: { title: "", text: "" },
-                    position: { target: "mouse", adjust: { x: 2, y: 2, mouse: false } },
-                    style: { width: true, classes: "qtip-dark qtip-rounded qtip-shadow" },
-                    show: { delay: 200 },
-                    hide: { fixed: true, delay: 300 },
-                };
-                $(`#${this.modesOfInheritanceTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "Mode of Inheritance",
-                        text: "Filter by disease mode of inheritance",
-                    },
-                }));
-                $(`#${this.sampleGenotypesTooltipId}`).qtip(Object.assign({}, tooltipDesc, {
-                    content: {
-                        title: "Samples & Genotypes",
-                        text: "Filter by sample genotypes",
-                    },
-                }));
             }
 
             onModeOfInheritanceChanged(e) {
