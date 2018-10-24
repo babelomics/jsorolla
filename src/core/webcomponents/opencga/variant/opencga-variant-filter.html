@@ -169,23 +169,6 @@
     <script>
         class OpencgaVariantFilter extends Polymer.Element {
 
-            constructor() {
-                super();
-
-                this.prefix = "ovf" + Utils.randomString(12);
-
-                this._initialised = false;
-                this._reset = true;
-                if (typeof PANELS !== "undefined") {
-                    this.set('panelList', PANELS);
-                }
-
-                this.modalHpoActive = false;
-                this.modalGoActive = false;
-
-                this.onQueryChanged = this.onQueryChanged.bind(this);
-            }
-
             static get is() {
                 return 'opencga-variant-filter';
             }
@@ -241,6 +224,23 @@
                         type: Object,
                     },
                 }
+            }
+
+            constructor() {
+                super();
+
+                this.prefix = "ovf" + Utils.randomString(12);
+
+                this._initialised = false;
+                this._reset = true;
+                if (typeof PANELS !== "undefined") {
+                    this.set('panelList', PANELS);
+                }
+
+                this.modalHpoActive = false;
+                this.modalGoActive = false;
+
+                this.onQueryChanged = this.onQueryChanged.bind(this);
             }
 
             onSamplesChanged() {
@@ -316,6 +316,10 @@
             }
 
             queryObserver(newValue, oldValue) {
+                console.log("opencga-variant-filter.query.changed");
+                console.log(JSON.stringify(this.query));
+
+
                 if (this._reset) {
                     this.setQueryFilters();
                 } else {
@@ -438,9 +442,7 @@
                 this._clearHtmlDom();
 
                 // Check 'query' is not null or empty there is nothing else to do
-                if (0 === Object.keys(this.query || []).length) {
-                    return;
-                }
+                if (0 === Object.keys(this.query || []).length) return;
 
                 // inheritance Mode
                 // if (UtilsNew.isNotUndefinedOrNull(this.modeInheritance)) {
@@ -476,32 +478,6 @@
                             }
                         }
                     }
-                }
-
-                // Panel - annot-panel
-                if (!!this.query["gene"]) {
-
-                    // TODO: from babelmics-mmp
-                    let genesPanelAppValues = PolymerUtils.getValue(this.prefix + "PanelAppsTextarea");
-
-                    if(this.query["gene"] !== genesPanelAppValues ){
-                        PolymerUtils.setValue(this.prefix + "PanelAppsTextarea", "");
-                        PolymerUtils.setPropertyById(this.prefix + "PanelApps", "selectedIndex", 0);
-                    }
-
-                    let genesExternalPanelValues = PolymerUtils.getValue(this.prefix + "ExternalPanelAppsTextarea");
-
-                    if(this.query["gene"] !== genesExternalPanelValues ){
-                        PolymerUtils.setValue(this.prefix + "AutocompleteExternalPanelSearchInput", "");
-                        PolymerUtils.setValue(this.prefix + "ExternalPanelAppsTextarea", "");
-                    }
-
-                    // TODO: from develop
-                    // PolymerUtils.setValue(this.prefix + "PanelAppsTextarea", this.query.gene);
-                    // let geneTextarea = PolymerUtils.getElementById(this.prefix + "PanelAppsTextarea");
-                    // if (UtilsNew.isNotUndefinedOrNull(geneTextarea)) {
-                    //     geneTextarea.value = this.query.gene;
-                    // }
                 }
 
                 // Population Freqs
@@ -663,40 +639,11 @@
                 }
 
                 const _filters = {};
-
-                // console.log("opencga-variant-filter.updateQueryFilters()");
-                // console.log(JSON.stringify(this.query));
-                _filters.genotype = this.query.genotype;
-
-                // Adding sample genotypes filter
-                // let selectedGenotypes = $("." + this.prefix + "genotypes:checkbox:checked");
-                // if (selectedGenotypes.length > 0) {
-                //     let sampleGenotypesObj = {};
-                //     for (let i = 0; i < selectedGenotypes.length; i++) {
-                //         if (typeof sampleGenotypesObj[selectedGenotypes[i].getAttribute("data-id")] === "undefined") {
-                //             sampleGenotypesObj[selectedGenotypes[i].getAttribute("data-id")] = {};
-                //         }
-                //         sampleGenotypesObj[selectedGenotypes[i].getAttribute("data-id")][selectedGenotypes[i].defaultValue] = selectedGenotypes[i].checked;
-                //     }
-                //     let _genotypes = [];
-                //     for (let sampleName in sampleGenotypesObj) {
-                //         let gts = [];
-                //         for (let sampleGT in sampleGenotypesObj[sampleName]) {
-                //             if (sampleGenotypesObj[sampleName][sampleGT] === true) {
-                //                 gts.push(sampleGT);
-                //             }
-                //         }
-                //         if (gts.length > 0) {
-                //             _genotypes.push(sampleName + ':' + gts.join(','));
-                //         }
-                //     }
-                //     _filters.genotype = _genotypes.join(';');
-                // }
-                if (UtilsNew.isNotUndefinedOrNull(this.query.format)) {
-                    _filters.format = this.query.format;
-                }
-                if (UtilsNew.isNotUndefinedOrNull(this.query.info)) {
-                    _filters.info = this.query.info;
+                const fieldsToCopy = ["genotype", "gene", "region", "type", "biotype", "annot-xref", "annot-ct", "format", "info"];
+                for (const field of fieldsToCopy) {
+                    if (!!this.query[field]) {
+                        _filters[field] = this.query[field];
+                    }
                 }
 
                 // Add Cohort stats MAF filter: [{study.alias}]:{cohort}[<|>|<=|>=]{number}
@@ -754,39 +701,21 @@
                     }
                 }
 
-                // Panel - annot-panel
-                let panelsDropdown = PolymerUtils.getElementById(this.prefix + "PanelApps");
-                let panelsTextArea = PolymerUtils.getElementById(this.prefix + "PanelAppsTextarea");
-                if (UtilsNew.isNotUndefinedOrNull(panelsDropdown) && (panelsDropdown.value !== "none" && panelsTextArea.value !== "")) {
-                    _filters["gene"] = panelsTextArea.value;
-
-                }
-
-                let externalPanelsTextArea = PolymerUtils.getElementById(this.prefix + "ExternalPanelAppsTextarea");
-                if (UtilsNew.isNotUndefinedOrNull(externalPanelsTextArea) && externalPanelsTextArea.value !== "") {
-                    _filters["gene"] = externalPanelsTextArea.value;
-                }
-
                 // Population Frequencies
                 // Population minor allele frequency: {study}:{population}[<|>|<=|>=]{number}
-                let popFreq = [];
-                if (UtilsNew.isNotUndefinedOrNull(this.populationFrequencies) && UtilsNew.isNotEmptyArray(this.populationFrequencies.studies)) {
-                    for (let i = 0; i < this.populationFrequencies.studies.length; i++) {
-                        let study = this.populationFrequencies.studies[i].id;
-                        for (let j = 0; j < this.populationFrequencies.studies[i].populations.length; j++) {
-                            let population = this.populationFrequencies.studies[i].populations[j].id;
-
-                            let studyTextbox = PolymerUtils.getElementById(this.prefix + study + population);
-                            if ((UtilsNew.isNotUndefinedOrNull(studyTextbox) && UtilsNew.isNotEmpty(studyTextbox.value))) {
-                                let operator = PolymerUtils.getElementById(this.prefix + study + population + "Operator");
-                                let pf = study + ":" + population + operator.value + studyTextbox.value;
-                                popFreq.push(pf);
-                            }
-                        }
+                if (!!this.populationFrequencies && !!this.populationFrequencies.studies) {
+                    const frequencies = this.populationFrequencies.studies.map(study => (
+                        study.populations.map(population => {
+                            const studyTextbox = PolymerUtils.getElementById(`${this.prefix}${study.id}${population.id}`);
+                            const studyTextboxValue = !!studyTextbox && studyTextbox.value;
+                            const operator = PolymerUtils.getElementById(`${this.prefix}${study.id}${population.id}Operator`);
+                            const operatorValue = !!operator && operator.value;
+                            return (!!studyTextboxValue && !!operatorValue && `${study.id}:${population.id}${operatorValue}${studyTextboxValue}`) || "";
+                        }).filter(freq => !!freq).join(';')
+                    )).filter(freq => !!freq).join(';');
+                    if (!!frequencies) {
+                        _filters["alternate_frequency"] = frequencies;
                     }
-                }
-                if (popFreq.length > 0) {
-                    _filters["alternate_frequency"] = popFreq.join(';');
                 }
 
                 // Protein Substitution Scores -  Sift and Polyphen
@@ -814,13 +743,9 @@
                 if (numFilters === 2) {
                     $("input:radio[name=pss]").attr('disabled', false);
                 }
-                if (pss.length > 0) {
-                    let filter = $('input:radio[name=pss]:checked').val();
-                    if (filter === "and") {
-                        _filters.protein_substitution = pss.join(';');
-                    } else {
-                        _filters.protein_substitution = pss.join(',');
-                    }
+                if (!!pss && pss.length > 0) {
+                    const filter = $('input:radio[name=pss]:checked').val();
+                    _filters.protein_substitution = pss.join(filter === "and" ? ';' : ',');
                 }
 
                 // Cadd scores
@@ -840,28 +765,21 @@
                 }
 
                 // Conservation
-                let arr = {"Phylop": "phylop", "Phastcons": "phastCons", "Gerp": "gerp"};
+                const arr = {"Phylop": "phylop", "Phastcons": "phastCons", "Gerp": "gerp"};
                 let conserArr = [];
-                for (let key of Object.keys(arr)) {
-                    let inputTextArea = PolymerUtils.getElementById(this.prefix + key + "Input");
-                    if (UtilsNew.isNotUndefinedOrNull(inputTextArea) && UtilsNew.isNotEmpty(inputTextArea.value)) {
-                        let operator = PolymerUtils.getElementById(this.prefix + key + "Operator");
+                for (const key in arr) {
+                    const inputTextArea = PolymerUtils.getElementById(`${this.prefix}${key}Input`);
+                    if (!!inputTextArea && !!inputTextArea.value) {
+                        const operator = PolymerUtils.getElementById(`${this.prefix}${key}Operator`);
                         conserArr.push(arr[key] + operator.value + inputTextArea.value);
                     }
                 }
+
                 // Disable OR/AND logical operator
-                if (conserArr.length > 1) {
-                    $("input:radio[name=conservation]").attr('disabled', false);
-                } else {
-                    $("input:radio[name=conservation]").attr('disabled', true);
-                }
+                $("input:radio[name=conservation]").attr('disabled', conserArr.length > 1);
                 if (conserArr.length > 0) {
-                    let filter = $('input:radio[name=conservation]:checked').val();
-                    if (filter === "and") {
-                        _filters.conservation = conserArr.join(';');
-                    } else {
-                        _filters.conservation = conserArr.join(',');
-                    }
+                    const filter = $('input:radio[name=conservation]:checked').val();
+                    _filters.conservation = conserArr.join(filter === "and" ? ';' : ',');
                 }
 
                 // Gene Ontology and Human Phenotype Ontology
@@ -872,18 +790,12 @@
 
                 inputTextArea = PolymerUtils.getElementById(this.prefix + "HumanPhenotypeOntologyTextarea");
                 if (UtilsNew.isNotUndefinedOrNull(inputTextArea) && UtilsNew.isNotEmpty(inputTextArea.value)) {
-                    let hpoValues = inputTextArea.value.split(",");
-
+                    const hpoValues = inputTextArea.value.split(",");
                     if (UtilsNew.isNotEmptyArray(hpoValues)) {
                         $("input:radio[name=hpoRadio]").attr('disabled', false);
-                        let filter = $('input:radio[name=hpoRadio]:checked').val();
-                        if (filter === "and") {
-                            _filters["annot-hpo"] = hpoValues.join(';');
-                        } else {
-                            _filters["annot-hpo"] = hpoValues.join(',');
-                        }
+                        const filter = $('input:radio[name=hpoRadio]:checked').val();
+                        _filters["annot-hpo"] = hpoValues.join(filter === "and" ? ';' : ',');
                     }
-                    // _filters["annot-hpo"] = inputTextArea.value;
                 }
 
                 inputTextArea = PolymerUtils.getElementById(this.prefix + "ClinVarTextarea");
@@ -1652,7 +1564,6 @@
             //     // this.query.approximateCount = e.target.checked;
             //     this.set("query.approximateCount", e.target.checked);
             // }
-
 
             onQueryChanged(e) {
                 this.query = Object.assign({}, this.query);
