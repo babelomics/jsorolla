@@ -439,6 +439,10 @@
                     mmpExtensionConfig: {
                         type: Object,
                     },
+                    samples: {
+                        type: Array,
+                        value: () => [],
+                    },
                 }
             }
 
@@ -594,11 +598,11 @@
                 }
             }
 
-            onClear() {
+            onClear(e) {
                 this.modeInheritance = "none";
+                this.search = {};
                 this.query = {studies: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias};
                 // this._initGenotypeSamples(this.samples, true);
-                this.search = {};
             }
 
             onFilterChange(e) {

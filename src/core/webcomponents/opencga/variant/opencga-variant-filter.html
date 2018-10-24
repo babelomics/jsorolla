@@ -188,7 +188,6 @@
                     search: {
                         type: Object,
                         notify: true,
-                        observer: "searchObserver"
                     },
                     family: {
                         type: Object,
@@ -335,12 +334,6 @@
                     // check this produces no undesired side effects,
                     // due to non-propagation of changes
                     // this.samples = this.samples.map(sample => ({ ...sample, dp: undefined }));
-                }
-            }
-
-            searchObserver(e) {
-                if (Object.keys(this.search).length === 0) {
-                    this.samples = [];
                 }
             }
 
