@@ -938,7 +938,6 @@
 
                 // Add events and tooltips to the filter menu
                 this._addEventListeners();
-                this._addAllTooltips();
 
                 // If Samples or Family properties have been passed then we hide the Sample selector
                 // if (UtilsNew.isNotEmptyArray(this.samples)) {
@@ -982,9 +981,7 @@
                 const header = `
                     <div class="form-group">
                         <div class="browser-subsection" id="${subsection.id}" name="${subsection.title}">${subsection.title}
-                            <div style="float: right" class="tooltip-div">
-                                <a><i class="fa fa-info-circle" aria-hidden="true" id="${subsection.id}Tooltip"></i></a>
-                            </div>
+                            <jsorolla-tooltip header="${subsection.title}" content="${subsection.tooltip}"></jsorolla-tooltip>
                         </div>
                         <div id="${this.prefix}${subsection.id}" class="subsection-content">
                 `;
@@ -1656,47 +1653,6 @@
             //     this.set("query.approximateCount", e.target.checked);
             // }
 
-
-            _addAllTooltips() {
-                for (let section of this.config.menu.sections) {
-                    for (let subsection of section.subsections) {
-                        if (UtilsNew.isNotEmpty(subsection.tooltip)) {
-                            let tooltipIcon = $("#" + subsection.id + "Tooltip");
-                            if (UtilsNew.isNotUndefinedOrNull(tooltipIcon)) {
-                                this._addTooltip(tooltipIcon, subsection.title, subsection.tooltip);
-                            }
-                        }
-                    }
-                }
-            }
-
-            _addTooltip(div, title, content) {
-                div.qtip({
-                    content: {
-                        title: title,
-                        text: content
-                    },
-                    position: {
-                        target: "mouse",
-                        adjust: {
-                            x: 2, y: 2,
-                            mouse: false
-                        }
-                    },
-                    style: {
-                        width: true,
-//                        classes:  "ocb-tooltip-font" + "  ui-tooltip ui-tooltip-shadow"},
-                        classes: this.config.menu.tooltip.classes
-                    },
-                    show: {
-                        delay: 200
-                    },
-                    hide: {
-                        fixed: true,
-                        delay: 300
-                    }
-                });
-            }
 
             onQueryChanged(e) {
                 this.query = Object.assign({}, this.query);
