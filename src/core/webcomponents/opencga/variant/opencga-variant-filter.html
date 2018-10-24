@@ -655,12 +655,12 @@
                         let operator = PolymerUtils.getElementById(this.prefix + this.opencgaSession.study.alias + cohort + "CohortOperator");
                         if ((cohortInput !== null && cohortInput.value !== "") || (operator !== null && operator.value !== "<")) {
                             operator = operator.value;
-                            let study = this.opencgaSession.study.alias;
+                            const study = this.opencgaSession.study.alias;
                             // to be removed!!
                             if (study === "BRIDGE") {
                                 study = "bridge";
                             }
-                            let pf = study + ":" + cohort + operator + cohortInput.value;
+                            const pf = study + ":" + cohort + operator + cohortInput.value;
                             cohortFreq.push(pf);
                         }
                     }
