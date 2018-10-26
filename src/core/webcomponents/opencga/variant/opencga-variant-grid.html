@@ -905,6 +905,56 @@
                 return '-';
             }
 
+            clinicalSignificanceFormatter(value, row, index) {
+                debugger;
+                const clinvars = (!!row
+                    && !!row.annotation
+                    && !!row.annotation.variantTraitAssociation
+                    && !!row.annotation.variantTraitAssociation.clinvar
+                    && row.annotation.variantTraitAssociation.clinvar) || [];
+
+                const clinicalSignificances = [...new Set([].concat(...clinvars.map(clinvar => (clinvar.clinicalSignificance || "").split(/[,\\]+/))).filter(x => !!x))].map(x => x.toLowerCase().trim());
+                clinicalSignificances.sort();
+
+                const renderings = clinicalSignificances.map(significance => {
+                    switch (significance) {
+                        case 'pathogenic':
+                            return `<span style="background-color: gray; color: red" title="${significance}">PAT</span>`;
+                        case 'likely pathogenic':
+                            return `<span style="background-color: gray; color: orange title="${significance}">PA?</span>`;
+                        case 'uncertain significance':
+                            return `<span style="background-color: gray; color: pink title="${significance}">VUS</span>`;
+                        case 'likely benign':
+                            return `<span style="background-color: gray; color: darkgreen title="${significance}">BE?</span>`;
+                        case 'benign':
+                            return `<span style="background-color: gray; color: green title="${significance}">BEN</span>`;
+                        case 'risk factor':
+                            return `<span style="background-color: gray; color: pink title="${significance}">RF</span>`;
+                        case 'affects':
+                            return `<span style="background-color: gray; color: pink title="${significance}">AFF</span>`;
+                        case 'association':
+                            return `<span style="background-color: gray; color: gray title="${significance}">AS</span>`;
+                        case 'drug response':
+                            return `<span style="background-color: gray; color: gray title="${significance}">DR</span>`;
+                        case 'protective':
+                            return `<span style="background-color: gray; color: gray title="${significance}">PRO</span>`;
+                        case 'conflicting data from submitters':
+                            return `<span style="background-color: gray; color: gray title="${significance}">!!!</span>`;
+                        case 'conflicting interpretations of pathogenicity':
+                            return `<span style="background-color: gray; color: gray title="${significance}">!!!</span>`;
+                        case 'no interpretation for the single variant':
+                            return `<span style="background-color: gray; color: gray title="${significance}">?</span>`;
+                        case 'not provided':
+                            return `<span style="background-color: gray; color: gray title="${significance}">?</span>`;
+                        case 'other':
+                            return `<span style="background-color: gray; color: gray title="${significance}">?</span>`;
+                        default:
+                            return `<span style="background-color: gray; color: gray title="${significance}">?</span>`;
+                    }
+                });
+                return renderings.join("");
+            }
+
             clinicalPhenotypeFormatter(value, row, index) {
                 let tooltipText = "";
                 let elemClass = "fa fa-times";
@@ -1178,7 +1228,7 @@
             }
 
             _createDefaultColumns() {
-                let columns = [
+                const columns = [
                     [
                         {
                             title: 'Variant',
@@ -1302,7 +1352,8 @@
                             field: 'clinvar',
                             colspan: 1,
                             rowspan: 1,
-                            formatter: this.clinicalPhenotypeFormatter,
+                            // formatter: this.clinicalPhenotypeFormatter,
+                            formatter: this.clinVarSignificanceFormatter,
                             align: 'center'
                         },
                         {
