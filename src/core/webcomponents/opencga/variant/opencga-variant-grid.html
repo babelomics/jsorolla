@@ -906,50 +906,61 @@
             }
 
             clinicalSignificanceFormatter(value, row, index) {
-                debugger;
                 const clinvars = (!!row
                     && !!row.annotation
                     && !!row.annotation.variantTraitAssociation
                     && !!row.annotation.variantTraitAssociation.clinvar
                     && row.annotation.variantTraitAssociation.clinvar) || [];
-
                 const clinicalSignificances = [...new Set([].concat(...clinvars.map(clinvar => (clinvar.clinicalSignificance || "").split(/[,\\]+/))).filter(x => !!x))].map(x => x.toLowerCase().trim());
-                clinicalSignificances.sort();
-
-                const renderings = clinicalSignificances.map(significance => {
+                const processedSignificances = [
+                    'pathogenic',
+                    'likely pathogenic',
+                    'uncertain significance',
+                    'likely benign',
+                    'benign',
+                    'conflicting data from submitters',
+                    'conflicting interpretations of pathogenicity',
+                    'risk factor',
+                    'affects',
+                    'association',
+                    'drug response',
+                    'protective',
+                    'no interpretation for the single variant',
+                    'not provided',
+                    'other'
+                ].filter(significance => clinicalSignificances.includes(significance));
+                const defaultStyle = "color: auto; width:2rem; margin: 0; padding: 3px; display: inline";
+                const renderingStr = (symbol, name, color, textColor) => `<div style="background-color:${color}; color:${textColor};${defaultStyle}" title="${name}">${symbol}</div>`;
+                const renderings = processedSignificances.map(significance => {
                     switch (significance) {
                         case 'pathogenic':
-                            return `<span style="background-color: gray; color: red" title="${significance}">PAT</span>`;
+                            return renderingStr("P", significance, "red", "white");
                         case 'likely pathogenic':
-                            return `<span style="background-color: gray; color: orange title="${significance}">PA?</span>`;
+                            return renderingStr("LP", significance, "orange", "white");
                         case 'uncertain significance':
-                            return `<span style="background-color: gray; color: pink title="${significance}">VUS</span>`;
+                            return renderingStr("VUS", significance, "pink", "white");
                         case 'likely benign':
-                            return `<span style="background-color: gray; color: darkgreen title="${significance}">BE?</span>`;
+                            return renderingStr("LB", significance, "darkgreen", "white");
                         case 'benign':
-                            return `<span style="background-color: gray; color: green title="${significance}">BEN</span>`;
+                            return renderingStr("B", significance, "green", "white");
                         case 'risk factor':
-                            return `<span style="background-color: gray; color: pink title="${significance}">RF</span>`;
+                            return renderingStr("RF", significance, "pink", "white");
                         case 'affects':
-                            return `<span style="background-color: gray; color: pink title="${significance}">AFF</span>`;
+                            return renderingStr("AF", significance, "pink", "white");
                         case 'association':
-                            return `<span style="background-color: gray; color: gray title="${significance}">AS</span>`;
+                            return renderingStr("AS", significance, "gray", "white");
                         case 'drug response':
-                            return `<span style="background-color: gray; color: gray title="${significance}">DR</span>`;
+                            return renderingStr("DR", significance, "gray", "white");
                         case 'protective':
-                            return `<span style="background-color: gray; color: gray title="${significance}">PRO</span>`;
+                            return renderingStr("PR", significance, "gray", "white");
                         case 'conflicting data from submitters':
-                            return `<span style="background-color: gray; color: gray title="${significance}">!!!</span>`;
                         case 'conflicting interpretations of pathogenicity':
-                            return `<span style="background-color: gray; color: gray title="${significance}">!!!</span>`;
+                            return renderingStr("!!!", significance, "pink", "white");
                         case 'no interpretation for the single variant':
-                            return `<span style="background-color: gray; color: gray title="${significance}">?</span>`;
                         case 'not provided':
-                            return `<span style="background-color: gray; color: gray title="${significance}">?</span>`;
                         case 'other':
-                            return `<span style="background-color: gray; color: gray title="${significance}">?</span>`;
                         default:
-                            return `<span style="background-color: gray; color: gray title="${significance}">?</span>`;
+                            return "";
                     }
                 });
                 return renderings.join("");
@@ -1263,6 +1274,15 @@
                             halign: 'center'
                         },
                         {
+                            title: 'Clinical<br>Significance',
+                            field: {context: this},
+                            colspan: 1,
+                            rowspan: 2,
+                            formatter: this.clinicalSignificanceFormatter,
+                            halign: 'center',
+                            align: 'center',
+                        },
+                        {
                             title: 'Consequence Type',
                             field: {context: this},
                             colspan: 1,
@@ -1352,8 +1372,7 @@
                             field: 'clinvar',
                             colspan: 1,
                             rowspan: 1,
-                            // formatter: this.clinicalPhenotypeFormatter,
-                            formatter: this.clinVarSignificanceFormatter,
+                            formatter: this.clinicalPhenotypeFormatter,
                             align: 'center'
                         },
                         {
