@@ -276,14 +276,14 @@
                                 }
                             }));
                         },
-                        onCheckAll: function (rows) {
+                        onCheckAll: rows => {
                             _this.dispatchEvent(new CustomEvent('checkvariant', {
                                 detail: {
                                     variants: _this.variantTable.bootstrapTable('getAllSelections'),
                                 }
                             }));
                         },
-                        onUncheck: function (row, $element) {
+                        onUncheck: (row, $element) => {
 //                            $('.success').removeClass('success');
 //                            $($element).addClass('success');
 
@@ -297,7 +297,8 @@
                                 }
                             }));
                         },
-                        onLoadSuccess: function (data) {
+                        onLoadSuccess: data => {
+                            // debugger;
                             // The first time we mark as selected the first row that is rows[2] since the first two rows are the header
                             if (!!_this.variantTable) {
                                 PolymerUtils.querySelector(_this.variantTable.selector).rows[2].setAttribute('class', 'success');
@@ -878,31 +879,27 @@
             }
 
             clinicalPhenotypeFormatter(value, row, index) {
-                let phenotypeHtml = "<span><i class='fa fa-times' style='color: red'></i></span>";
-                if (typeof row !== "undefined" && typeof row.annotation !== "undefined" && typeof row.annotation.variantTraitAssociation !== "undefined") {
-                    if (row.annotation.variantTraitAssociation != null) {
-                        let traits = [];
-                        let clinicalData = row.annotation.variantTraitAssociation[this.field];
-                        if (typeof clinicalData !== "undefined" && clinicalData.length > 0) {
-                            for (let j = 0; j < clinicalData.length; j++) {
-                                if (this.field === "clinvar" && traits.indexOf(clinicalData[j].traits[0]) === -1
-                                    && clinicalData[j].traits[0] !== "not specified" && clinicalData[j].traits[0] !== "not provided") {
-                                    traits.push(clinicalData[j].traits[0]);
-                                } else if (this.field === "cosmic" && traits.indexOf(clinicalData[j].primaryHistology) === -1) {
-                                    traits.push(clinicalData[j].primaryHistology);
-                                }
-                            }
-
-                            if (traits.length > 0) {
-                                let traitText = traits[0];
-                                if (traits.length > 1) {
-                                    traitText += ", ..."
-                                }
-                                phenotypeHtml = `<span data-toggle="tooltip" data-placement="bottom" title="${traitText}"><i class='fa fa-check' style='color: green'></i></span>`;
-                            }
+                let tooltipText = "";
+                let elemClass = "fa fa-times";
+                let elemColor = "red";
+                if (!!row && !!row.annotation && !!row.annotation.variantTraitAssociation) {
+                    let traits = [];
+                    let clinicalData = row.annotation.variantTraitAssociation[this.field];
+                    for (const datum of (clinicalData || [])) {
+                        if (this.field === "clinvar" && !traits.includes(datum.traits[0]) && !['not specified', 'not provided'].includes(datum.traits[0])) {
+                            traits.push(datum.traits[0]);
+                        } else if (this.field === "cosmic" && !traits.includes(datum.primaryHistology)) {
+                            traits.push(datum.primaryHistology);
                         }
                     }
+                    if (traits.length > 0) {
+                        const traitText = `${traits[0]}${(traits.length > 1 ? ', ...' : '')}`;
+                        tooltipText = `data-toggle="tooltip" data-placement="bottom" title="${traitText}"`;
+                        elemClass = "fa fa-check";
+                        elemColor = "green";
+                    }
                 }
+                const phenotypeHtml = `<span ${tooltipText}><i class='${elemClass}' style='color: ${elemColor}'></i></span>`;
                 return phenotypeHtml;
             }
 
