@@ -30,7 +30,7 @@
                 <form class="form-inline">
                     <div class="form-group" style="width: 80%">
                         <select class="form-control" id="{{prefix}}-annotation-picker" data-live-search="true" data-size="10"
-                                on-change="onChangeSelectedVariable" data-width="100%" multiple$="{{_config.multiSelection}}">
+                                on-change="onChangeSelectedVariable" style="width:100%" multiple$="{{_config.multiSelection}}">
                             <template is="dom-repeat" items="{{variables}}" as="variable" on-dom-change="renderDomRepeat" restamp="true">
                                 <option data-tokens="{{variable.tags}}" data-variable="{{variable}}"
                                         style$="padding-left: {{variable.margin}}px; cursor: {{variable.cursor}};"
