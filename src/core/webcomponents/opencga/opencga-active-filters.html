@@ -250,7 +250,6 @@
             save() {
                 const filterName = this.saveDialogFilterName;
                 const filterDescription = PolymerUtils.getValue(this.prefix + "filterDescription");
-
                 const params = {
                     name: filterName,
                     description: filterDescription,
@@ -259,13 +258,12 @@
                     options: {},
                 };
                 const _this = this;
-
-                this.opencgaClient.users().getFilter({name: filterName}, {serverVersion: this.opencgaClient._config.serverVersion})
+                this.opencgaClient.users().getFilters({name: filterName}, {serverVersion: this.opencgaClient._config.serverVersion})
                     .then(response => {
                         if (response.response[0].result.length > 0) {
                             delete params.name;
                             _this.opencgaClient.users().updateFilter(filterName, params, {})
-                                .then(function (response) {
+                                .then(response => {
                                     for (let i in _this.filters) {
                                         if (_this.filters[i].name === filterName) {
                                             _this.filters[i] = response.response[0].result[0];
@@ -274,23 +272,20 @@
                                     PolymerUtils.setValue("filterName", "");
                                     PolymerUtils.setValue(_this.prefix + "filterDescription", "");
                                 });
+                        } else if ("1.3" === _this.opencgaClient._config.serverVersion) {
+                            _this.opencgaClient.users().createFilter(params, {})
+                                .then(response => {
+                                    _this.push("filters", params);
+                                    PolymerUtils.setValue("filterName", "");
+                                    PolymerUtils.setValue(_this.prefix + "filterDescription", "");
+                                });
                         } else {
-                            if ("1.3" === _this.opencgaClient._config.serverVersion) {
-                                _this.opencgaClient.users().createFilter(params, {})
-                                    .then(response => {
-                                        debugger;
-                                        _this.push("filters", params);
-                                        PolymerUtils.setValue("filterName", "");
-                                        PolymerUtils.setValue(_this.prefix + "filterDescription", "");
-                                    });
-                            } else {
-                                _this.opencgaClient.users().updateFilters(undefined, params, {})
-                                    .then(function (response) {
-                                        _this.push("filters", params);
-                                        PolymerUtils.setValue("filterName", "");
-                                        PolymerUtils.setValue(_this.prefix + "filterDescription", "");
-                                    });
-                            }
+                            _this.opencgaClient.users().updateFilters(undefined, params, {})
+                                .then(response => {
+                                    _this.push("filters", params);
+                                    PolymerUtils.setValue("filterName", "");
+                                    PolymerUtils.setValue(_this.prefix + "filterDescription", "");
+                                });
                         }
                     });
             }

@@ -549,7 +549,7 @@ class Users extends OpenCGAParentClass {
 
     // Filters
     getFilters(params, options) {
-        const subCat = ("1.3" === options.serverVersion ? "list" : "");
+        const subCat = ("1.3" === options.serverVersion && !params.name ? "list" : "");
         return this.extendedGet("users", this._getUserId(), "configs/filters", undefined, subCat, params, options);
     }
 
