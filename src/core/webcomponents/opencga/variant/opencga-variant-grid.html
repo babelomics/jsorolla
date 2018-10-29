@@ -701,7 +701,6 @@
                 // }
 
                 if (!!row && !!row.annotation && !!row.annotation.consequenceTypes && !!row.annotation.consequenceTypes.length > 0) {
-
                     // FIXME This is a temporal fix for some wrong CTs. This must be removed ASAP.
                     const fixConsequenceName = name => (
                         name === "2KB_downstream_gene_variant" ? "2KB_downstream_variant"
@@ -906,7 +905,7 @@
                     'not provided',
                     'other'
                 ].filter(significance => clinicalSignificances.includes(significance));
-                const defaultStyle = "color: auto; width:2rem; margin: 0; padding: 3px; display: inline; float: left";
+                const defaultStyle = "color: auto; width:2.5rem; margin: 0; padding: 3px; display: inline; float: left; font-size: smaller";
                 const renderingStr = (symbol, name, color, textColor) => `<div style="background-color:${color}; color:${textColor};${defaultStyle}" title="${name}">${symbol}</div>`;
                 const renderings = processedSignificances.map(significance => {
                     switch (significance) {

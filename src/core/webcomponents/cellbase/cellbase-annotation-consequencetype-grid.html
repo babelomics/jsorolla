@@ -179,7 +179,8 @@
             }
 
             seqOntologyFormatter(value, row, index) {
-                return (row.sequenceOntologyTerms || []).map(soTerm => {
+                const comparator = (type1, type2) => consequenceTypesComparator(type1.name, type2.name);
+                return (row.sequenceOntologyTerms || []).sort(comparator).map(soTerm => {
                     const termColor = !!this.field && !!this.field.context && !!this.field.context.consequenceTypeToColor && this.field.context.consequenceTypeToColor[soTerm.name];
                     const spanPrefix = !!termColor ? `<span style="color: ${termColor}">` : "";
                     const spanPostfix = !!termColor ? "</span>" : "";
