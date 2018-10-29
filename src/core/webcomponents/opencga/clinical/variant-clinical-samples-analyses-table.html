@@ -1,0 +1,440 @@
+<dom-module id="variant-clinical-samples-analyses-table">
+    <template>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Analysis ID</th>
+                    <th>Description</th>
+                    <th>Samples</th>
+                    <th>Date</th>
+                    <th>Proband</th>
+                    <th>Disease</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <template is="dom-repeat" items="[[analyses]]" as="analysis">
+                    <tr>
+                        <td>[[analysis.analysisID]]</td>
+                        <td><input type="text" id="' + this.prefix + 'description' + randomString + '" class="form-control" maxlength="75"></td>
+                        <td>[[analysis.analysisSamples]]</td>
+                        <td>[[analysis.analysisDate]]</td>
+                        <td>
+                            <select class="form-control form-control-sm">
+                                <template is="dom-repeat" items="[[getMembers(analysis)]]" as="member">
+                                    <option value="[[member.name]]">[[member.name]]</option>
+                                </template>
+                            </select>
+                        </td>
+                        <td>[[analysis.diseaseSelected]]</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-success">
+                                <span class="fa fa-floppy-o"></span>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" on-click="onRemoveAnalysis" data-analysis-id="[[analysis.analysisID]]">
+                                <span class="glyphicon glyphicon-remove"></span>
+                            </button>
+                            <!-- glyphicon glyphicon-remove-sign -->
+                            <!-- glyphicon glyphicon-ok-sign -->
+                            </button>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </template>
+    <script>
+        class VariantClinicalSamplesAnalysesTable extends Polymer.Element {
+
+            static get is() {
+                return "variant-clinical-samples-analyses-table";
+            }
+
+            static get properties() {
+                return {
+                    analyses: {
+                        type: Array,
+                        value: () => [],
+                        observer: "onAnalysisChanged",
+                    },
+                };
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            getMembers(analysis) {
+                const members = analysis.sampleList
+                    .filter(sample => !!sample.attributes && !!sample.attributes.individual && !!sample.attributes.individual.id && sample.attributes.individual.id > 0)
+                    .map(sample => sample.attributes.individual);
+                return members;
+            }
+
+            onAnalysisChanged(e) {
+            }
+
+            onRemoveAnalysis(e) {
+                debugger;
+                if (!!e && !!e.target && !!e.target.dataAnalysisId) {
+                    const params = {
+                        detail: e.target.dataAnalysisId,
+                        bubbles: true,
+                        composed: true,
+                    }
+                    this.dispatchEvent(new CustomEvent("remove-analysis", params));
+                }
+            }
+
+
+            // TODO: delete
+//
+//             _getClinicalAnalysisColumns() {
+//                 return [
+//                     {
+//                         field: 'state',
+//                         checkbox: true,
+//                         align: 'center',
+//                         valign: 'middle'
+//                     },
+//                     {
+//                         field: 'analysisID',
+//                         title: 'Analysis ID'
+//                     },
+//                     {
+//                         field: 'description',
+//                         title: 'Description'
+//                     },
+//                     {
+//                         field: 'analysisSamples',
+//                         title: 'Samples'
+//                     },
+//                     {
+//                         field: 'analysisType',
+//                         title: 'Analysis Type'
+//                     },
+//                     {
+//                         field: 'editFamily',
+//                         title: 'Definition'
+//                     },
+//                     {
+//                         field: 'analysisDate',
+//                         title: 'Date'
+//                     },
+//                     {
+//                         field: 'subjectSelected',
+//                         title: 'Subject'
+//                     },
+//                     {
+//                         field: 'diseaseSelected',
+//                         title: 'Disease'
+//                     },
+//                     {
+//                         field: 'action',
+//                         title: 'Action'
+//                     },
+//                     {
+//                         field: 'sampleList',
+//                         visible: false
+//                     },
+//                     {
+//                         field: 'analysisIDinternal',
+//                         visible: false
+//                     },
+//                     {
+//                         field: 'family',
+//                         visible: false
+//                     }
+//                 ];
+//             }
+
+//             renderAnalysisTable() {
+//                 let _this = this;
+//                 $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable('destroy');
+//                 $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable({
+//                     columns: _this._getClinicalAnalysisColumns(),
+//                     data: _this._analysis,
+//                     onCheck: function (row, elem) {
+//                         PolymerUtils.removeClass(_this.prefix + 'DeleteAnalysisButton', 'disabled');
+//                         _this._numAnalysisSelected++;
+//                     },
+//                     onUncheck: function (row, elem) {
+//                         _this._numAnalysisSelected--;
+//                         if (_this._numAnalysisSelected <= 0) {
+//                             PolymerUtils.addClass(_this.prefix + 'DeleteAnalysisButton', 'disabled');
+//                         }
+//                     },
+//                     onClickCell: function (field, value, row, elem) {
+//                         if (field === "editFamily") { // Only if cell related to family editor is selected, get samples for this analysis to the family editor
+//                             _this._samplesAnalysis = row.sampleList;
+//                             _this.currentAnalysis = row;
+//                             _this.selectedRow = elem.parent().data("index");
+//                             _this.messageErrorFamily = [];
+
+//                             if (UtilsNew.isNotUndefinedOrNull(row.family)) {
+//                                 _this.family = row.family;
+//                             } else {
+//                                 _this.initFamily();
+//                             }
+
+//                         } else if (field === "action") { // Only if cell related to save is selected
+//                             _this.saveAnalysis(row);
+//                         }
+//                     }
+//                 });
+//             }
+
+//             deleteAnalysis(e) {
+//                 e.preventDefault(); // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
+//                 let ids = $.map($(PolymerUtils.getElementById(this.prefix + 'tableAnalysis')).bootstrapTable('getSelections'), function (row) {
+//                     return row.analysisID;
+//                 });
+
+//                 $(PolymerUtils.getElementById(this.prefix + 'tableAnalysis')).bootstrapTable('remove', {
+//                     field: 'analysisID',
+//                     values: ids
+//                 });
+//                 this.unsavedAnalysis--;
+//             }
+
+//             saveAnalysis(rowInfo) {
+//                 const _this = this;
+//                 try {
+//                     if (this.opencgaClient instanceof OpenCGAClient) {
+
+//                         let _analysisType = "";
+//                         let params = {
+//                             study: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias
+//                         };
+//                         this.messageErrorText =  [];
+//                         this.messageSuccessText = [];
+//                         this.messageError = false;
+//                         this.messageSuccess = false;
+//                         switch (rowInfo.analysisType) {
+//                             case "Single":
+//                                 _analysisType = "SINGLE";
+//                                 break;
+//                             case "Duo":
+//                                 _analysisType = "DUO";
+//                                 break;
+//                             case "Trio":
+//                                 _analysisType = "TRIO";
+//                                 break;
+//                             case "Family":
+//                                 _analysisType = "FAMILY";
+//                                 break;
+//                             case "Auto comparative":
+//                                 _analysisType = "AUTO";
+//                                 break;
+//                             case "Multisample":
+//                                 _analysisType = "MULTISAMPLE";
+//                                 break;
+//                         }
+
+//                         // When analysis type != SINGLE Or AUTO
+
+//                         const bodyFamily = !!rowInfo.family ? Object.assign({}, rowInfo.family) : null;
+//                         const membersWithParents = !!bodyFamily && bodyFamily.members.filter(member => (
+//                             UtilsNew.isNotUndefinedOrNull(member.father) || UtilsNew.isNotUndefinedOrNull(member.mother)
+//                         ));
+
+//                         let individualPromises = [];
+//                         let checkPromises = [];
+//                         let subjectName = "";
+//                         let samplesName = [];
+//                         let diseaseAnalysis = [];
+//                         let subjects = [];
+//                         let description = "";
+
+//                         // These properties are for analysis params
+//                         subjectName = PolymerUtils.getValue(this.prefix + "selectedSubject" + rowInfo.analysisIDinternal);
+//                         samplesName = rowInfo.sampleList.filter((sample) => {
+//                             return sample.individual.name === subjectName;
+//                         }).map((sample) => {
+//                             let res = {name: sample.name};
+//                             return res;
+//                         });
+//                         description = PolymerUtils.getValue(this.prefix + "description" + rowInfo.analysisIDinternal);
+
+
+//                         let diseaseSelected = PolymerUtils.getValue(this.prefix + "selectedDisease" + rowInfo.analysisIDinternal);
+//                         if (UtilsNew.isUndefinedOrNull(rowInfo.family)) {
+//                             // When Analysis type is SINGLE
+//                             let diseases = [];
+//                             rowInfo.sampleList.forEach((sample) => {
+//                                 if (UtilsNew.isNotUndefinedOrNull(sample.attributes) && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual)
+//                                     && UtilsNew.isNotEmptyArray(sample.attributes.individual.phenotypes)) {
+//                                     let ontologyTerms = sample.attributes.individual.phenotypes;
+//                                     ontologyTerms.forEach((term) => {
+//                                         if (term.id !== "") {
+//                                             // check if exists already this term in data.diseases
+//                                             let existsTerm = diseases.find((element) => {
+//                                                 return element.id === term.id;
+//                                             });
+//                                             if (UtilsNew.isUndefinedOrNull(existsTerm)) {
+//                                                 diseases.push(term);
+//                                             }
+//                                         }
+//                                     });
+
+//                                 }
+//                             });
+
+//                             diseaseAnalysis = diseases.find((disease) => {
+//                                 return disease.id === diseaseSelected;
+//                             });
+//                         } else {
+//                             // When Analysis type is != SINGLE
+//                             diseaseAnalysis = rowInfo.family.phenotypes.find((disease) => {
+//                                 return disease.id === diseaseSelected
+//                             });
+//                         }
+
+//                         subjects.push({name: subjectName, samples: samplesName});
+
+//                         let analysisInfo = {
+//                             analysisID: rowInfo.analysisID,
+//                             description: description,
+//                             type: _analysisType,
+//                             familyID: rowInfo.family !== null ? rowInfo.family.name : undefined,
+//                             subjects: subjects,
+//                             disease: diseaseAnalysis
+//                         };
+
+//                         // Check if already exists an analysis or family with current names
+//                         let checkExistsNames = true;
+//                         if (UtilsNew.isNotUndefinedOrNull(rowInfo.family)) {
+//                             let checkFamilyName = _this.opencgaClient.families().search(Object.assign({name: bodyFamily.name}, params), {"method": "GET"})
+//                                 .then(function (response) {
+//                                     if (response.response[0].numResults >= 1 || UtilsNew.isUndefinedOrNull(bodyFamily.name) || UtilsNew.isEmpty(bodyFamily.name)) {
+//                                         checkExistsNames = false;
+//                                     }
+//                                 });
+//                             checkPromises.push(checkFamilyName);
+//                         }
+
+//                         let checkAnalysisName = _this.opencgaClient.clinical().search(Object.assign({name: analysisInfo.analysisID}, params), {"method": "GET"})
+//                             .then(function (response) {
+//                                 if (response.response[0].numResults >= 1 || UtilsNew.isUndefinedOrNull(analysisInfo.analysisID) || UtilsNew.isEmpty(analysisInfo.analysisID)) {
+//                                     checkExistsNames = false;
+//                                 }
+//                             });
+//                         checkPromises.push(checkAnalysisName);
+
+//                         // Once all checkExistsName promise are resolved we try to create family
+//                         Promise.all(checkPromises)
+//                             .then(function (response) {
+//                                 if (checkExistsNames) {
+//                                     if (!!membersWithParents && membersWithParents.length > 0) {
+
+//                                         for (const individualToUpdate of bodyFamily.members) {
+//                                             _this.opencgaClient.individuals().info(individualToUpdate.name, params, {"method": "GET"}).then(response => {
+//                                                 if (response.response[0].numResults >= 1) {
+//                                                     const individual = response.response[0].result[0];
+//                                                     const individualId = individual.id;
+
+//                                                     // check if individual already has any parent; if not the case, we will allow create family.
+//                                                     if (((UtilsNew.isUndefinedOrNull(individual.father) ||
+//                                                         (UtilsNew.isNotUndefinedOrNull(individual.father) && UtilsNew.isUndefinedOrNull(individual.father.id)) ||
+//                                                         individual.father.id <= 0)
+//                                                         &&
+//                                                         (UtilsNew.isUndefinedOrNull(individual.mother) ||
+//                                                         UtilsNew.isNotUndefinedOrNull(individual.mother) && UtilsNew.isUndefinedOrNull(individual.mother.id) || individual.mother.id <= 0))) {
+//                                                         const individualPost = {};
+//                                                         if (!!individualToUpdate.mother)    individualPost.mother = individualToUpdate.mother;
+//                                                         if (!!individualToUpdate.father)    individualPost.father = individualToUpdate.father;
+//                                                         if (!!individualToUpdate.lifeStatus)    individualPost.lifeStatus = individualToUpdate.lifeStatus;
+//                                                         if (!!individualToUpdate.parentalConsanguinity)    individualPost.parentalConsanguinity = individualToUpdate.parentalConsanguinity;
+//                                                         if (!!individualToUpdate.phenotypes)    individualPost.phenotypes = individualToUpdate.phenotypes.slice();
+//                                                         const individualPromise = _this.opencgaClient.individuals().update(individualId, params, individualPost, {"method": "POST"})
+//                                                             .then(response => { console.log("Individual updated"); });
+//                                                         individualPromises.push(individualPromise);
+//                                                     } else {
+//                                                         _this.messageError = true;
+//                                                         _this.messageErrorText.push(analysisInfo.analysisID + " " + individualToUpdate.name + " individual already has parents.");
+//                                                         // PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
+//                                                     }
+//                                                 }
+//                                             });
+//                                         }
+
+//                                         /*
+//                                         membersWithParents.forEach(function (individualToUpdate) {
+//                                             _this.opencgaClient.individuals().info(individualToUpdate.name, params, {"method": "GET"})
+//                                                 .then(function (response) {
+//                                                     if (response.response[0].numResults >= 1) {
+//                                                         const individual = response.response[0].result[0];
+//                                                         const individualId = individual.id;
+
+//                                                         // Check if individual has father or mother already. If individual does not have, we will allow create family.
+//                                                         if (((UtilsNew.isUndefinedOrNull(individual.father) ||
+//                                                             (UtilsNew.isNotUndefinedOrNull(individual.father) && UtilsNew.isUndefinedOrNull(individual.father.id)) ||
+//                                                             individual.father.id <= 0 )
+//                                                             &&
+//                                                             (UtilsNew.isUndefinedOrNull(individual.mother) ||
+//                                                             UtilsNew.isNotUndefinedOrNull(individual.mother) && UtilsNew.isUndefinedOrNull(individual.mother.id) || individual.mother.id <= 0))) {
+//                                                             let individualPost = {
+//                                                                 father: individualToUpdate.father,
+//                                                                 mother: individualToUpdate.mother
+//                                                             };
+//                                                             let individualPromise = _this.opencgaClient.individuals().update(individualId, params, individualPost, {"method": "POST"})
+//                                                                 .then(function (response) {
+//                                                                     console.log("Individual update");
+//                                                                 });
+//                                                             individualPromises.push(individualPromise);
+
+//                                                         } else {
+//                                                             _this.messageError = true;
+//                                                             _this.messageErrorText.push(analysisInfo.analysisID + " " + individualToUpdate.name + " individual already has parents.");
+// //                                                            PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
+//                                                         }
+//                                                     }
+//                                                 });
+//                                         });
+//                                         */
+
+//                                         Promise.all(individualPromises)
+//                                             .then(function (response) {
+//                                                 console.log("Create family");
+//                                                 if (UtilsNew.isNotUndefinedOrNull(individualPromises) &&
+//                                                     UtilsNew.isNotEmptyArray(individualPromises) && individualPromises.length > 0) {
+//                                                     _this.createFamily(params, bodyFamily, rowInfo, subjectName, samplesName, analysisInfo);
+//                                                 } else {
+//                                                     _this.messageError = true;
+//                                                     _this.messageErrorText.push(analysisInfo.analysisID + " We cannot create a family. Individuals are not correct.");
+// //                                                    PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
+//                                                 }
+//                                             })
+//                                             .catch(function (response) {
+//                                                 _this.messageError = true;
+//                                                 _this.messageErrorText.push(analysisInfo.analysisID + " " + response.error);
+// //                                                PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
+//                                             });
+//                                     } else {
+//                                         // We are here when we are Correct Single Analysis. If we are here with DUO, TRIO or FAMILY will be an error.
+//                                         if ((_analysisType !== "DUO" && _analysisType !== "TRIO" && _analysisType !== "FAMILY")) {
+//                                             _this.createAnalysis(analysisInfo);
+//                                         } else {
+//                                             _this.messageError = true;
+//                                             _this.messageErrorText.push(analysisInfo.analysisID + " We cannot create a family. Analysis type is not correct.");
+// //                                            PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
+//                                         }
+//                                     }
+//                                 } else {
+//                                     _this.messageError = true;
+//                                     _this.messageErrorText.push(analysisInfo.analysisID + " Family name or Analysis name is not correct.");
+//                                     PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
+//                                 }
+//                             });
+//                     }
+//                 } catch(err) {
+//                     _this.messageError = true;
+//                     _this.messageErrorText.push(err);
+//                 }
+//             }
+
+        }
+
+        customElements.define(VariantClinicalSamplesAnalysesTable.is, VariantClinicalSamplesAnalysesTable);
+    </script>
+</dom-module>

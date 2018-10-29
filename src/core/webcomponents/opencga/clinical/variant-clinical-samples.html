@@ -19,6 +19,7 @@
 <link rel="import" href="../catalog/samples/opencga-family-editor-new.html">
 <link rel="import" href="../opencga-active-filters.html">
 <link rel="import" href="../opencga-message-dialog.html">
+<link rel="import" href="./variant-clinical-samples-analyses-table.html">
 
 <dom-module id="variant-clinical-samples">
     <template>
@@ -64,34 +65,27 @@
                 <br>
 
 
-                <div style="padding: 10px 0px">
-                    <h3>Clinical Analysis</h3>
-                    <template is="dom-if" if="{{messageSuccess}}">
-                        <template is="dom-repeat" items="{{messageSuccessText}}">
-                                <div class="alert alert-success" role="alert" id="{{prefix}}messageSuccess" style="margin:0 auto;">{{item}}</div>
+                <template is="dom-if" if="[[pendingAnalyses.length]]">
+                    <div style="padding: 10px 0px">
+                        <h3>Clinical Analysis</h3>
+                        <template is="dom-if" if="{{messageSuccess}}">
+                            <template is="dom-repeat" items="{{messageSuccessText}}">
+                                    <div class="alert alert-success" role="alert" id="{{prefix}}messageSuccess" style="margin:0 auto;">{{item}}</div>
+                            </template>
                         </template>
-                    </template>
-                    <template is="dom-if" if="{{messageError}}">
-                        <template is="dom-repeat" items="{{messageErrorText}}">
-                                <div class="alert alert-danger" role="alert" id="{{prefix}}messageError" style="margin:0 auto;">{{item}}</div>
+                        <template is="dom-if" if="{{messageError}}">
+                            <template is="dom-repeat" items="{{messageErrorText}}">
+                                    <div class="alert alert-danger" role="alert" id="{{prefix}}messageError" style="margin:0 auto;">{{item}}</div>
+                            </template>
                         </template>
-                    </template>
-                    <template is="dom-if" if="{{unsavedAnalysis}}">
-                        <div class="alert alert-warning" role="alert" style="margin:0 auto;">There are unsaved analyses!</div>
-                    </template>
+                        <template is="dom-if" if="{{pendingAnalyses.length}}">
+                            <div class="alert alert-warning" role="alert" style="margin:0 auto;">There are unsaved analyses!</div>
+                        </template>
 
-                    <div id="toolbar">
-                        <button id="{{prefix}}DeleteAnalysisButton" class="btn btn-danger disabled" on-click="deleteAnalysis">
-                            <i class="fa fa-times"></i>&nbsp;Delete
-                        </button>
+                        <variant-clinical-samples-analyses-table analyses="[[pendingAnalyses]]" on-remove-analysis="onRemoveAnalysis">
+                        </variant-clinical-samples-analyses-table>
                     </div>
-
-                    <table id="{{prefix}}tableAnalysis" data-toolbar="#toolbar" data-show-columns="true" data-show-export="true"
-                           data-show-pagination-switch="true" data-pagination="true" data-page-size="5" data-page-list="[5, 10, 25]"
-                           data-checkbox-header="false" data-maintain-selected="true" data-icons-prefix="fa" data-icons="icons" style="cursor: pointer;">
-                        <thead style="background-color: #eee"></thead>
-                    </table>
-                </div>
+                </template>
             </div>
         </div>
 
@@ -195,7 +189,6 @@
                     },
                     opencgaClient: {
                         type: Object,
-                        observer: "renderAnalysisTable"
                     },
                     samples: {
                         type: Array,
@@ -225,14 +218,14 @@
                         type: Object,
                         notify: true
                     },
-                    analysisChanged: {
-                        type: Number,
-                        observer: "renderAnalysisTable"
-                    },
                     eventNotifyName: {
                         type: String,
                         value: "messageevent"
-                    }
+                    },
+                    pendingAnalyses: {
+                        type: Array,
+                        value: () => [],
+                    },
                 }
             }
 
@@ -247,12 +240,10 @@
 
             clear() {
                 this.samples = [];
-                this._analysis = [];
+                this.pendingAnalyses = [];
                 this._numAnalysisSelected = 0;
-                this.analysisChanged = 0;
                 this.currentAnalysis = {};
                 this.selectedRow = -1;
-                this.unsavedAnalysis = 0;
                 this.messageError = false;
                 this.fixedFilters = ["studies"];
             }
@@ -264,42 +255,6 @@
 
             static get observers() {
                 return ['calculateFilters(filteredVariables.variables.*)'];
-            }
-
-            renderAnalysisTable() {
-                let _this = this;
-                $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable('destroy');
-                $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable({
-                    columns: _this._getClinicalAnalysisColumns(),
-                    data: _this._analysis,
-                    onCheck: function (row, elem) {
-                        PolymerUtils.removeClass(_this.prefix + 'DeleteAnalysisButton', 'disabled');
-                        _this._numAnalysisSelected++;
-                    },
-                    onUncheck: function (row, elem) {
-                        _this._numAnalysisSelected--;
-                        if (_this._numAnalysisSelected <= 0) {
-                            PolymerUtils.addClass(_this.prefix + 'DeleteAnalysisButton', 'disabled');
-                        }
-                    },
-                    onClickCell: function (field, value, row, elem) {
-                        if (field === "editFamily") { // Only if cell related to family editor is selected, get samples for this analysis to the family editor
-                            _this._samplesAnalysis = row.sampleList;
-                            _this.currentAnalysis = row;
-                            _this.selectedRow = elem.parent().data("index");
-                            _this.messageErrorFamily = [];
-
-                            if (UtilsNew.isNotUndefinedOrNull(row.family)) {
-                                _this.family = row.family;
-                            } else {
-                                _this.initFamily();
-                            }
-
-                        } else if (field === "action") { // Only if cell related to save is selected
-                            _this.saveAnalysis(row);
-                        }
-                    }
-                });
             }
 
             initFamily() {
@@ -327,7 +282,7 @@
                 super.connectedCallback();
 
                 this.table = PolymerUtils.getElementById(this.prefix + "FamilySelector");
-                this.renderAnalysisTable();
+                // this.renderAnalysisTable();
                 let _this = this;
                 $("#"+this.prefix + "FamilyEditor").on('shown.bs.modal', function (e) {
                     _this.showModalFamilyEditor = true;
@@ -494,295 +449,20 @@
 
 
                if (this.analysisError(analysisType, this.samples, _properMembers)) {
-                    let fullDate = new Date();
-                    let twoDigitMonth = ((fullDate.getMonth() + 1) >= 10) ? (fullDate.getMonth() + 1) : '0' + (fullDate.getMonth() + 1);
-                    let currentDate = fullDate.getDate() + "/" + twoDigitMonth + "/" + fullDate.getFullYear();
+                    const fullDate = new Date();
+                    const twoDigitMonth = ((fullDate.getMonth() + 1) >= 10) ? (fullDate.getMonth() + 1) : '0' + (fullDate.getMonth() + 1);
+                    const currentDate = fullDate.getDate() + "/" + twoDigitMonth + "/" + fullDate.getFullYear();
 
-                    let samplesToShow = "";
-                    let _this = this;
-                    let aux = Utils.randomString(6);
-
-                    let analysisID = _this.analysisFormatter("AN-" + analysisId, aux);
-                    for (let sampleIdx in this.samples) {
-                        samplesToShow = samplesToShow + this.samples[sampleIdx].name + ",";
-                    }
-
-                    samplesToShow = samplesToShow.slice(0, -1);
-
-                    let _anObject = {
-                        analysisID: analysisID,
-                        description: _this.descriptionFormatter(aux),
-                        analysisSamples: samplesToShow,
+                    const analysis = {
+                        analysisID: `AN-${analysisId}`,
                         analysisType: analysisType,
                         analysisDate: currentDate,
                         filter: "NO",
-                        editFamily: _this.familyFormatter(_familyEditor, aux),
-                        subjectSelected: _this.subjectFormatter(aux, this.samples, ""),
-                        diseaseSelected: _this.diseaseFormatter(aux, this.samples, ""),
-                        action: _this.actionFormatter(_familyEditor, aux),
+                        // diseaseSelected: _this.diseaseFormatter(aux, this.samples, ""),
+                        diseaseSelected: "none",
                         sampleList: this.samples,
-                        analysisIDinternal: aux,
-                        family: null,
                     };
-
-                    if (UtilsNew.isNotUndefined(this._analysis)) {
-                        this.push('_analysis', _anObject);
-                    } else {
-                        this._analysis = [_anObject];
-                    }
-
-                    this.analysisChanged++;
-                    this.unsavedAnalysis++;
-                }
-            }
-
-
-            deleteAnalysis(e) {
-                e.preventDefault(); // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
-                let ids = $.map($(PolymerUtils.getElementById(this.prefix + 'tableAnalysis')).bootstrapTable('getSelections'), function (row) {
-                    return row.analysisID;
-                });
-
-                $(PolymerUtils.getElementById(this.prefix + 'tableAnalysis')).bootstrapTable('remove', {
-                    field: 'analysisID',
-                    values: ids
-                });
-                this.unsavedAnalysis--;
-            }
-
-            saveAnalysis(rowInfo) {
-                const _this = this;
-                try {
-                    if (this.opencgaClient instanceof OpenCGAClient) {
-
-                        let _analysisType = "";
-                        let params = {
-                            study: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias
-                        };
-                        this.messageErrorText =  [];
-                        this.messageSuccessText = [];
-                        this.messageError = false;
-                        this.messageSuccess = false;
-                        switch (rowInfo.analysisType) {
-                            case "Single":
-                                _analysisType = "SINGLE";
-                                break;
-                            case "Duo":
-                                _analysisType = "DUO";
-                                break;
-                            case "Trio":
-                                _analysisType = "TRIO";
-                                break;
-                            case "Family":
-                                _analysisType = "FAMILY";
-                                break;
-                            case "Auto comparative":
-                                _analysisType = "AUTO";
-                                break;
-                            case "Multisample":
-                                _analysisType = "MULTISAMPLE";
-                                break;
-                        }
-
-                        // When analysis type != SINGLE Or AUTO
-
-                        const bodyFamily = !!rowInfo.family ? Object.assign({}, rowInfo.family) : null;
-                        const membersWithParents = !!bodyFamily && bodyFamily.members.filter(member => (
-                            UtilsNew.isNotUndefinedOrNull(member.father) || UtilsNew.isNotUndefinedOrNull(member.mother)
-                        ));
-
-                        let individualPromises = [];
-                        let checkPromises = [];
-                        let subjectName = "";
-                        let samplesName = [];
-                        let diseaseAnalysis = [];
-                        let subjects = [];
-                        let description = "";
-
-                        // These properties are for analysis params
-                        subjectName = PolymerUtils.getValue(this.prefix + "selectedSubject" + rowInfo.analysisIDinternal);
-                        samplesName = rowInfo.sampleList.filter((sample) => {
-                            return sample.individual.name === subjectName;
-                        }).map((sample) => {
-                            let res = {name: sample.name};
-                            return res;
-                        });
-                        description = PolymerUtils.getValue(this.prefix + "description" + rowInfo.analysisIDinternal);
-
-
-                        let diseaseSelected = PolymerUtils.getValue(this.prefix + "selectedDisease" + rowInfo.analysisIDinternal);
-                        if (UtilsNew.isUndefinedOrNull(rowInfo.family)) {
-                            // When Analysis type is SINGLE
-                            let diseases = [];
-                            rowInfo.sampleList.forEach((sample) => {
-                                if (UtilsNew.isNotUndefinedOrNull(sample.attributes) && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual)
-                                    && UtilsNew.isNotEmptyArray(sample.attributes.individual.phenotypes)) {
-                                    let ontologyTerms = sample.attributes.individual.phenotypes;
-                                    ontologyTerms.forEach((term) => {
-                                        if (term.id !== "") {
-                                            // check if exists already this term in data.diseases
-                                            let existsTerm = diseases.find((element) => {
-                                                return element.id === term.id;
-                                            });
-                                            if (UtilsNew.isUndefinedOrNull(existsTerm)) {
-                                                diseases.push(term);
-                                            }
-                                        }
-                                    });
-
-                                }
-                            });
-
-                            diseaseAnalysis = diseases.find((disease) => {
-                                return disease.id === diseaseSelected;
-                            });
-                        } else {
-                            // When Analysis type is != SINGLE
-                            diseaseAnalysis = rowInfo.family.phenotypes.find((disease) => {
-                                return disease.id === diseaseSelected
-                            });
-                        }
-
-                        subjects.push({name: subjectName, samples: samplesName});
-
-                        let analysisInfo = {
-                            analysisID: rowInfo.analysisID,
-                            description: description,
-                            type: _analysisType,
-                            familyID: rowInfo.family !== null ? rowInfo.family.name : undefined,
-                            subjects: subjects,
-                            disease: diseaseAnalysis
-                        };
-
-                        // Check if already exists an analysis or family with current names
-                        let checkExistsNames = true;
-                        if (UtilsNew.isNotUndefinedOrNull(rowInfo.family)) {
-                            let checkFamilyName = _this.opencgaClient.families().search(Object.assign({name: bodyFamily.name}, params), {"method": "GET"})
-                                .then(function (response) {
-                                    if (response.response[0].numResults >= 1 || UtilsNew.isUndefinedOrNull(bodyFamily.name) || UtilsNew.isEmpty(bodyFamily.name)) {
-                                        checkExistsNames = false;
-                                    }
-                                });
-                            checkPromises.push(checkFamilyName);
-                        }
-
-                        let checkAnalysisName = _this.opencgaClient.clinical().search(Object.assign({name: analysisInfo.analysisID}, params), {"method": "GET"})
-                            .then(function (response) {
-                                if (response.response[0].numResults >= 1 || UtilsNew.isUndefinedOrNull(analysisInfo.analysisID) || UtilsNew.isEmpty(analysisInfo.analysisID)) {
-                                    checkExistsNames = false;
-                                }
-                            });
-                        checkPromises.push(checkAnalysisName);
-
-                        // Once all checkExistsName promise are resolved we try to create family
-                        Promise.all(checkPromises)
-                            .then(function (response) {
-                                if (checkExistsNames) {
-                                    if (!!membersWithParents && membersWithParents.length > 0) {
-
-                                        for (const individualToUpdate of bodyFamily.members) {
-                                            _this.opencgaClient.individuals().info(individualToUpdate.name, params, {"method": "GET"}).then(response => {
-                                                if (response.response[0].numResults >= 1) {
-                                                    const individual = response.response[0].result[0];
-                                                    const individualId = individual.id;
-
-                                                    // check if individual already has any parent; if not the case, we will allow create family.
-                                                    if (((UtilsNew.isUndefinedOrNull(individual.father) ||
-                                                        (UtilsNew.isNotUndefinedOrNull(individual.father) && UtilsNew.isUndefinedOrNull(individual.father.id)) ||
-                                                        individual.father.id <= 0)
-                                                        &&
-                                                        (UtilsNew.isUndefinedOrNull(individual.mother) ||
-                                                        UtilsNew.isNotUndefinedOrNull(individual.mother) && UtilsNew.isUndefinedOrNull(individual.mother.id) || individual.mother.id <= 0))) {
-                                                        const individualPost = {};
-                                                        if (!!individualToUpdate.mother)    individualPost.mother = individualToUpdate.mother;
-                                                        if (!!individualToUpdate.father)    individualPost.father = individualToUpdate.father;
-                                                        if (!!individualToUpdate.lifeStatus)    individualPost.lifeStatus = individualToUpdate.lifeStatus;
-                                                        if (!!individualToUpdate.parentalConsanguinity)    individualPost.parentalConsanguinity = individualToUpdate.parentalConsanguinity;
-                                                        if (!!individualToUpdate.phenotypes)    individualPost.phenotypes = individualToUpdate.phenotypes.slice();
-                                                        const individualPromise = _this.opencgaClient.individuals().update(individualId, params, individualPost, {"method": "POST"})
-                                                            .then(response => { console.log("Individual updated"); });
-                                                        individualPromises.push(individualPromise);
-                                                    } else {
-                                                        _this.messageError = true;
-                                                        _this.messageErrorText.push(analysisInfo.analysisID + " " + individualToUpdate.name + " individual already has parents.");
-                                                        // PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                                                    }
-                                                }
-                                            });
-                                        }
-
-                                        /*
-                                        membersWithParents.forEach(function (individualToUpdate) {
-                                            _this.opencgaClient.individuals().info(individualToUpdate.name, params, {"method": "GET"})
-                                                .then(function (response) {
-                                                    if (response.response[0].numResults >= 1) {
-                                                        const individual = response.response[0].result[0];
-                                                        const individualId = individual.id;
-
-                                                        // Check if individual has father or mother already. If individual does not have, we will allow create family.
-                                                        if (((UtilsNew.isUndefinedOrNull(individual.father) ||
-                                                            (UtilsNew.isNotUndefinedOrNull(individual.father) && UtilsNew.isUndefinedOrNull(individual.father.id)) ||
-                                                            individual.father.id <= 0 )
-                                                            &&
-                                                            (UtilsNew.isUndefinedOrNull(individual.mother) ||
-                                                            UtilsNew.isNotUndefinedOrNull(individual.mother) && UtilsNew.isUndefinedOrNull(individual.mother.id) || individual.mother.id <= 0))) {
-                                                            let individualPost = {
-                                                                father: individualToUpdate.father,
-                                                                mother: individualToUpdate.mother
-                                                            };
-                                                            let individualPromise = _this.opencgaClient.individuals().update(individualId, params, individualPost, {"method": "POST"})
-                                                                .then(function (response) {
-                                                                    console.log("Individual update");
-                                                                });
-                                                            individualPromises.push(individualPromise);
-
-                                                        } else {
-                                                            _this.messageError = true;
-                                                            _this.messageErrorText.push(analysisInfo.analysisID + " " + individualToUpdate.name + " individual already has parents.");
-//                                                            PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                                                        }
-                                                    }
-                                                });
-                                        });
-                                        */
-
-                                        Promise.all(individualPromises)
-                                            .then(function (response) {
-                                                console.log("Create family");
-                                                if (UtilsNew.isNotUndefinedOrNull(individualPromises) &&
-                                                    UtilsNew.isNotEmptyArray(individualPromises) && individualPromises.length > 0) {
-                                                    _this.createFamily(params, bodyFamily, rowInfo, subjectName, samplesName, analysisInfo);
-                                                } else {
-                                                    _this.messageError = true;
-                                                    _this.messageErrorText.push(analysisInfo.analysisID + " We cannot create a family. Individuals are not correct.");
-//                                                    PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                                                }
-                                            })
-                                            .catch(function (response) {
-                                                _this.messageError = true;
-                                                _this.messageErrorText.push(analysisInfo.analysisID + " " + response.error);
-//                                                PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                                            });
-                                    } else {
-                                        // We are here when we are Correct Single Analysis. If we are here with DUO, TRIO or FAMILY will be an error.
-                                        if ((_analysisType !== "DUO" && _analysisType !== "TRIO" && _analysisType !== "FAMILY")) {
-                                            _this.createAnalysis(analysisInfo);
-                                        } else {
-                                            _this.messageError = true;
-                                            _this.messageErrorText.push(analysisInfo.analysisID + " We cannot create a family. Analysis type is not correct.");
-//                                            PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                                        }
-                                    }
-                                } else {
-                                    _this.messageError = true;
-                                    _this.messageErrorText.push(analysisInfo.analysisID + " Family name or Analysis name is not correct.");
-                                    PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                                }
-                            });
-                    }
-                } catch(err) {
-                    _this.messageError = true;
-                    _this.messageErrorText.push(err);
+                    this.push('pendingAnalyses', analysis);
                 }
             }
 
@@ -818,8 +498,7 @@
                 };
                 let _this = this;
                 this.opencgaClient.clinical().create(params, body)
-                    .then(function (response) {
-                        _this.unsavedAnalysis--;
+                    .then(response => {
                         _this.messageSuccess = true;
                         _this.messageSuccessText.push(body.name + " analysis has been created correctly.");
 //                        PolymerUtils.innerHTML(_this.prefix + "messageSuccess", _this.messageSuccessText);
@@ -843,40 +522,15 @@
                     return '<button data-toggle="modal" id="' + this.prefix + 'Editor' + randomString + '" role="button" type="button" class="btn btn-sm btn-success disabled" disabled data-target="#' + this.prefix + 'FamilyEditor"><i class="fa fa-cog" aria-hidden="true"></i>&nbsp;Edit</button>';
                 }
             }
-            subjectFormatter(analysisID, samples, selected) {
-                let res = "NOT AFFECTED";
-                let members = [];
-                samples.forEach((sample) => {
-                    if (UtilsNew.isNotUndefinedOrNull(sample.attributes) && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual)
-                        && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual.id) && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual.id > 0)) {
-                        members.push(sample.attributes.individual);
-                    }
-                });
-
-                if (UtilsNew.isNotEmptyArray(members)) {
-
-                    res = '<select id='+ this.prefix + 'selectedSubject' + analysisID + ' class="form-control form-control-sm">';
-                    members.forEach((affected) => {
-                        if (selected === affected.name || UtilsNew.isEmpty(selected)) {
-                            res = res +  '<option value="'+affected.name+'" selected>'+affected.name+'</option>';
-                            selected = affected.name;
-                        } else {
-                            res = res +  '<option value="'+affected.name+'">'+affected.name+'</option>';
-                        }
-                    });
-                    res = res +'</select>';
-                }
-                return res;
-            }
 
             diseaseFormatter(analysisID, samples, diseasesFromFamily = [], selected) {
                 let res = "NOT DISEASES";
-                let _this = this;
-                if (UtilsNew.isNotEmptyArray(samples)) {
+
+                if (!!samples && samples.length > 0) {
                     let resDiseases = [];
 
                     // If Analysis type is Single we are not going to have family
-                    if (UtilsNew.isEmptyArray(diseasesFromFamily)) {
+                    if (!!diseasesFromFamily && diseasesFromFamily.length > 0) {
                         let affectedMembers = samples.forEach((sample) => {
                             if (UtilsNew.isNotUndefinedOrNull(sample.attributes) && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual)
                                 && UtilsNew.isNotEmptyArray(sample.attributes.individual.phenotypes)) {
@@ -914,23 +568,6 @@
                     }
                 }
                 return res;
-            }
-
-            actionFormatter(familyEditor, randomString) {
-                const buttonClass = `class="btn btn-sm btn-primary${familyEditor ? " disabled" : ""}"`;
-                const buttonDisabled = familyEditor ? " disabled" : "";
-                const buttonString = `<button type="button" id="${this.prefix}Save${randomString}" ${buttonClass}${buttonDisabled}>`;
-                const istring = '<i class="fa fa-floppy-o" aria-hidden="true"></i>&nbsp;Save</button>';
-                return `${buttonString}${istring}`;
-            }
-
-            analysisFormatter(analysisID, randomString) {
-//                return '<input type="text" id="' + this.prefix + 'analysisID' + randomString + '" class="form-control" value="' + analysisID + '" maxlength="75">';
-                return analysisID;
-            }
-
-            descriptionFormatter(randomString) {
-                return '<input type="text" id="' + this.prefix + 'description' + randomString + '" class="form-control" maxlength="75">';
             }
 
             // we don't want to worry about the details of sending a message in every function
@@ -1003,8 +640,8 @@
                             samples: samples
                         }
                     });
-                    $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable("updateCell",{ index: selectedRow, field: "subjectSelected", value: _this.subjectFormatter(this.currentAnalysis.analysisIDinternal,samples, subjectSelected)});
-                    $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable("updateCell",{ index: selectedRow, field: "diseaseSelected", value: _this.diseaseFormatter(this.currentAnalysis.analysisIDinternal, samples, family.phenotypes , diseaseSelected)});
+                    // $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable("updateCell",{ index: selectedRow, field: "subjectSelected", value: _this.subjectFormatter(this.currentAnalysis.analysisIDinternal,samples, subjectSelected)});
+                    // $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable("updateCell",{ index: selectedRow, field: "diseaseSelected", value: _this.diseaseFormatter(this.currentAnalysis.analysisIDinternal, samples, family.phenotypes , diseaseSelected)});
                     PolymerUtils.getElementById(this.prefix + 'selectedSubject' + this.currentAnalysis.analysisIDinternal).addEventListener('change', e => this.selectSubject(e));
                     PolymerUtils.removeAttribute(this.prefix + "Save" + this.currentAnalysis.analysisIDinternal, "disabled");
                     PolymerUtils.removeClass(this.prefix + "Save" + this.currentAnalysis.analysisIDinternal, "disabled");
@@ -1012,67 +649,6 @@
                 }
 
                 this.messageErrorFamily = messageErrorFamily.slice();
-            }
-
-            _getClinicalAnalysisColumns() {
-                return [
-                    [
-                        {
-                            field: 'state',
-                            checkbox: true,
-                            align: 'center',
-                            valign: 'middle'
-                        },
-                        {
-                            field: 'analysisID',
-                            title: 'Analysis ID'
-                        },
-                        {
-                            field: 'description',
-                            title: 'Description'
-                        },
-                        {
-                            field: 'analysisSamples',
-                            title: 'Samples'
-                        },
-                        {
-                            field: 'analysisType',
-                            title: 'Analysis Type'
-                        },
-                        {
-                            field: 'editFamily',
-                            title: 'Definition'
-                        },
-                        {
-                            field: 'analysisDate',
-                            title: 'Date'
-                        },
-                        {
-                            field: 'subjectSelected',
-                            title: 'Subject'
-                        },
-                        {
-                            field: 'diseaseSelected',
-                            title: 'Disease'
-                        },
-                        {
-                            field: 'action',
-                            title: 'Action'
-                        },
-                        {
-                            field: 'sampleList',
-                            visible: false
-                        },
-                        {
-                            field: 'analysisIDinternal',
-                            visible: false
-                        },
-                        {
-                            field: 'family',
-                            visible: false
-                        }
-                    ]
-                ];
             }
 
             onClear() {
@@ -1083,6 +659,13 @@
             onFilterChange(e) {
                 this.query = e.detail;
                 this.search = e.detail;
+            }
+
+            onRemoveAnalysis(e) {
+                debugger;
+                if (!!e && !!e.detail) {
+                    this.pendingAnalyses = this.pendingAnalyses.filter(analysis => analysis.analysisID !== e.detail);
+                }
             }
         }
 
