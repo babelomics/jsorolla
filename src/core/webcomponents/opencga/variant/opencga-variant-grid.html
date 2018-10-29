@@ -689,17 +689,6 @@
             }
 
             consequenceTypeFormatter(value, row, index) {
-                // const consequenceTypes = row.sequenceOntologyTerms || [];
-                // if (consequenceTypes.length > 0) {
-                //     const mostSevereType = consequenceTypes.map(type => type.name).sort(consequenceTypesComparator)[0];
-                //     const termColor = !!this.field && !!this.field.context && !!this.field.context.consequenceTypeToColor && this.field.context.consequenceTypeToColor[mostSevereType];
-                //     const spanPrefix = !!termColor ? `<span style="color: ${termColor}">` : "";
-                //     const spanPostfix = !!termColor ? "</span>" : "";
-                //     return `${spanPrefix}${mostSevereType}${spanPostfix}&nbsp;(<a target="_blank" href="http://www.sequenceontology.org/browser/current_svn/term/${soTerm.accession}">${soTerm.accession}</a>)`;
-                // } else {
-                //     return "";
-                // }
-
                 if (!!row && !!row.annotation && !!row.annotation.consequenceTypes && !!row.annotation.consequenceTypes.length > 0) {
                     // FIXME This is a temporal fix for some wrong CTs. This must be removed ASAP.
                     const fixConsequenceName = name => (
@@ -843,10 +832,8 @@
             }
 
             populationFrequenciesFormatter(value, row, index) {
-                if (typeof row !== "undefined" && typeof row.annotation !== "undefined"
-                    && typeof row.annotation.populationFrequencies !== "undefined" && row.annotation.populationFrequencies.length > 0) {
-
-                    let data = new Map();
+                if (!!row && !!row.annotation && !!row.annotation.populationFrequencies && row.annotation.populationFrequencies.length > 0) {
+                    const data = new Map();
                     for (let popFreqIdx in row.annotation.populationFrequencies) {
                         let popFreq = row.annotation.populationFrequencies[popFreqIdx];
                         if (this.field.study === popFreq.study && this.field.populationMap[popFreq.population] === true) {
@@ -854,7 +841,7 @@
                         }
                     }
 
-                    let tableSize = this.field.populations.length * 15;
+                    const tableSize = this.field.populations.length * 15;
                     // Creates the colored table with one row and as many columns as populations
                     let htmlPopFreqTable = "<table style='width: " + tableSize + "px'><tr>";
                     for (let p in this.field.populations) {
@@ -968,9 +955,14 @@
             }
 
             sampleFormatter(value, row, index) {
+                // TODO: this function is severely broken, as it depends on the order of the columns implicitly
+                // as shown in the comment "NOTE: There are always 4 columns before the samples"
+                // this SHOULD be fixed
+
+                const sampleColumnIndex = 5;
                 let res = "-";
 
-                if (typeof row !== "undefined" && typeof row.studies !== "undefined" && row.studies.length > 0) {
+                if (!!row && !!row.studies && row.studies.length > 0) {
                     // NOTE: There are always 4 columns before the samples
                     // This context is for row
                     if (this.nucleotideGenotype) {
@@ -985,14 +977,14 @@
                         genotypeMatch.set(1, alternateSequence === "" ? "-" : alternateSequence);
 
                         row.studies.forEach((study) => {
-                            if (UtilsNew.isNotUndefinedOrNull(study.secondaryAlternates) && UtilsNew.isNotEmptyArray(study.secondaryAlternates)) {
+                            if (!!study.secondaryAlternates && study.secondaryAlternates.length > 0) {
                                 study.secondaryAlternates.forEach((secondary) => {
                                     genotypeMatch.set(genotypeMatch.size, secondary.alternate === "" ? "-" : secondary.alternate);
                                 });
                             }
-                            if (UtilsNew.isNotUndefinedOrNull(study.samplesData) && UtilsNew.isNotEmptyArray(study.samplesData)) {
-                                if (UtilsNew.isNotUndefinedOrNull(study.samplesData[this.fieldIndex - 4])) {
-                                    let currentGenotype = study.samplesData[this.fieldIndex - 4][0];
+                            if (!!study.samplesData && study.samplesData.length > 0) {
+                                if (UtilsNew.isNotUndefinedOrNull(study.samplesData[this.fieldIndex - sampleColumnIndex])) {
+                                    let currentGenotype = study.samplesData[this.fieldIndex - sampleColumnIndex][0];
                                     let reference = currentGenotype.split("/")[0];
                                     let alternate = currentGenotype.split("/")[1];
                                     let tooltipText = reference + " / " + alternate;
@@ -1067,7 +1059,7 @@
                     } else {
                         row.studies.forEach((study) => {
                             if (study.samplesData.length > 0) {
-                                let currentGenotype = study.samplesData[this.fieldIndex - 4];
+                                let currentGenotype = study.samplesData[this.fieldIndex - sampleColumnIndex];
                                 if (UtilsNew.isNotUndefinedOrNull(currentGenotype)) {
                                     res = currentGenotype[0];
                                     return;
@@ -1081,9 +1073,12 @@
 
             _refreshTableColumns() {
                 this.cols = this._createDefaultColumns();
+                // TODO: this function is severely broken
+                // the order of columns is hardcoded in several different ways
+                // rendering this unmaintainable
+                // columns and column order should be specified once, and
 
-                if (typeof this.cols !== "undefined" && typeof this.cohorts !== "undefined" && Object.keys(this.cohorts).length > 0
-                    && this.config.filter.menu.skipSubsections !== undefined && !this.config.filter.menu.skipSubsections.includes("cohort")) {
+                if (!!this.cols && !!this.cohorts && Object.keys(this.cohorts).length > 0 && !!this.config.filter.menu.skipSubsections && !this.config.filter.menu.skipSubsections.includes("cohort")) {
                     let cohortIdx = 5;
                     let cohortStudies = Object.keys(this.cohorts);
                     this.cols[0].splice(7, 0, {
@@ -1110,11 +1105,10 @@
                     }
                 }
 
-                if (typeof this.populationFrequencies !== "undefined" && typeof this.populationFrequencies.studies !== "undefined" && this.populationFrequencies.studies.length > 0) {
+                if (!!this.populationFrequencies && !!this.populationFrequencies.studies && this.populationFrequencies.studies.length > 0) {
                     let popIdx = 7;
                     let subPopIdx = 6;
-                    if (typeof this.cohorts !== "undefined" && Object.keys(this.cohorts).length > 0
-                        && this.config.filter.menu.skipSubsections !== undefined && !this.config.filter.menu.skipSubsections.includes("cohort")) {
+                    if (!!this.cohorts && Object.keys(this.cohorts).length > 0 && !!this.config.filter.menu.skipSubsections && !this.config.filter.menu.skipSubsections.includes("cohort")) {
                         popIdx++;
                         subPopIdx += Object.keys(this.cohorts).length;
                     }
@@ -1160,7 +1154,7 @@
                     }
                 }
 
-                if (typeof this.cols !== "undefined" && typeof this.samples !== "undefined" && this.samples.length > 0) {
+                if (!!this.cols && !!this.samples && this.samples.length > 0) {
                     this.cols[0].splice(4, 0, {
                         title: 'Samples',
                         field: 'samples',
@@ -1179,39 +1173,24 @@
                             nucleotideGenotype: true,
                         });
                     }
-                    // switch(this.analysisMode) {
-                    //     case "family":
-                    //         // if type is 'family' we expected few samples to be provided in property 'samples'
-                    //         break;
-                    //     case "cancer":
-                    //         this.cols[0].splice(4, 0, {
-                    //             title: this.samples[0].name,
-                    //             field: 'samples',
-                    //             rowspan: 1,
-                    //             colspan: 2,
-                    //             halign: 'center'
-                    //         });
-                    //         this.cols[1].splice(0, 0, {
-                    //                 title: 'Somatic',
-                    //                 field: 'samples',
-                    //                 rowspan: 1,
-                    //                 colspan: 1,
-                    //                 halign: 'center'
-                    //             },
-                    //             {
-                    //                 title: 'Germline',
-                    //                 field: 'samples',
-                    //                 rowspan: 1,
-                    //                 colspan: 1,
-                    //                 halign: 'center'
-                    //             }
-                    //         );
-                    //         break;
-                    //     default:
-                    //         break;
-                    // }
                 }
-                // this.renderVariantTable();
+
+                // add last checkbox column
+                if (this._config.showSelectCheckbox) {
+                    this.cols[0].unshift({
+                        title: 'Select',
+                        field: "selectForInterpretation",
+                        rowspan: 1,
+                        colspan: 1,
+                        align: 'center'
+                    });
+                    this.cols[1].unshift({
+                        field: "stateCheckBox",
+                        checkbox: true,
+                        rowspan: 1,
+                        colspan: 1
+                    });
+                }
             }
 
             _createDefaultColumns() {
@@ -1362,22 +1341,6 @@
                     ]
                 ];
 
-                // add last checkbox column
-                if (this._config.showSelectCheckbox) {
-                    columns[0].push({
-                        title: 'Select for <br> Interpretation',
-                        field: "selectForInterpretation",
-                        rowspan: 1,
-                        colspan: 1,
-                        align: 'center'
-                    });
-                    columns[1].push({
-                        field: "stateCheckBox",
-                        checkbox: true,
-                        rowspan: 1,
-                        colspan: 1
-                    });
-                }
                 return columns;
             }
 
