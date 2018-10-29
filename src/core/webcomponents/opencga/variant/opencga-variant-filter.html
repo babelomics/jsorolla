@@ -320,18 +320,10 @@
                             }
                         }
                     }
-
-                    // Setting mandatory field for variant query
-//                    this.samples = [];
-                    // this.query = {studies: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias};
                 }
             }
 
             queryObserver(newValue, oldValue) {
-                console.log("opencga-variant-filter.query.changed");
-                console.log(JSON.stringify(this.query));
-
-
                 if (this._reset) {
                     this.setQueryFilters();
                 } else {
@@ -618,17 +610,12 @@
             }
 
             onExternalPanelChange() {
-                let externalPanelSearchInputValue = PolymerUtils.getValue(this.prefix + "AutocompleteExternalPanelSearchInput");
-                let externalPanelSearchInput =PolymerUtils.getElementById(this.prefix + "AutocompleteExternalPanelSearchDataList").options;
-                let optionSelected = Array.from(externalPanelSearchInput).find((option) => {
-                    return option.value === externalPanelSearchInputValue;
-                });
-                if (UtilsNew.isNotUndefinedOrNull(optionSelected)) {
-                    let panel = JSON.parse(optionSelected.dataset.panel);
-                    // console.log("Prueba: "+ panel);
-                    let genes = panel.genes.map((gene) => {
-                        return gene._id.cellbaseId;
-                    }).join(",");
+                const externalPanelSearchInputValue = PolymerUtils.getValue(this.prefix + "AutocompleteExternalPanelSearchInput");
+                const externalPanelSearchInput = PolymerUtils.getElementById(this.prefix + "AutocompleteExternalPanelSearchDataList").options;
+                const optionSelected = Array.from(externalPanelSearchInput).find(option => option.value === externalPanelSearchInputValue);
+                if (!!optionSelected) {
+                    const panel = JSON.parse(optionSelected.dataset.panel);
+                    const genes = panel.genes.map(gene => gene._id.cellbaseId).join(",");
                     PolymerUtils.getElementById(this.prefix + "ExternalPanelAppsTextarea").value = genes;
                     PolymerUtils.setValue(this.prefix + "PanelAppsTextarea", "");
                     PolymerUtils.setPropertyById(this.prefix + "PanelApps", "selectedIndex", 0);
