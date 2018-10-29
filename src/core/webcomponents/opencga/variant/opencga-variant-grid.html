@@ -689,63 +689,40 @@
             }
 
             consequenceTypeFormatter(value, row, index) {
-                if (typeof row !== "undefined" && typeof row.annotation !== "undefined") {
-                    if (typeof row.annotation !== "undefined" && typeof row.annotation.consequenceTypes !== "undefined" && row.annotation.consequenceTypes.length > 0) {
-                        let consequenceTypesArr = [];
-                        let visited = new Set();
-                        let impact = {};
-                        for (let i = 0; i < row.annotation.consequenceTypes.length; i++) {
-                            for (let j = 0; j < row.annotation.consequenceTypes[i].sequenceOntologyTerms.length; j++) {
+                // const consequenceTypes = row.sequenceOntologyTerms || [];
+                // if (consequenceTypes.length > 0) {
+                //     const mostSevereType = consequenceTypes.map(type => type.name).sort(consequenceTypesComparator)[0];
+                //     const termColor = !!this.field && !!this.field.context && !!this.field.context.consequenceTypeToColor && this.field.context.consequenceTypeToColor[mostSevereType];
+                //     const spanPrefix = !!termColor ? `<span style="color: ${termColor}">` : "";
+                //     const spanPostfix = !!termColor ? "</span>" : "";
+                //     return `${spanPrefix}${mostSevereType}${spanPostfix}&nbsp;(<a target="_blank" href="http://www.sequenceontology.org/browser/current_svn/term/${soTerm.accession}">${soTerm.accession}</a>)`;
+                // } else {
+                //     return "";
+                // }
 
-                                let consequenceTypeName = row.annotation.consequenceTypes[i].sequenceOntologyTerms[j].name;
+                if (!!row && !!row.annotation && !!row.annotation.consequenceTypes && !!row.annotation.consequenceTypes.length > 0) {
 
-                                // FIXME This is a temporal fix for some wrong CTs. This must be removed ASAP.
-                                if (consequenceTypeName === "2KB_downstream_gene_variant") {
-                                    consequenceTypeName = "2KB_downstream_variant";
-                                }
-                                if (consequenceTypeName === "2KB_upstream_gene_variant") {
-                                    consequenceTypeName = "2KB_upstream_variant";
-                                }
-
-                                if (typeof consequenceTypeName !== "undefined" && consequenceTypeName !== "" && !visited.has(consequenceTypeName)) {
-                                    if (typeof this.field.context.consequenceTypeToImpact !== "undefined"
-                                        && typeof this.field.context.consequenceTypeToImpact[consequenceTypeName] !== "undefined") {
-                                        let imp = this.field.context.consequenceTypeToImpact[consequenceTypeName];
-                                        if (typeof impact[imp] === "undefined") {
-                                            impact[imp] = [];
-                                        }
-                                        if (typeof this.field.context.consequenceTypeToColor !== "undefined"
-                                            && typeof this.field.context.consequenceTypeToColor[consequenceTypeName] !== "undefined") {
-                                            impact[imp].push('<span style="color: ' + this.field.context.consequenceTypeToColor[consequenceTypeName] + '">' + consequenceTypeName + '</span>');
-                                        } else {
-                                            impact[imp].push('<span>' + consequenceTypeName + '</span>');
-                                        }
-
-                                    }
-                                    visited.add(consequenceTypeName);
-                                }
-                            }
-                        }
-
-                        if (Object.keys(impact).length > 0) {
-                            if (typeof impact["high"] !== "undefined" || typeof impact["moderate"] !== "undefined") {
-                                if (typeof impact["high"] !== "undefined") {
-                                    Array.prototype.push.apply(consequenceTypesArr, impact["high"]);
-                                }
-                                if (typeof impact["moderate"] !== "undefined") {
-                                    Array.prototype.push.apply(consequenceTypesArr, impact["moderate"]);
-                                }
-                            } else if (typeof impact["low"] !== "undefined") {
-                                Array.prototype.push.apply(consequenceTypesArr, impact["low"]);
-                            } else if (typeof impact["modifier"] !== "undefined") {
-                                Array.prototype.push.apply(consequenceTypesArr, impact["modifier"]);
-                            }
-                        }
-
-                        return consequenceTypesArr.join('<br>');
+                    // FIXME This is a temporal fix for some wrong CTs. This must be removed ASAP.
+                    const fixConsequenceName = name => (
+                        name === "2KB_downstream_gene_variant" ? "2KB_downstream_variant"
+                        : name === "2KB_upstream_gene_variant" ? "2KB_upstream_variant" : name
+                    );
+                    const consequences = [].concat(...row.annotation.consequenceTypes.map(consequence => (
+                            (!!consequence.sequenceOntologyTerms && consequence.sequenceOntologyTerms.map(term => fixConsequenceName(term.name))) || []
+                        )).filter(item => !!item && item.length>0));
+                    const uniqueConsequences = consequences.filter((value, idx) => idx === consequences.indexOf(value));
+                    if (uniqueConsequences.length > 0) {
+                        const mostSevereConsequence = uniqueConsequences.sort(consequenceTypesComparator)[0];
+                        // get color
+                        const color = !!this.field && !!this.field.context && !!this.field.context.consequenceTypeToColor && this.field.context.consequenceTypeToColor[mostSevereConsequence];
+                        const style = !!color ? `style="color: ${color}"` : "";
+                        return `<span ${style}>${mostSevereConsequence}</span>`;
+                    } else {
+                        return "-";
                     }
+                } else {
+                    return '-';
                 }
-                return '-';
             }
 
             proteinScoreFormatter(value, row, index) {
@@ -929,7 +906,7 @@
                     'not provided',
                     'other'
                 ].filter(significance => clinicalSignificances.includes(significance));
-                const defaultStyle = "color: auto; width:2rem; margin: 0; padding: 3px; display: inline";
+                const defaultStyle = "color: auto; width:2rem; margin: 0; padding: 3px; display: inline; float: left";
                 const renderingStr = (symbol, name, color, textColor) => `<div style="background-color:${color}; color:${textColor};${defaultStyle}" title="${name}">${symbol}</div>`;
                 const renderings = processedSignificances.map(significance => {
                     switch (significance) {
