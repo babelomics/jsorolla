@@ -25,26 +25,30 @@
     <template>
         <div id="{{prefix}}-main-div">
             <template is="dom-if" if="{{variables.length}}">
-                    <template is="dom-if" if="{{_config.addResetButton}}">
-                        <button type="button" style="float: right; margin: 10px 10px 5px 0px;" class="btn btn-primary" on-click="resetSelection">Reset</button>
-                    </template>
+                <label for="{{prefix}}-annotation-picker" style="margin-top: 15px;">{{_config.title}}</label>
 
-                    <label for="{{prefix}}-annotation-picker" style="margin-top: 15px;">{{_config.title}}</label>
-                    <select class="form-control ovs-list" id="{{prefix}}-annotation-picker" data-live-search="true" data-size="10"
-                            on-change="onChangeSelectedVariable" data-width="100%" data-class="btn-sm" multiple$="{{_config.multiSelection}}">
-                        <template is="dom-repeat" items="{{variables}}" as="variable" on-dom-change="renderDomRepeat" restamp="true">
-                            <option data-tokens="{{variable.tags}}" data-variable="{{variable}}"
-                                    style$="padding-left: {{variable.margin}}px; cursor: {{variable.cursor}};"
-                                    disabled$="{{variable.disabled}}">
-                                {{variable.name}}
-                            </option>
-                        </template>
-                    </select>
+                <form class="form-inline">
+                    <div class="form-group" style="width: 80%">
+                        <select class="form-control" id="{{prefix}}-annotation-picker" data-live-search="true" data-size="10"
+                                on-change="onChangeSelectedVariable" data-width="100%" multiple$="{{_config.multiSelection}}">
+                            <template is="dom-repeat" items="{{variables}}" as="variable" on-dom-change="renderDomRepeat" restamp="true">
+                                <option data-tokens="{{variable.tags}}" data-variable="{{variable}}"
+                                        style$="padding-left: {{variable.margin}}px; cursor: {{variable.cursor}};"
+                                        disabled$="{{variable.disabled}}">
+                                    {{variable.name}}
+                                </option>
+                            </template>
+                        </select>
+                    </div>
+                    <template is="dom-if" if="{{_config.showResetButton}}">
+                        <button type="button" class="btn btn-primary" on-click="resetSelection">Reset</button>
+                    </template>
+                </form>
             </template>
         </div>
     </template>
-    <script>
 
+    <script>
         class OpencgaVariableSelector extends Polymer.Element {
 
             constructor() {
@@ -61,7 +65,7 @@
                 return {
                     variableSet: {
                         type: Array,
-                        observer: "parseVariableForDisplay"
+                        observer: "variableSetObserver"
                     },
                     selected: {
                         type: Array
@@ -78,28 +82,33 @@
             }
 
             _init() {
-                // super.ready();
                 this.prefix = "ovs-" + Utils.randomString(6);
 
                 this.variables = [];
 
-                this.configObserver(this.config);
+                this._config = this.getDefaultConfig();
             }
 
-            configObserver(parentConfig) {
-                let config = {};
-                Object.assign(config, this.getDefaultConfig(), parentConfig);
-                this._config = config;
+            configObserver() {
+                this._config = Object.assign({}, this.getDefaultConfig(), this.config);
             }
 
-            parseVariableForDisplay(variableSet) {
+            variableSetObserver(variableSet) {
                 this.variables = this._parseVariableForDisplay(variableSet.variables, [], this._config.variableSelector.marginLeft);
 
-                // Select first allowed variable by default
-                for (let i = 0; i < this.variables.length; i++) {
-                    if (!this.variables[i].disabled) {
-                        $(`#${this.prefix}-annotation-picker`).find(".selectpicker").selectpicker('deselectAll');
-                        return;
+                if (!this._config.multiselection) {
+                    // Select first allowed variable by default
+                    for (let variable of this.variables) {
+                        if (!variable.disabled) {
+                            $(`#${this.prefix}-annotation-picker`).find(".selectpicker").selectpicker('deselectAll');
+                            this.dispatchEvent(new CustomEvent('variablechange', {
+                                    detail: {
+                                        value: [variable]
+                                    }
+                                }
+                            ));
+                            return;
+                        }
                     }
                 }
             }
@@ -125,9 +134,7 @@
                             disabled: false,
                             margin: margin,
                             cursor: "pointer",
-                            // tags: [variable.name, variable.title].concat(tags).join(" ")
-                            // tags: myTags
-                            // tags: tags + "." + variable.name
+
                             tags: tags.concat(variable.id).join(".")
                         });
                     } else {
@@ -156,30 +163,30 @@
             }
 
             renderDomRepeat(e) {
-                let mainDiv = $(`#${this.prefix}-main-div`);
+                const mainDiv = $(`#${this.prefix}-main-div`);
 
-                let selectpicker = mainDiv.find(".selectpicker");
+                const selectpicker = mainDiv.find(".selectpicker");
                 selectpicker.selectpicker('refresh');
                 selectpicker.selectpicker('deselectAll');
 
-                // Add the class to the select picker buttons
-                selectpicker.selectpicker('setStyle', this._config.buttonClass, 'add');
-                // Add the class to the lists
-                mainDiv.find("ul > li").addClass(this._config.class);
+                // // Add the class to the select picker buttons
+                // selectpicker.selectpicker('setStyle', this._config.buttonClass, 'add');
+                // // Add the class to the lists
+                // mainDiv.find("ul > li").addClass(this._config.class);
             }
 
             onChangeSelectedVariable(e) {
-                let selectedVariables = [];
-                for (let i = 0; i < e.currentTarget.selectedOptions.length; i++) {
-                    selectedVariables.push(e.currentTarget.selectedOptions[i].dataVariable);
+                const selectedVariables = [];
+                const options = (!!e && e.currentTarget && !!e.currentTarget.selectedOptions && e.currentTarget.selectedOptions) || [];
+                for (const option of options) {
+                    selectedVariables.push(option.dataVariable);
                 }
-
-                this.dispatchEvent(new CustomEvent('ovschange', {detail: {value: selectedVariables}}));
+                this.dispatchEvent(new CustomEvent('variablechange', {detail: {value: selectedVariables}}));
             }
 
             resetSelection(e) {
-                let mainDiv = $(`#${this.prefix}-main-div`);
-                let selectpicker = mainDiv.find(".selectpicker");
+                const mainDiv = $(`#${this.prefix}-main-div`);
+                const selectpicker = mainDiv.find(".selectpicker");
 
                 selectpicker.selectpicker('refresh');
                 selectpicker.selectpicker('deselectAll');
@@ -190,7 +197,7 @@
                     title: "Select variable and value(s)",
                     multiSelection: false, // Select multiple fields
                     onlyAllowLeafSelection: true, // Only allow leaf selection
-                    addResetButton: false,
+                    showResetButton: false,
 
                     class: "small",
                     buttonClass: "btn-sm",

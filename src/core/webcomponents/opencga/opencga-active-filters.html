@@ -249,19 +249,19 @@
 
             save() {
                 const filterName = this.saveDialogFilterName;
-                let filterDescription = PolymerUtils.getValue(this.prefix + "filterDescription");
+                const filterDescription = PolymerUtils.getValue(this.prefix + "filterDescription");
 
-                let params = {};
-                params.name = filterName;
-                params.description = filterDescription;
-                params.bioformat = this.filterBioformat;
-                params.query = this.query;
-                params.options = {};
+                const params = {
+                    name: filterName,
+                    description: filterDescription,
+                    bioformat: this.filterBioformat,
+                    query: this.query,
+                    options: {},
+                };
                 const _this = this;
 
-                this.opencgaClient.users().getFilters({name: filterName}, {serverVersion: this.opencgaClient._config.serverVersion})
-                    .then(function (response) {
-                        debugger;
+                this.opencgaClient.users().getFilter({name: filterName}, {serverVersion: this.opencgaClient._config.serverVersion})
+                    .then(response => {
                         if (response.response[0].result.length > 0) {
                             delete params.name;
                             _this.opencgaClient.users().updateFilter(filterName, params, {})
@@ -275,13 +275,7 @@
                                     PolymerUtils.setValue(_this.prefix + "filterDescription", "");
                                 });
                         } else {
-                            // HACK!!!!!!
-                            // this.opencgaClient._config.serverSession does not exist
-                            // so this path is never taken
-                            // which is the path we actually need
-                            // if (_this.opencgaClient._config.serverSession !== undefined && _this.opencgaClient._config.serverSession === "1.3") {
-                            if (true) {
-                                debugger;
+                            if ("1.3" === _this.opencgaClient._config.serverVersion) {
                                 _this.opencgaClient.users().createFilter(params, {})
                                     .then(response => {
                                         debugger;
