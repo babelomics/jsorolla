@@ -42,49 +42,37 @@
                 <opencga-sample-grid opencga-client="{{opencgaClient}}" opencga-session="{{opencgaSession}}" config="[[config]]" event-notify-name="[[eventNotifyName]]" samples="{{samples}}" search="{{search}}"></opencga-sample-grid>
 
                 <br>
-                <h3>Analysis Type</h3>
+
+                <h3>Create analysis</h3>
                 <div id="{{prefix}}toolbar">
                     <div class="btn-group btn-group-sm">
-                        <button id="singleButton" class="button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 1)}}">
-                            <img src="[[importPath]]images/analysis_single_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 1)}}">
-                        </button>
-                        <button id="duoButton" class="button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 2)}}">
-                            <img src="[[importPath]]images/analysis_duo_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 2)}}">
-                        </button>
-                        <button id="trioButton" class="button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 3)}}">
-                            <img src="[[importPath]]images/analysis_trio_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 3)}}">
-                        </button>
-                        <button id="familyButton" class="button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 4)}}">
-                            <img src="[[importPath]]images/analysis_family_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 4)}}">
-                        </button>
-                        <button id="autoButton" class="hidden button" on-click="addAnalysis" disabled="{{!isAnalysisTypeEnabled(samples.length, 4, 'ge')}}">
-                            <img src="[[importPath]]images/analysis_auto_button.png" height="60" style$="{{getAnalysisTypeButtonStyle(samples.length, 4, 'ge')}}">
+                        <button class="button" on-click="addAnalysis" disabled="[[!samples.length]]">
+                            <img src="[[importPath]]images/analysis_button.png" height="60" style$="{{getAnalysisButtonStyle(samples.length)}}">
                         </button>
                     </div>
                 </div>
                 <br>
 
 
-                <template is="dom-if" if="[[pendingAnalyses.length]]">
-                    <div style="padding: 10px 0px">
-                        <h3>Clinical Analysis</h3>
-                        <template is="dom-if" if="{{messageSuccess}}">
-                            <template is="dom-repeat" items="{{messageSuccessText}}">
-                                    <div class="alert alert-success" role="alert" id="{{prefix}}messageSuccess" style="margin:0 auto;">{{item}}</div>
-                            </template>
-                        </template>
-                        <template is="dom-if" if="{{messageError}}">
-                            <template is="dom-repeat" items="{{messageErrorText}}">
-                                    <div class="alert alert-danger" role="alert" id="{{prefix}}messageError" style="margin:0 auto;">{{item}}</div>
-                            </template>
-                        </template>
-                        <template is="dom-if" if="{{pendingAnalyses.length}}">
-                            <div class="alert alert-warning" role="alert" style="margin:0 auto;">There are unsaved analyses!</div>
-                        </template>
-                        <variant-clinical-samples-analyses-table analyses="[[pendingAnalyses]]" on-remove-analysis="onRemovePendingAnalysis">
-                        </variant-clinical-samples-analyses-table>
-                    </div>
-                </template>
+                <div style="padding: 10px 0px">
+                    <h3>Clinical Analysis</h3>
+                    <template is="dom-repeat" items="[[messageSuccess]]" as="message">
+                        <div class="alert alert-success" role="alert" style="margin:0 auto;">[[message]]</div>
+                    </template>
+                    <template is="dom-repeat" items="[[messageErrorText]]" as="message">
+                            <div class="alert alert-danger" role="alert" style="margin:0 auto;">[[message]]</div>
+                    </template>
+                    <template is="dom-if" if="{{pendingAnalyses.length}}">
+                        <div class="alert alert-warning" role="alert" style="margin:0 auto;">There are unsaved analyses!</div>
+                    </template>
+                    <variant-clinical-samples-analyses-table
+                            opencga-session="[[opencgaSession]]"
+                            opencga-client="[[opencgaClient]]"
+                            analyses="[[pendingAnalyses]]"
+                            on-remove-analysis="onRemovePendingAnalysis"
+                            on-message="onMessage"
+                    ></variant-clinical-samples-analyses-table>
+                </div>
             </div>
         </div>
 
@@ -203,6 +191,14 @@
                         type: Array,
                         value: () => [],
                     },
+                    messageError: {
+                        type: Array,
+                        value: () => [],
+                    },
+                    messageSuccess: {
+                        type: Array,
+                        value: () => [],
+                    },
                 }
             }
 
@@ -242,23 +238,13 @@
                 // TODO
             }
 
-            isAnalysisTypeEnabled(actualCount, properCount, operator="eq") {
-                const op = !!operator ? operator : 'eq';
-                switch(op) {
-                    case 'ge':  return actualCount >= properCount;
-                    default:    return actualCount === properCount;
-                }
-            }
-
-            getAnalysisTypeButtonStyle(actualCount, properCount, operator) {
-                const res = this.isAnalysisTypeEnabled(actualCount, properCount, operator);
-                return res ? "" : "opacity: 0.4; filter: alpha(opacity=40);";
+            getAnalysisButtonStyle(count) {
+                return !!this.samples && this.samples.length > 0 ? "" : "opacity: 0.4; filter: alpha(opacity=40);";
             }
 
             clear() {
                 this.samples = [];
                 this.pendingAnalyses = [];
-                this._numAnalysisSelected = 0;
                 this.currentAnalysis = {};
                 this.selectedRow = -1;
                 this.messageError = false;
@@ -373,47 +359,10 @@
             }
 
             addAnalysis(e) {
-
                 // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
                 e.preventDefault();
 
-                // get the type of analysisId
-                let analysisType = "";
-                let properMembers = -1;
-                switch (e.currentTarget.id) {
-                    case "familyButton":
-                        analysisType = "Family";
-                        properMembers = 4;
-                        break;
-                    case "trioButton":
-                        analysisType = "Trio";
-                        properMembers = 3;
-                        break;
-                    case "duoButton":
-                        analysisType = "Duo";
-                        properMembers = 2;
-                        break;
-                    case "singleButton":
-                        analysisType = "Single";
-                        properMembers = 1;
-                        // _familyEditor = !UtilsNew.isNotUndefinedOrNull(this.samples[0].individual) && UtilsNew.isNotEmptyArray(this.samples[0].phenotypes);
-                        break;
-                    case "autoButton":
-                        analysisType = "Auto comparative";
-                        properMembers = 2;
-                        break;
-                    case "multiButton":
-                        analysisType = "Multisample";
-                        properMembers = 2;
-                        break;
-                    default:
-                        analysisType = "Family";
-                        properMembers = 4;
-                        break;
-                }
-
-
-               if (this.analysisError(analysisType, this.samples, properMembers)) {
+                if (this.analysisError(this.samples)) {
                     const fullDate = new Date();
                     const twoDigitMonth = ((fullDate.getMonth() + 1) >= 10) ? (fullDate.getMonth() + 1) : '0' + (fullDate.getMonth() + 1);
                     const currentDate = fullDate.getDate() + "/" + twoDigitMonth + "/" + fullDate.getFullYear();
@@ -425,10 +374,7 @@
 
                     const analysis = {
                         id: `AN-${1 + Math.floor(Math.random() * 10000000)}`,
-                        type: analysisType,
                         date: currentDate,
-                        // filter: "NO",
-                        // diseaseSelected: _this.diseaseFormatter(aux, this.samples, ""),
                         diseaseSelected: "none",
                         samples: this.samples,
                     };
@@ -437,116 +383,36 @@
                 }
             }
 
-            createAnalysis(analysisInfo) {
-                let params = {
-                    study: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias
-                };
-                let body = {
-                    "name": analysisInfo.analysisID,
-                    "description": analysisInfo.description,
-                    "type": analysisInfo.type,
-                    "family": analysisInfo.familyID,
-                    "subjects": analysisInfo.subjects,
-                    "disease": analysisInfo.disease,
-                    "attributes": {
-                        "filter": false
-                    }
-                };
-                let _this = this;
-                this.opencgaClient.clinical().create(params, body)
-                    .then(response => {
-                        _this.messageSuccess = true;
-                        _this.messageSuccessText.push(body.name + " analysis has been created correctly.");
-//                        PolymerUtils.innerHTML(_this.prefix + "messageSuccess", _this.messageSuccessText);
-                        // Remove the current analysis from the table
-                        $(PolymerUtils.getElementById(_this.prefix + 'tableAnalysis')).bootstrapTable('remove', {
-                            field: 'analysisID',
-                            values:  [analysisInfo.analysisID]
-                        });
-                    })
-                    .catch(function (response) {
-                        _this.messageError = true;
-                        _this.messageErrorText.push(analysisInfo.analysisID + " " + response.error);
-//                        PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                    });
-            }
-
-            diseaseFormatter(analysisID, samples, diseasesFromFamily = [], selected) {
-                let res = "NOT DISEASES";
-
-                if (!!samples && samples.length > 0) {
-                    let resDiseases = [];
-
-                    // If Analysis type is Single we are not going to have family
-                    if (!!diseasesFromFamily && diseasesFromFamily.length > 0) {
-                        let affectedMembers = samples.forEach((sample) => {
-                            if (UtilsNew.isNotUndefinedOrNull(sample.attributes) && UtilsNew.isNotUndefinedOrNull(sample.attributes.individual)
-                                && UtilsNew.isNotEmptyArray(sample.attributes.individual.phenotypes)) {
-                                let ontologyTerms = sample.attributes.individual.phenotypes;
-                                ontologyTerms.forEach((term) => {
-                                    if (UtilsNew.isNotEmpty(term.id)) {
-                                        // check if exists already this term in data.diseases
-                                        let existsTerm = resDiseases.find((element) => {
-                                            return element.id === term.id;
-                                        });
-                                        if (UtilsNew.isUndefinedOrNull(existsTerm)) {
-                                            resDiseases.push(term);
-                                        }
-                                    }
-                                });
-                            }
-                        });
-                    } else {
-                        resDiseases = diseasesFromFamily;
-                    }
-
-                    if (UtilsNew.isNotEmptyArray(resDiseases)) {
-                        res = '<select id='+ this.prefix + 'selectedDisease' + analysisID + ' class="form-control form-control-sm">';
-
-                        resDiseases.forEach((disease) => {
-                            if (selected === disease.id || UtilsNew.isEmpty(selected)) {
-                                res = res +  '<option value="'+disease.id+'" selected>'+disease.id+'</option>';
-                                selected = disease.id;
-                            } else {
-                                res = res + '<option value="' + disease.id + '">' + disease.id + '</option>';
-                            }
-                        });
-
-                        res = res + '</select>';
-                    }
-                }
-                return res;
-            }
-
             // we don't want to worry about the details of sending a message in every function
             throwMessage(message, type) {
                 const params = { detail: { message: message, type: type }, bubbles: true, composed: true };
                 this.dispatchEvent(new CustomEvent(this.eventNotifyName, params));
             }
 
-            analysisError(analysisType, samples, properLength) {
-                // check all samples have an associated individual
-                const sampleHasIndividual = sample => (
-                    !!sample && !!sample.attributes && !!sample.attributes.individual
-                    && !!sample.attributes.individual.id && (sample.attributes.individual.id>0)
-                );
-                const allSamplesHaveIndividual = (samples || []).every(sampleHasIndividual);
-                if (allSamplesHaveIndividual) {
-                    const invalidSubjectCount = (['Single', 'Duo', 'Trio', 'Auto comparative'].includes(analysisType) && samples.length != properLength)
-                        || (['Family', 'Multisample'].includes(analysisType) && samples.length < properLength);
-                    if (invalidSubjectCount) {
-                        const message = `Incorrect number of samples selected (${samples.length.toString()}) for ${analysisType} analysis (${properLength.toString()})`;
-                        this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
-                        return false;
-                    } else if (analysisType === "Single" && !!samples && samples.length>0 && !!(samples[0]) && (samples[0].phenotypes || []).length === 0) {
-                        this.throwMessage("Incorrect single analysis without diseases", UtilsNew.MESSAGE_ERROR);
+            analysisError(samples) {
+                if (!samples || samples.length == 0) {
+                    const message = "An analysis must include at least one sample. Please, select one from the sample browser above.";
+                    this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
+                    return false;
+                } else {
+                    // check all samples have an associated individual
+                    const sampleHasIndividual = sample => (
+                        !!sample && !!sample.attributes && !!sample.attributes.individual
+                        && !!sample.attributes.individual.id && (sample.attributes.individual.id>0)
+                    );
+                    const allSamplesHaveIndividual = samples.every(sampleHasIndividual);
+                    if (!allSamplesHaveIndividual) {
+                        this.throwMessage("All samples must have an associated individual.", UtilsNew.MESSAGE_ERROR);
                         return false;
                     } else {
-                        return true;
+                        const anyDiseasedSamples = samples.some(sample => !!sample.phenotypes && sample.phenotypes.length > 0);
+                        if (!anyDiseasedSamples) {
+                            this.throwMessage("At least one subject should be diseased.", UtilsNew.MESSAGE_ERROR);
+                            return false;
+                        } else {
+                            return true;
+                        }
                     }
-                } else {
-                    this.throwMessage("All samples must have an associated individual.", UtilsNew.MESSAGE_ERROR);
-                    return false;
                 }
             }
 
@@ -570,7 +436,19 @@
                 }
             }
 
+            onMessage(e) {
+                const error = !!e && !!e.detail && !!e.detail.error;
+                const message = !!e && !!e.detail && e.detail.message;
+                const pthis = this;
+                const queue = error ? 'messageError' : 'messageSuccess';
+                this.push(queue, message);
+                setTimeout(() => pthis.shift(queue), 5000);
+            }
+
+            //======================================================================================
             // TODO: remove family related methods from this class
+            //======================================================================================
+
             createFamily(params, body, rowInfo, subjectName, samplesName, analysisInfo){
                 let _this = this;
                 this.opencgaClient.families().create(params, body)

@@ -868,66 +868,94 @@
                 return '-';
             }
 
+            //======================================================================================
+            // <clinical significance>
+            //======================================================================================
+            static get significances() {
+                return {
+                    'pathogenic': {
+                        image: 'pathogenic.svg',
+                        color: 'red',
+                    },
+                    'likely pathogenic': {
+                        image: 'likely-pathogenic.svg',
+                        color: 'orange',
+                    },
+                    'uncertain significance': {
+                        image: 'uncertain-significance.svg',
+                        color: 'yellow',
+                    },
+                    'likely benign': {
+                        image: 'likely-benign.svg',
+                        color: 'green',
+                    },
+                    'benign': {
+                        image: 'benign.svg',
+                        color: 'lime',
+                    },
+                    'conflicting data from submitters': {
+                        image: 'conflict.svg',
+                        color: 'red',
+                    },
+                    'conflicting interpretations of pathogenicity': {
+                        image: 'conflict.svg',
+                        color: 'red',
+                    },
+                    'risk factor': {
+                        image: 'risk-factor.svg',
+                        color: 'red',
+                    },
+                    'affects': {
+                        image: 'affects.svg',
+                        color: 'gray',
+                    },
+                    'association': {
+                        image: 'association.svg',
+                        color: 'gray',
+                    },
+                    'drug response': {
+                        image: 'drug-response.svg',
+                        color: 'gray',
+                    },
+                    'protective': {
+                        image: 'protective.svg',
+                        color: 'green',
+                    },
+                    // 'no interpretation for the single variant': {
+                    //     color: 'red',
+                    // },
+                    // 'other': {
+                    // },
+                    // 'not provided': {
+                    //     color: 'red',
+                    // },
+                };
+            }
+
+            static filterSignificances(significances) {
+                const normSignificances = significances.map(significance => significance.trim().toLowerCase());
+                return Object.keys(OpencgaVariantGrid.significances).filter(significance => normSignificances.includes(significance));
+            }
+
             clinicalSignificanceFormatter(value, row, index) {
-                const clinvars = (!!row
-                    && !!row.annotation
-                    && !!row.annotation.variantTraitAssociation
-                    && !!row.annotation.variantTraitAssociation.clinvar
-                    && row.annotation.variantTraitAssociation.clinvar) || [];
-                const clinicalSignificances = [...new Set([].concat(...clinvars.map(clinvar => (clinvar.clinicalSignificance || "").split(/[,\\]+/))).filter(x => !!x))].map(x => x.toLowerCase().trim());
-                const processedSignificances = [
-                    'pathogenic',
-                    'likely pathogenic',
-                    'uncertain significance',
-                    'likely benign',
-                    'benign',
-                    'conflicting data from submitters',
-                    'conflicting interpretations of pathogenicity',
-                    'risk factor',
-                    'affects',
-                    'association',
-                    'drug response',
-                    'protective',
-                    'no interpretation for the single variant',
-                    'not provided',
-                    'other'
-                ].filter(significance => clinicalSignificances.includes(significance));
-                const defaultStyle = "color: auto; width:2.5rem; margin: 0; padding: 3px; display: inline; float: left; font-size: smaller";
-                const renderingStr = (symbol, name, color, textColor) => `<div style="background-color:${color}; color:${textColor};${defaultStyle}" title="${name}">${symbol}</div>`;
-                const renderings = processedSignificances.map(significance => {
-                    switch (significance) {
-                        case 'pathogenic':
-                            return renderingStr("P", significance, "red", "white");
-                        case 'likely pathogenic':
-                            return renderingStr("LP", significance, "orange", "white");
-                        case 'uncertain significance':
-                            return renderingStr("VUS", significance, "pink", "white");
-                        case 'likely benign':
-                            return renderingStr("LB", significance, "darkgreen", "white");
-                        case 'benign':
-                            return renderingStr("B", significance, "green", "white");
-                        case 'risk factor':
-                            return renderingStr("RF", significance, "pink", "white");
-                        case 'affects':
-                            return renderingStr("AF", significance, "pink", "white");
-                        case 'association':
-                            return renderingStr("AS", significance, "gray", "white");
-                        case 'drug response':
-                            return renderingStr("DR", significance, "gray", "white");
-                        case 'protective':
-                            return renderingStr("PR", significance, "gray", "white");
-                        case 'conflicting data from submitters':
-                        case 'conflicting interpretations of pathogenicity':
-                            return renderingStr("!!!", significance, "pink", "white");
-                        case 'no interpretation for the single variant':
-                        case 'not provided':
-                        case 'other':
-                        default:
-                            return "";
-                    }
+                const variant = row;
+                const clinvars = (!!variant
+                    && !!variant.annotation
+                    && !!variant.annotation.variantTraitAssociation
+                    && variant.annotation.variantTraitAssociation.clinvar) || [];
+                const naiveSignificances = [...new Set([].concat(...clinvars.map(clinvar => (clinvar.clinicalSignificance || "").split(/[,\\]+/))).filter(x => !!x))];
+                const significances = OpencgaVariantGrid.filterSignificances(naiveSignificances);
+                const renderings = significances.map(significance => {
+                    const elem = OpencgaVariantGrid.significances[significance];
+                    const style = `style="background-color:${elem.color}; width: 2rem; margin: 1px"`;
+                    return `<img src="img/clinvar/${elem.image}" ${style} title="${significance}" alt="${significance}">`;
+
                 });
                 return renderings.join("");
             }
+            //======================================================================================
+            // </clinical significance>
+            //======================================================================================
 
             clinicalPhenotypeFormatter(value, row, index) {
                 let tooltipText = "";

@@ -1,6 +1,6 @@
 <dom-module id="variant-clinical-samples-analyses-table">
     <template>
-        <table class="table">
+        <table class="table table-bordered table-striped">
             <thead>
                 <tr>
                     <th>Analysis ID</th>
@@ -15,14 +15,20 @@
             <tbody>
                 <template is="dom-repeat" items="[[analyses]]" as="analysis">
                     <tr>
-                        <td>[[analysis.id]]</td>
-                        <td><input type="text" class="form-control" maxlength="75"></td>
+                        <td>
+                            [[analysis.id]]
+                        </td>
+                        <td>
+                            <input type="text" class="form-control" maxlength="75" value="{{analysis.description::input}}">
+                        </td>
                         <td>
                             <template is="dom-repeat" items="[[analysis.samples]]" as="sample">
                                 <span>[[sample.name]]</span><br>
                             </template>
                         </td>
-                        <td>[[analysis.date]]</td>
+                        <td>
+                            [[analysis.date]]
+                        </td>
                         <td>
                             <select class="form-control form-control-sm">
                                 <template is="dom-repeat" items="[[getMembers(analysis)]]" as="member">
@@ -30,7 +36,13 @@
                                 </template>
                             </select>
                         </td>
-                        <td>[[analysis.diseaseSelected]]</td>
+                        <td>
+                            <select class="form-control form-control-sm" on-change="onDiseaseChanged" data-analysis="[[analysis.id]]">
+                                <template is="dom-repeat" items="[[getDiseases(analysis)]]" as="disease">
+                                    <option value="[[disease.id]]">[[disease.id]]</option>
+                                </template>
+                            </select>
+                        </td>
                         <td>
                             <button type="button" class="btn btn-sm btn-success" data-analysis="[[analysis.id]]" on-click="onSaveAnalysis">
                                 <span class="fa fa-floppy-o" data-analysis="[[analysis.id]]"></span>
@@ -56,6 +68,12 @@
 
             static get properties() {
                 return {
+                    opencgaSession: {
+                        type: Object,
+                    },
+                    opencgaClient: {
+                        type: Object,
+                    },
                     analyses: {
                         type: Array,
                         value: () => [],
@@ -75,34 +93,80 @@
                 return members;
             }
 
+            getDiseases(analysis) {
+                const diseases = [].concat(...analysis.samples.map(sample => sample.phenotypes));
+                return diseases;
+            }
+
             onAnalysisChanged(e) {
+
+            }
+
+            removeAnalysis(analysisId) {
+                const params = {
+                    detail: analysisId,
+                    bubbles: true,
+                    composed: true,
+                }
+                this.dispatchEvent(new CustomEvent("remove-analysis", params));
+            }
+
+            showMessage(error, message) {
+                const params = {
+                    detail: { error: error, message: message },
+                    bubbles: true,
+                    composed: true,
+                }
+                this.dispatchEvent(new CustomEvent("message", params));
+            }
+
+            onDiseaseChanged(e) {
+                const analysisId = !!e && !!e.target && e.target.dataAnalysis;
+                const disease = !!e && !!e.target && e.target.value;
+                const analysis = !!analysisId && this.analyses.find(analysis => analysis.id === analysisId);
+                if (!!analysis) {
+                    analysis.disease = this.getDiseases(analysis).find(candidate => disease === candidate.id);
+                }
             }
 
             onRemoveAnalysis(e) {
                 const analysisId = !!e && !!e.target && e.target.dataAnalysis;
                 if (!!analysisId) {
-                    const params = {
-                        detail: analysisId,
-                        bubbles: true,
-                        composed: true,
-                    }
-                    this.dispatchEvent(new CustomEvent("remove-analysis", params));
+                    this.removeAnalysis(analysisId);
                 }
             }
 
             onSaveAnalysis(e) {
                 const analysisId = !!e && !!e.target && e.target.dataAnalysis;
-
-                const success = !!analysisId;
-                if (success) {
+                const analysis = this.analyses.find(analysis => analysis.id === analysisId);
+                if (!!analysis) {
                     const params = {
-                        detail: analysisId,
-                        bubbles: true,
-                        composed: true,
+                      study: `${this.opencgaSession.project.alias}:${this.opencgaSession.study.alias}`,
+                    };
+                    let subjects = (analysis.samples || []).map(sample => sample.individual);
+                    subjects = subjects.filter((individual, idx) => subjects.findIndex(ind2 => ind2.id === individual.id) === idx);
+                    subjects = subjects.map(individual => ({ id: individual.id, name: individual.name }));
+                    for (const individual of subjects) {
+                        individual.samples = analysis.samples
+                            .filter(sample => sample.individual.id === individual.id)
+                            .map(sample => ({ /*id: sample.id,*/ name: sample.name }));
+                        delete individual.id;
                     }
-                    this.dispatchEvent(new CustomEvent("remove-analysis", params));
+                    const body = {
+                        "name": analysis.id,
+                        "description": analysis.description,
+                        "type": analysis.samples == 1 ? "SINGLE" : "MULTISAMPLE",
+                        "subjects": subjects,
+                        "disease": analysis.disease || this.getDiseases(analysis)[0],
+                    };
+                    const pthis = this;
+                    this.opencgaClient.clinical().create(params, body).then(response => {
+                        pthis.showMessage(false, body.name + " analysis has been created correctly.");
+                        pthis.removeAnalysis(analysis.id);
+                    }).catch(response => {
+                        pthis.showMessage(true, analysis.id + " " + response.error);
+                    });
                 }
-
             }
 
 
