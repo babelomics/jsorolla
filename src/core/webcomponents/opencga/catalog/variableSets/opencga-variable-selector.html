@@ -15,14 +15,12 @@
   -->
 
 <dom-module id="opencga-variable-selector">
-
-    <style>
-        .ovs-list li.selected {
-            background-color: #cdcdcd;
-        }
-    </style>
-
     <template>
+        <style>
+            .ovs-list li.selected {
+                background-color: #cdcdcd;
+            }
+        </style>
         <div id="{{prefix}}-main-div">
             <template is="dom-if" if="{{variables.length}}">
                 <label for="{{prefix}}-annotation-picker" style="margin-top: 15px;">{{_config.title}}</label>

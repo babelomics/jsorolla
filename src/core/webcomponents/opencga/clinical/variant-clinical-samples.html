@@ -81,8 +81,7 @@
                         <template is="dom-if" if="{{pendingAnalyses.length}}">
                             <div class="alert alert-warning" role="alert" style="margin:0 auto;">There are unsaved analyses!</div>
                         </template>
-
-                        <variant-clinical-samples-analyses-table analyses="[[pendingAnalyses]]" on-remove-analysis="onRemoveAnalysis">
+                        <variant-clinical-samples-analyses-table analyses="[[pendingAnalyses]]" on-remove-analysis="onRemovePendingAnalysis">
                         </variant-clinical-samples-analyses-table>
                     </div>
                 </template>
@@ -155,28 +154,6 @@
     <script>
         class VariantClinicalSamples extends Polymer.Element {
 
-            onSamplesChanged(newValue, oldValue) {
-                // TODO
-            }
-
-            isAnalysisTypeEnabled(actualCount, properCount, operator="eq") {
-                const op = !!operator ? operator : 'eq';
-                switch(op) {
-                    case 'ge':  return actualCount >= properCount;
-                    default:    return actualCount === properCount;
-                }
-            }
-
-            getAnalysisTypeButtonStyle(actualCount, properCount, operator) {
-                const res = this.isAnalysisTypeEnabled(actualCount, properCount, operator);
-                return res ? "" : "opacity: 0.4; filter: alpha(opacity=40);";
-            }
-
-            constructor() {
-                super();
-                this._init();
-            }
-
             static get is() {
                 return 'variant-clinical-samples';
             }
@@ -229,13 +206,53 @@
                 }
             }
 
+            static get observers() {
+                return ['calculateFilters(filteredVariables.variables.*)'];
+            }
+
             _attachDom(dom) {
                 this.appendChild(dom);
             }
 
-            _init() {
+            constructor() {
+                super();
                 this.prefix = "sample" + Utils.randomString(6);
+            }
 
+            ready() {
+                super.ready();
+                this.clear();
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+
+                this.table = PolymerUtils.getElementById(this.prefix + "FamilySelector");
+                const _this = this;
+                $("#"+this.prefix + "FamilyEditor").on('shown.bs.modal', e => {
+                    _this.showModalFamilyEditor = true;
+                });
+
+                $("#"+this.prefix + "FamilyEditor").on('hidden.bs.modal', () => {
+                    _this.showModalFamilyEditor = false;
+                });
+            }
+
+            onSamplesChanged(newValue, oldValue) {
+                // TODO
+            }
+
+            isAnalysisTypeEnabled(actualCount, properCount, operator="eq") {
+                const op = !!operator ? operator : 'eq';
+                switch(op) {
+                    case 'ge':  return actualCount >= properCount;
+                    default:    return actualCount === properCount;
+                }
+            }
+
+            getAnalysisTypeButtonStyle(actualCount, properCount, operator) {
+                const res = this.isAnalysisTypeEnabled(actualCount, properCount, operator);
+                return res ? "" : "opacity: 0.4; filter: alpha(opacity=40);";
             }
 
             clear() {
@@ -246,51 +263,6 @@
                 this.selectedRow = -1;
                 this.messageError = false;
                 this.fixedFilters = ["studies"];
-            }
-
-            ready() {
-                super.ready();
-                this.clear();
-            }
-
-            static get observers() {
-                return ['calculateFilters(filteredVariables.variables.*)'];
-            }
-
-            initFamily() {
-                if (UtilsNew.isNotUndefinedOrNull(this._samplesAnalysis)) {
-                    this.family = {};
-                    this.family.name = "FA-" + Math.floor(Math.random() * 10000) + 1;
-                    this.family.description = "";
-                    this.family.phenotypes = [];
-                    this.family.members = [];
-                    this.family.annotationSets = [];
-                    this.family.attributes = {};
-                    let _this = this;
-                    this._samplesAnalysis.forEach((sample) => {
-                        _this.family.members[sample.id] = {
-                            father: undefined,
-                            mother: undefined,
-                            phenotypes: [],
-                            parentalConsanguinity: false
-                        }
-                    });
-                }
-            }
-
-            connectedCallback() {
-                super.connectedCallback();
-
-                this.table = PolymerUtils.getElementById(this.prefix + "FamilySelector");
-                // this.renderAnalysisTable();
-                let _this = this;
-                $("#"+this.prefix + "FamilyEditor").on('shown.bs.modal', function (e) {
-                    _this.showModalFamilyEditor = true;
-                });
-
-                $("#"+this.prefix + "FamilyEditor").on('hidden.bs.modal', function() {
-                    _this.showModalFamilyEditor = false;
-                });
             }
 
             /**
@@ -402,83 +374,67 @@
 
             addAnalysis(e) {
 
-                e.preventDefault(); // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
+                // prevents the hash change to "#" and allows to manipulate the hash fragment as needed
+                e.preventDefault();
 
-                // TODO: this should be changed; with 700 analyses, 7% probability of collision
-                const analysisId = 1 + Math.floor(Math.random() * 1000000);
-                // Get the type of analysisId
+                // get the type of analysisId
                 let analysisType = "";
-                let _properMembers = -1;
-                let _familyEditor = false;
-                this.family = {};
-
+                let properMembers = -1;
                 switch (e.currentTarget.id) {
                     case "familyButton":
                         analysisType = "Family";
-                        _properMembers = 4;
-                        _familyEditor = true;
+                        properMembers = 4;
                         break;
                     case "trioButton":
                         analysisType = "Trio";
-                        _properMembers = 3;
-                        _familyEditor = true;
+                        properMembers = 3;
                         break;
                     case "duoButton":
                         analysisType = "Duo";
-                        _properMembers = 2;
-                        _familyEditor = true;
+                        properMembers = 2;
                         break;
                     case "singleButton":
                         analysisType = "Single";
-                        _properMembers = 1;
-                        _familyEditor = !UtilsNew.isNotUndefinedOrNull(this.samples[0].individual) && UtilsNew.isNotEmptyArray(this.samples[0].phenotypes);
+                        properMembers = 1;
+                        // _familyEditor = !UtilsNew.isNotUndefinedOrNull(this.samples[0].individual) && UtilsNew.isNotEmptyArray(this.samples[0].phenotypes);
                         break;
                     case "autoButton":
                         analysisType = "Auto comparative";
-                        _properMembers = 2;
+                        properMembers = 2;
                         break;
                     case "multiButton":
                         analysisType = "Multisample";
-                        _properMembers = 2;
+                        properMembers = 2;
                         break;
                     default:
                         analysisType = "Family";
-                        _properMembers = 4;
+                        properMembers = 4;
                         break;
                 }
 
 
-               if (this.analysisError(analysisType, this.samples, _properMembers)) {
+               if (this.analysisError(analysisType, this.samples, properMembers)) {
                     const fullDate = new Date();
                     const twoDigitMonth = ((fullDate.getMonth() + 1) >= 10) ? (fullDate.getMonth() + 1) : '0' + (fullDate.getMonth() + 1);
                     const currentDate = fullDate.getDate() + "/" + twoDigitMonth + "/" + fullDate.getFullYear();
 
+                    // TODO: the way the ID is generated MUST be changed;
+                    // with 700 analyses, 7% probability of collision (initial ID space was 1-10000)
+                    // in any way, this is not a matter of increasing the ID space
+                    // it should be solved other way (i.e., asking a new ID to the server)
+
                     const analysis = {
-                        analysisID: `AN-${analysisId}`,
-                        analysisType: analysisType,
-                        analysisDate: currentDate,
-                        filter: "NO",
+                        id: `AN-${1 + Math.floor(Math.random() * 10000000)}`,
+                        type: analysisType,
+                        date: currentDate,
+                        // filter: "NO",
                         // diseaseSelected: _this.diseaseFormatter(aux, this.samples, ""),
                         diseaseSelected: "none",
-                        sampleList: this.samples,
+                        samples: this.samples,
                     };
+
                     this.push('pendingAnalyses', analysis);
                 }
-            }
-
-            createFamily(params, body, rowInfo, subjectName, samplesName, analysisInfo){
-                let _this = this;
-                this.opencgaClient.families().create(params, body)
-                    .then(function (response) {
-                        if (response.response[0].numResults >= 1) {
-                            _this.createAnalysis(analysisInfo);
-                        }
-                    })
-                    .catch(function (response) {
-                        _this.messageError = true;
-                        _this.messageErrorText.push(analysisInfo.analysisID + " " + response.error);
-//                        PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                    });
             }
 
             createAnalysis(analysisInfo) {
@@ -513,14 +469,6 @@
                         _this.messageErrorText.push(analysisInfo.analysisID + " " + response.error);
 //                        PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
                     });
-            }
-
-            familyFormatter(familyEditor, randomString) {
-                if (familyEditor) {
-                    return '<button data-toggle="modal" id="' + this.prefix + 'Editor' + randomString + '" role="button" type="button" class="btn btn-sm btn-success" data-target="#' + this.prefix + 'FamilyEditor" ><i class="fa fa-cog" aria-hidden="true"></i>&nbsp;Edit</button>';
-                } else { // Is not a family analysis -> a family cannot be edited
-                    return '<button data-toggle="modal" id="' + this.prefix + 'Editor' + randomString + '" role="button" type="button" class="btn btn-sm btn-success disabled" disabled data-target="#' + this.prefix + 'FamilyEditor"><i class="fa fa-cog" aria-hidden="true"></i>&nbsp;Edit</button>';
-                }
             }
 
             diseaseFormatter(analysisID, samples, diseasesFromFamily = [], selected) {
@@ -606,6 +554,67 @@
                 PolymerUtils.setValue(this.prefix + "selectedSubject" + this.currentAnalysis.analysisIDinternal, e.target.value);
             }
 
+            onClear() {
+                this.query = {studies: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias};
+                this.search = {};
+            }
+
+            onFilterChange(e) {
+                this.query = e.detail;
+                this.search = e.detail;
+            }
+
+            onRemovePendingAnalysis(e) {
+                if (!!e && !!e.detail) {
+                    this.pendingAnalyses = this.pendingAnalyses.filter(analysis => analysis.id !== e.detail);
+                }
+            }
+
+            // TODO: remove family related methods from this class
+            createFamily(params, body, rowInfo, subjectName, samplesName, analysisInfo){
+                let _this = this;
+                this.opencgaClient.families().create(params, body)
+                    .then(function (response) {
+                        if (response.response[0].numResults >= 1) {
+                            _this.createAnalysis(analysisInfo);
+                        }
+                    })
+                    .catch(function (response) {
+                        _this.messageError = true;
+                        _this.messageErrorText.push(analysisInfo.analysisID + " " + response.error);
+//                        PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
+                    });
+            }
+
+            initFamily() {
+                if (!!this._samplesAnalysis) {
+                    this.family = {};
+                    this.family.name = "FA-" + Math.floor(Math.random() * 10000) + 1;
+                    this.family.description = "";
+                    this.family.phenotypes = [];
+                    this.family.members = [];
+                    this.family.annotationSets = [];
+                    this.family.attributes = {};
+                    let _this = this;
+                    this._samplesAnalysis.forEach((sample) => {
+                        _this.family.members[sample.id] = {
+                            father: undefined,
+                            mother: undefined,
+                            phenotypes: [],
+                            parentalConsanguinity: false
+                        }
+                    });
+                }
+            }
+
+            familyFormatter(familyEditor, randomString) {
+                if (familyEditor) {
+                    return '<button data-toggle="modal" id="' + this.prefix + 'Editor' + randomString + '" role="button" type="button" class="btn btn-sm btn-success" data-target="#' + this.prefix + 'FamilyEditor" ><i class="fa fa-cog" aria-hidden="true"></i>&nbsp;Edit</button>';
+                } else { // Is not a family analysis -> a family cannot be edited
+                    return '<button data-toggle="modal" id="' + this.prefix + 'Editor' + randomString + '" role="button" type="button" class="btn btn-sm btn-success disabled" disabled data-target="#' + this.prefix + 'FamilyEditor"><i class="fa fa-cog" aria-hidden="true"></i>&nbsp;Edit</button>';
+                }
+            }
+
             familyChange(e) { // Event fired by opencga-family-editor web component
                 this.family = e.detail._family;
                 this._samplesAnalysis = e.detail._samples;
@@ -649,23 +658,6 @@
                 }
 
                 this.messageErrorFamily = messageErrorFamily.slice();
-            }
-
-            onClear() {
-                this.query = {studies: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias};
-                this.search = {};
-            }
-
-            onFilterChange(e) {
-                this.query = e.detail;
-                this.search = e.detail;
-            }
-
-            onRemoveAnalysis(e) {
-                debugger;
-                if (!!e && !!e.detail) {
-                    this.pendingAnalyses = this.pendingAnalyses.filter(analysis => analysis.analysisID !== e.detail);
-                }
             }
         }
 

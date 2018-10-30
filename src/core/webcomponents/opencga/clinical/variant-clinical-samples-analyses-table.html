@@ -15,10 +15,14 @@
             <tbody>
                 <template is="dom-repeat" items="[[analyses]]" as="analysis">
                     <tr>
-                        <td>[[analysis.analysisID]]</td>
-                        <td><input type="text" id="' + this.prefix + 'description' + randomString + '" class="form-control" maxlength="75"></td>
-                        <td>[[analysis.analysisSamples]]</td>
-                        <td>[[analysis.analysisDate]]</td>
+                        <td>[[analysis.id]]</td>
+                        <td><input type="text" class="form-control" maxlength="75"></td>
+                        <td>
+                            <template is="dom-repeat" items="[[analysis.samples]]" as="sample">
+                                <span>[[sample.name]]</span><br>
+                            </template>
+                        </td>
+                        <td>[[analysis.date]]</td>
                         <td>
                             <select class="form-control form-control-sm">
                                 <template is="dom-repeat" items="[[getMembers(analysis)]]" as="member">
@@ -28,11 +32,11 @@
                         </td>
                         <td>[[analysis.diseaseSelected]]</td>
                         <td>
-                            <button type="button" class="btn btn-sm btn-success">
-                                <span class="fa fa-floppy-o"></span>
+                            <button type="button" class="btn btn-sm btn-success" data-analysis="[[analysis.id]]" on-click="onSaveAnalysis">
+                                <span class="fa fa-floppy-o" data-analysis="[[analysis.id]]"></span>
                             </button>
-                            <button type="button" class="btn btn-sm btn-danger" on-click="onRemoveAnalysis" data-analysis-id="[[analysis.analysisID]]">
-                                <span class="glyphicon glyphicon-remove"></span>
+                            <button type="button" class="btn btn-sm btn-danger" data-analysis="[[analysis.id]]" on-click="onRemoveAnalysis">
+                                <span class="glyphicon glyphicon-remove" data-analysis="[[analysis.id]]"></span>
                             </button>
                             <!-- glyphicon glyphicon-remove-sign -->
                             <!-- glyphicon glyphicon-ok-sign -->
@@ -65,7 +69,7 @@
             }
 
             getMembers(analysis) {
-                const members = analysis.sampleList
+                const members = analysis.samples
                     .filter(sample => !!sample.attributes && !!sample.attributes.individual && !!sample.attributes.individual.id && sample.attributes.individual.id > 0)
                     .map(sample => sample.attributes.individual);
                 return members;
@@ -75,15 +79,30 @@
             }
 
             onRemoveAnalysis(e) {
-                debugger;
-                if (!!e && !!e.target && !!e.target.dataAnalysisId) {
+                const analysisId = !!e && !!e.target && e.target.dataAnalysis;
+                if (!!analysisId) {
                     const params = {
-                        detail: e.target.dataAnalysisId,
+                        detail: analysisId,
                         bubbles: true,
                         composed: true,
                     }
                     this.dispatchEvent(new CustomEvent("remove-analysis", params));
                 }
+            }
+
+            onSaveAnalysis(e) {
+                const analysisId = !!e && !!e.target && e.target.dataAnalysis;
+
+                const success = !!analysisId;
+                if (success) {
+                    const params = {
+                        detail: analysisId,
+                        bubbles: true,
+                        composed: true,
+                    }
+                    this.dispatchEvent(new CustomEvent("remove-analysis", params));
+                }
+
             }
 
 
