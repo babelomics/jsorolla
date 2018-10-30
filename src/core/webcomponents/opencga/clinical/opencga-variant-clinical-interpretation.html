@@ -130,11 +130,7 @@
 
                 <div class="col-md-12">
                     <div style="float: right; margin:0 25%;">
-                        <button
-                                id="clickOkPrioritization"
-                                type="button"
-                                class="btn btn-lg btn-primary"
-                                on-click="onClickOkPrioritization">
+                        <button type="button" class="btn btn-lg btn-primary" on-click="onPrioritizationClick">
                             Go to Interpretation
                         </button>
                     </div>
@@ -342,12 +338,10 @@
                 this.dispatchEvent(new CustomEvent(this.eventNotifyName, params));
             }
 
-            onClickOkPrioritization() {
+            onPrioritizationClick() {
                 if (!!this.clinicalAnalysis) {
                     if (!this.interactive && !this.diseasePanelId) {
                         this.showMessage("You must select a panel to continue.", UtilsNew.MESSAGE_INFO);
-                    } else if ((this.clinicalAnalysis.subjects||[]).length!==1 || (this.clinicalAnalysis.subjects[0].samples||[]).length!==1 || this.clinicalAnalysis.type!=="SINGLE") {
-                        this.showMessage("Multisample interpretation is disables in this version.");
                     } else {
                         this.activePrioritization = true;
                         $('select.selectpicker').selectpicker('render');
