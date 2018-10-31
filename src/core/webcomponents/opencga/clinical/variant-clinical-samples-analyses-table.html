@@ -60,6 +60,7 @@
         </table>
     </template>
     <script>
+
         class VariantClinicalSamplesAnalysesTable extends Polymer.Element {
 
             static get is() {
@@ -136,6 +137,8 @@
                 }
             }
 
+
+
             onSaveAnalysis(e) {
                 const analysisId = !!e && !!e.target && e.target.dataAnalysis;
                 const analysis = this.analyses.find(analysis => analysis.id === analysisId);
@@ -143,6 +146,9 @@
                     const params = {
                       study: `${this.opencgaSession.project.alias}:${this.opencgaSession.study.alias}`,
                     };
+
+
+
                     let subjects = (analysis.samples || []).map(sample => sample.individual);
                     subjects = subjects.filter((individual, idx) => subjects.findIndex(ind2 => ind2.id === individual.id) === idx);
                     subjects = subjects.map(individual => ({ id: individual.id, name: individual.name }));
