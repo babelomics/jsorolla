@@ -40,17 +40,18 @@
 
                 <h3>Sample Results</h3>
                 <opencga-sample-grid opencga-client="{{opencgaClient}}" opencga-session="{{opencgaSession}}" config="[[config]]" event-notify-name="[[eventNotifyName]]" samples="{{samples}}" search="{{search}}"></opencga-sample-grid>
-
                 <br>
 
-                <h3>Create analysis</h3>
-                <div id="{{prefix}}toolbar">
-                    <div class="btn-group btn-group-sm">
-                        <button class="button" on-click="addAnalysis" disabled="[[!samples.length]]">
-                            <img src="[[importPath]]images/analysis_button.png" height="60" style$="{{getAnalysisButtonStyle(samples.length)}}">
+                <h3>Actions</h3>
+                <div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" on-click="addAnalysis" disabled="[[!samples.length]]">
+                            Create analysis
+                        </button>
+                        <button type="button" class="btn btn-primary" on-click="editFamilyRelations" disabled="[[!samples.length]]">
+                            Edit family relations
                         </button>
                     </div>
-                </div>
                 <br>
 
 
@@ -389,7 +390,7 @@
                 this.dispatchEvent(new CustomEvent(this.eventNotifyName, params));
             }
 
-            analysisError(samples) {
+            analysisError(samples, checkDiseases = true) {
                 if (!samples || samples.length == 0) {
                     const message = "An analysis must include at least one sample. Please, select one from the sample browser above.";
                     this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
@@ -406,7 +407,7 @@
                         return false;
                     } else {
                         const anyDiseasedSamples = samples.some(sample => !!sample.phenotypes && sample.phenotypes.length > 0);
-                        if (!anyDiseasedSamples) {
+                        if (checkDiseases && !anyDiseasedSamples) {
                             this.throwMessage("At least one subject should be diseased.", UtilsNew.MESSAGE_ERROR);
                             return false;
                         } else {
@@ -443,6 +444,32 @@
                 const queue = error ? 'messageError' : 'messageSuccess';
                 this.push(queue, message);
                 setTimeout(() => pthis.shift(queue), 5000);
+            }
+
+            //======================================================================================
+            // family relations
+            //======================================================================================
+
+            editFamilyRelations() {
+                if (this.analysisError(this.samples)) {
+                    const message = "An analysis must include at least one sample. Please, select one from the sample browser above.";
+                    this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
+                    return false;
+                } else {
+                    const sampleHasIndividual = sample => (
+                        !!sample && !!sample.attributes && !!sample.attributes.individual
+                        && !!sample.attributes.individual.id && (sample.attributes.individual.id>0)
+                    );
+                    const allSamplesHaveIndividual = samples.every(sampleHasIndividual);
+                    if (!allSamplesHaveIndividual) {
+                        const message = "Some samples do not have an associated individual, so they cannot be edited.";
+                        this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
+                        return false;
+                    } else {
+                        // pass them to new family editor
+
+                    }
+                }
             }
 
             //======================================================================================

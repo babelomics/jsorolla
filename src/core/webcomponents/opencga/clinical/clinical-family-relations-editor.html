@@ -1,0 +1,653 @@
+<dom-module id="clinical-family-relations-editor.html">
+    <template>
+        <template is="dom-if" if="[[!individuals.length]]">
+            <div class="alert alert-warning" role="alert">
+                <h4>No individual selected, please select some individuals.</h4>
+            </div>
+        </template>
+        <template is="dom-if" if="[[!individuals.length]]">
+            <template is="dom-repeat" items="{{messageError}}" as="message">
+                <div class="alert alert-danger" role="alert">
+                    [[message]]
+                </div>
+            </template>
+            <div class="col-md-12">
+                <form class="form-inline">
+                    <div class="row" style="padding: 15px 10px">
+                        <div class="col-md-3">
+                            <label>Name </label>
+                            <input
+                                    type="text"
+                                    class="form-control"
+                                    placeholder="Family name"
+                                    maxlength="100"
+                                    on-change="_changeName"
+                                    value="{{family.name}}" />
+                        </div>
+                        <div class="col-md-9">
+                            <label class="labels">Description </label>
+                            <input
+                                class="form-control"
+                                on-change="_changeDescription"
+                                value="{{family.description}}" />
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="row">
+                            <h4>Diseases</h4>
+                        </div>
+                        <div class="panel-group" id="[[prefix]]accordion" role="tablist" aria-multiselectable="true">
+                            <div class="panel panel-default">
+                                <div class="panel-heading" role="tab" id="[[prefix]]headingTwo">
+                                    <h4 class="panel-title">
+                                        <a role="button" class="collapsed" data-toggle="collapse" data-parent="#[[prefix]]accordion" href="#collapseTwo"
+                                                aria-expanded="false" aria-controls="[[prefix]]collapseTwo" on-click="_summaryOnClick">
+                                            <i id="{{prefix}}SummaryCollapseIcon" class="fa fa-plus-square-o" aria-hidden="true"></i> Add custom disease
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="[[prefix]]collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="[[prefix]]headingTwo">
+                                    <div class="col-md-12">
+                                        <div class="row" style="padding: 15px 10px">
+                                            <div class="col-md-2">
+                                                <label>ID </label>
+                                                <input type="text" class="form-control" id="{{prefix}}idDisease" placeholder="" maxlength="50" type="number">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label>Name </label>
+                                                <input type="text" class="form-control" id="{{prefix}}nameDisease" placeholder="" maxlength="100" type="text">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Source </label>
+                                                <input type="text" class="form-control" id="{{prefix}}srcDisease" placeholder="" maxlength="100" type="text">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label>Add to diseases</label>
+                                                <button  class="button-form" type="button" class="btn btn-secondary" on-click="addAddedDisease">Add</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row">
+                                <ul class="list-group">
+                                    <template is="dom-repeat" items="{{sourceDiseases}}">
+                                        <li class="list-group-item">{{item.name}}({{item.id}})</li>
+                                    </template>
+                                </ul>
+                            </div>
+                            <div class="row">
+                                <ul class="list-group">
+                                    <template is="dom-repeat" items="{{addedDiseases}}" >
+                                        <li class="list-group-item">{{item.name}}({{item.id}})
+                                            <button type="button" class="btn danger" on-click="removeAddedDisease" data-selected-term$="{{item}}">X</button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-md-12">
+                <table class="table hover">
+                    <thead>
+                        <tr class="active">
+                            <th>Individual ID</th>
+                            <th>Father</th>
+                            <th>Mother</th>
+                            <th>Phenotypes</th>
+                            <th>Deceased</th>
+                            <th>Parental Consanguinity</th>
+                            <th>Sex</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    <template id="[[prefix]]individualsTable" is="dom-repeat" items="{{individuals}}" as="individual">
+                        <tr>
+                            <td>[[individual.name]]</td>
+                            <td>
+                                <template is="dom-if" if="{{showSelectParents}}">
+                                    <div class="dropdown">
+                                        <select class="form-control" id="{{prefix}}[[individual.name]]Father"
+                                                data-individual-id$="[[individual.id]]" data-is-father="true"
+                                                on-change="_selectParent">
+                                            <option value="none">Select an individual...</option>
+                                            <template is="dom-repeat" items="{{getPotentialFathersFor(individual, potentialParents)}}" as="individualFather">
+                                                <option value="[[individualFather.id]]" selected$="[[isSelectedParent(0, individualFather.id, individual.id)}}">
+                                                    [[individualFather.name]]
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </template>
+                                <template is="dom-if" if="{{!showSelectParents}}">
+                                    <span>Unknown</span>
+                                </template>
+                            </td>
+                            <td>
+                                <template is="dom-if" if="{{showSelectParents}}">
+                                    <div class="dropdown">
+                                        <select class="form-control" id="[[prefix]][[individual.name]]Mother"
+                                                data-individual-id$="[[individual.id]]" data-is-mother="true"
+                                                on-change="_selectParent">
+                                            <option value="none">Select an individual...</option>
+                                            <template is="dom-repeat" items="{{getPotentialMothersFor(individual, potentialParents)}}" as="individualMother">
+                                                <option value="[[individualMother.id]]" selected$="[[isSelectedParent(1, individualMother.id, individual.id)]]">
+                                                    [[individualMother.name]]
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </template>
+                                <template is="dom-if" if="{{!showSelectParents}}">
+                                    <span>Unknown</span>
+                                </template>
+                            </td>
+
+                            <td style="width: 150px;">
+                                <template is="dom-repeat" items="{{allDiseases}}" as="disease">
+                                    <input data-individual-id$="{{individual.id}}"
+                                           data-disease-id$="{{disease.id}}"
+                                           checked$="{{isCheckedDisease(individual.id, disease.id)}}"
+                                           type="checkbox" on-change="selectAffected">
+                                    {{disease.id}}
+                                    <br>
+                                </template>
+                            </td>
+                            <td>
+                                <template is="dom-if" if="{{isCheckedDeceased(individual.id)}}">
+
+                                    <input id="{{prefix}}[[individual.name]]Deceased" data-individual-id$="[[individual.id]]"
+                                           type="checkbox" on-change="_selectDeceased" checked>
+                                </template>
+                                <template is="dom-if" if="{{!isCheckedDeceased(individual.id)}}">
+
+                                    <input id="{{prefix}}{{individual.name}}Deceased" data-individual-id$="{{individual.id}}"
+                                           type="checkbox" on-change="_selectDeceased">
+                                </template>
+
+                            </td>
+                            <td>
+                                <template is="dom-if" if="{{isCheckedParentalConsanguinity(individual.id)}}">
+
+                                    <input id="{{prefix}}{{individual.name}}ParentalConsanguinity"
+                                           data-individual-id$="{{individual.id}}" checked
+                                           type="checkbox" on-change="_selectParentalConsanguinity">
+                                </template>
+
+                                <template is="dom-if" if="{{!isCheckedParentalConsanguinity(individual.id)}}">
+                                    <input id="{{prefix}}{{individual.name}}ParentalConsanguinity"
+                                           data-individual-id$="{{individual.id}}"
+                                           type="checkbox" on-change="_selectParentalConsanguinity">
+                                </template>
+                            </td>
+                            <td>
+                                <span>[[individual.sex]]</span>
+                            </td>
+                        </tr>
+                    </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-12">
+                <div id="[[prefix]]PedigreeView"></div>
+            </div>
+
+            <opencga-message-dialog
+                    opencga-client="{{opencgaClient}}"
+                    show-message-modal="{{showMessageModal}}"
+                    settings-message-modal="{{settingsMessageModal}}">
+            </opencga-message-dialog>
+        </template>
+    </template>
+
+    <script>
+        class OpencgaFamilyEditorNew extends Polymer.Element {
+
+
+
+            /*
+            we should update the pedigree render whenever changes
+            father.id, mother.id, phenotypes, lifeStatus, parentalConsanguinity
+            */
+
+            constructor() {
+                super();
+                this.prefix = "FamEditor" + Utils.randomString(6);
+            }
+
+            static get is() {
+                return 'clinical-family-relations-editor';
+            }
+
+            static get properties() {
+                return {
+                    opencgaSession: {
+                        type: Object,
+                        observer: 'onSamplesChanged',
+                    },
+                    opencgaClient: {
+                        type: Object
+                    },
+                    samples: {
+                        type: Array,
+                        observer: 'onSamplesChanged',
+                    },
+                    messageErrorFamily: {
+                        type: Array,
+                        observer: 'updateError',
+                    },
+                    potentialParents: {
+                        type: Object,
+                        observer: 'onPotentialParentsChange',
+                        value: {a: 0},
+                    },
+                    sourceDiseases: {
+                        type: Array,
+                        value: () => [],
+                    },
+                    addedDiseases: {
+                        type: Array,
+                        value: () => [],
+                    },
+                    allDiseases: {
+                        type: Array,
+                        computed: 'concatenateSourceAndAddedDiseases(sourceDiseases.*, addedDiseases.*, potentialParents)',
+                    },
+                    showSelectParents: {
+                        type: Boolean,
+                        computed: 'computeShowSelectParents(individuals)',
+                    },
+                    individuals: {
+                        type: Array,
+                    },
+                }
+            }
+
+            addSourceDiseases(diseases) {
+                const newDiseases = (diseases || []).filter(disease => !this.sourceDiseases.some(d => (d.id === disease.id)));
+                if (diseases.length > 0) {
+                    this.sourceDiseases = this.sourceDiseases.concat(newDiseases);
+                }
+            }
+
+            addAddedDisease(e) {
+                // customDiseases
+                const newDisease = {
+                    id: PolymerUtils.getValue(this.prefix + "idDisease"),
+                    name: PolymerUtils.getValue(this.prefix + "nameDisease"),
+                    source: PolymerUtils.getValue(this.prefix + "srcDisease"),
+                };
+                PolymerUtils.setValue(this.prefix + "idDisease", "");
+                PolymerUtils.setValue(this.prefix + "nameDisease", "");
+                PolymerUtils.setValue(this.prefix + "srcDisease", "");
+
+                if (!this.addedDiseases.some(disease => (disease.id == newDisease.id))
+                        && !this.sourceDiseases.some(disease => (disease.id == newDisease.id))) {
+                    this.push('addedDiseases', newDisease);
+                }
+            }
+
+            removeAddedDisease(e) {
+                const diseaseToRemove = JSON.parse(e.target.getAttribute("data-selected-term"));
+                if (!!diseaseToRemove.id)  return;
+
+                // remove the disease from the individuals
+                for (let idx=0; idx<this.individuals.length; ++idx) {
+                    const individual = this.individuals[idx];
+                    if ((individual.phenotypes || []).some(disease => disease.id === diseaseToRemove.id)) {
+                        this.set(`individuals.${idx}.phenotypes`, individual.phenotypes.filter(disease => (disease.id !== diseaseToRemove.id)));
+                    }
+                }
+                this.set('addedDiseases', this.addedDiseases.filter(disease => (disease.id !== diseaseToRemove.id)));
+            }
+
+
+            concatenateSourceAndAddedDiseases() {
+                return (this.sourceDiseases || []).concat(this.addedDiseases || []);
+            }
+
+            getPhenotypesFromIndividuals() {
+                const diseases = this.individuals
+                    .filter(individual => !!individual.phenotypes)
+                    .map(individual.phenotypes)
+                    .reduce((accum, diseases) => accum.concat(diseases), []);
+                return diseases.filter((disease, idx) => idx === diseases.findIndex(d => disease.id === d.id));
+            }
+
+            computeOntologyTermsDiseases() {
+                const individualDiseases = this.getPhenotypesFromIndividuals();
+                const diseases = (this.customDiseases || []).concat(individualDiseases || []);
+                return diseases.filter((disease, index) => index === diseases.findIndex(d => (d.id === disease.id)));
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+                this._summaryCollapsed = true;
+            }
+
+            computeShowSelectParents() {
+                return !!this.individuals && (this.individuals.length > 1);
+            }
+
+            getIndividual(individualId) {
+                return !!this.individuals && this.individuals.find(individual => individualId === individual) || null;
+            }
+
+            isCheckedDisease(individualId, diseaseId) {
+                const individual = this.getIndividual(individualId);
+                return (!!individual && !!individual.phenotypes)
+                    ? individual.phenotypes.some(disease => (disease.id === diseaseId))
+                    : false;
+            }
+
+            isCheckedParentalConsanguinity(individualId) {
+                const individualSelected = this.getIndividual(individualId);
+                return !!individualSelected && !!individualSelected.parentalConsanguinity;
+            }
+
+            isCheckedDeceased(individualId) {
+                const individualSelected = this.getIndividual(individualId);
+                return !!individualSelected && individualSelected.lifeStatus === "DECEASED";
+            }
+
+            isSelectedParent(isMother, parentId, individualId) {
+                const individual = this.getIndividual(individualId);
+                const individualParent = this.getIndividualParent(individual, isMother);
+                return (individualParent && individualParent.id == parentId);
+            }
+
+            getIndividualParent(individual, mother) {
+                return !!mother
+                    ? !!individual && !!individual.mother && !!individual.mother.id && this.getIndividual(individual.mother.id)
+                    : !!individual && !!individual.father && !!individual.father.id && this.getIndividual(individual.father.id);
+            }
+
+            isAncestor(ancestor, descendant) {
+                // TODO: fix case of previously existing cycles
+                if (!ancestor || !descendant || ancestor === descendant)    return false;
+                const descendantMother = this.getIndividualParent(descendant, true);
+                const descendantFather = this.getIndividualParent(descendant, false);
+                return (!!descendantMother && descendantMother.id === ancestor.id)
+                    || (!!descendantFather && descendantFather.id === ancestor.id)
+                    || (!!descendantMother && this.isAncestor(ancestor, descendantMother))
+                    || (!!descendantFather && this.isAncestor(ancestor, descendantFather));
+            }
+
+            getPotentialFathersFor(individual, potentialParents) {
+                return this.individuals.filter(s => (s !== individual && (s.sex === 'MALE') && !this.isAncestor(individual, s)));
+            }
+
+            getPotentialMothersFor(individual, potentialParents) {
+                return this.individuals.filter(s => (s !== individual && (s.sex === 'FEMALE') && !this.isAncestor(individual, s)));
+            }
+
+            onPotentialParentsChange() {
+            }
+
+            invalidatePotentialParents() {
+                this.potentialParents = Object.assign({}, this.potentialParents, {a: this.potentialParents.a+1});
+            }
+
+            isDisabledParent(isMother, parentId, individualId) {
+                const individualSelected = this.getIndividual(individualId);
+                const individualCurrentParent = this.getIndividual(parentId);
+                let parentSelected = false;
+
+                const gender = isMother ? "FEMALE" : "MALE";
+                if(!!individualSelected && !!individualCurrentParent && !!individualCurrentParent.name) {
+                        parentSelected = (individualSelected.id === individualCurrentParent.id || individualCurrentParent.sex !== gender);
+                }
+
+                parentSelected = parentSelected || this.isAncestor(individualSelected, individualCurrentParent);
+
+                return parentSelected;
+            }
+
+            _changeName(e) {
+                this.family.name = e.target.value;
+                this.updateFamily();
+            }
+
+            _changeDescription(e) {
+                this.family.description = e.target.value;
+                this.updateFamily();
+            }
+
+            selectAffected(e) {
+                const sampleId = e.target.getAttribute("data-sample-id");
+                const diseaseId = e.target.getAttribute("data-disease-id");
+                const sample = this.findSample(sampleId);
+                if (!!sample) {
+                    const isDiseased = sample.individual.phenotypes.some(disease => (disease.id === diseaseId));
+                    if (isDiseased) {
+                        sample.individual.phenotypes = sample.individual.phenotypes.filter(disease => (disease.id !== diseaseId));
+                    } else {
+                        const disease = this.allDiseases.find(disease => (diseaseId === disease.id));
+                        sample.individual.phenotypes.push(disease);
+                    }
+                    this.updateFamily();
+                }
+            }
+
+            _selectDeceased(e) {
+                let sampleId = e.target.getAttribute("data-sample-id");
+                let sampleSelected = this.findSample(sampleId);
+                if(UtilsNew.isNotUndefinedOrNull(sampleSelected)) {
+                    sampleSelected.individual.lifeStatus = (e.target.checked ? 'DECEASED' : 'UNKNOWN');
+                    this.updateFamily();
+                }
+            }
+
+
+            _selectParentalConsanguinity(e) {
+                let sampleId = e.target.getAttribute("data-sample-id");
+                let sampleSelected = this.findSample(sampleId);
+                if(UtilsNew.isNotUndefinedOrNull(sampleSelected)) {
+                    sampleSelected.individual.parentalConsanguinity = e.target.checked;
+                }
+                this.updateFamily();
+            }
+
+            _selectParent(e) {
+                const sampleId = e.target.getAttribute("data-sample-id");
+                const isFather = (e.target.getAttribute("data-is-father") === "true");
+                const isMother = (e.target.getAttribute("data-is-mother") === "true");
+
+                // search the sample which is parent selected
+                const parentSampleId = ("none" === e.target.value ? null : parseInt(e.target.value));
+                const sampleSelectedParent = this.samples.find(sample => (sample.id === parentSampleId));
+
+                // search the sample which we are selecting a parent.
+                const sampleSelected = this.samples.find(sample => (sample.id === parseInt(sampleId)));
+
+                const parent = UtilsNew.isNotUndefinedOrNull(sampleSelectedParent) ? {
+                        id: sampleSelectedParent.individual.id,
+                        name: sampleSelectedParent.individual.name,
+                        sex: sampleSelectedParent.individual.sex
+                    } : null;
+                if (!!sampleSelected && !!sampleSelected.individual) {
+                    sampleSelected.individual.sex = sampleSelected.individual.sex || "UNKNOWN";
+                    if (!!parent)   parent.sex = (isMother ? 'FEMALE' : (isFather? 'MALE' : "UNKNOWN"));
+                    if (isMother) sampleSelected.individual.mother = parent || null;
+                    else if (isFather) sampleSelected.individual.father = parent || null;
+                }
+                this.updateFamily();
+                this.invalidatePotentialParents();
+            }
+
+            updateFamilyMembersFromSamples() {
+                // const members = this.samples.filter(sample => !!sample.individual).map(sample => sample.individual);
+                this.family.members = this.samples.filter(sample => !!sample.individual).map(sample => {
+                    const srcIndividual = sample.individual;
+                    const individual = { name: srcIndividual.name, };
+                    if (!!srcIndividual.sex)    individual.sex = srcIndividual.sex;
+                    if (!!srcIndividual.karyotypicSex)    individual.karyotypicSex = srcIndividual.karyotypicSex;
+                    if (!!srcIndividual.ethnicity)    individual.ethnicity = srcIndividual.ethnicity;
+                    if (!!srcIndividual.population)    individual.population = srcIndividual.population;
+                    if (!!srcIndividual.lifeStatus)    individual.lifeStatus = srcIndividual.lifeStatus;
+                    if (!!srcIndividual.affectationStatus)    individual.affectationStatus = srcIndividual.affectationStatus;
+                    if (!!srcIndividual.parentalConsanguinity)    individual.parentalConsanguinity = srcIndividual.parentalConsanguinity;
+                    // if (!!sample.individual.annotationSets)    individual.annotationSets = Object.assign({}, sample.individual.annotationSets);
+                    if (!!srcIndividual.phenotypes)    individual.phenotypes = srcIndividual.phenotypes.slice();
+                    if (!!srcIndividual.father && !!srcIndividual.father.name)  individual.father = srcIndividual.father.name;
+                    if (!!srcIndividual.mother && !!srcIndividual.mother.name)  individual.mother = srcIndividual.mother.name;
+                    return individual;
+                });
+            }
+
+            updateFamily() {
+                // sync family and parent
+                this.family.phenotypes = this.getPhenotypesFromIndividuals();
+                this.updateFamilyMembersFromSamples();
+
+                // updating family in parents sending an event.
+                this.dispatchEvent(new CustomEvent('familychange', {
+                    detail: { _family: this.family, _samples: this.samples},
+                    bubbles: true,
+                    composed: true
+                }));
+                this.invalidatePotentialParents();
+                this.renderPedigree();
+
+            }
+
+            fillSampleParentNames() {
+                if (!this.samples) return;
+
+                for (const sample of this.samples) {
+                    const individual = sample.individual;
+                    if (!!individual) {
+                        if (!!individual.father && !!individual.father.id && individual.father.id>0) {
+                            const parentId = individual.father.id;
+                            const parentSample = this.samples.find(sample => (!!sample.individual && sample.individual.id === parentId));
+                            if (!!parentSample) {
+                                individual.father.name = parentSample.individual.name;
+                            }
+                        }
+                        if (!!individual.mother && !!individual.mother.id && individual.mother.id>0) {
+                            const parentId = individual.mother.id;
+                            const parentSample = this.samples.find(sample => (!!sample.individual && sample.individual.id === parentId));
+                            if (!!parentSample) {
+                                individual.mother.name = parentSample.individual.name;
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            renderPedigree() {
+                if (!this.showSelectParents)    return;
+
+                const pedigreeView = PolymerUtils.getElementById(this.prefix + "PedigreeView");
+                if (!pedigreeView) return;
+
+                if (UtilsNew.isNotUndefined(this.svg)) {
+                    pedigreeView.removeChild(this.svg);
+                }
+
+                // const members = Object.assign({}, this.samples.members);
+                const body = Object.assign({}, this.family);
+
+                // Render new Pedigree
+                const pedigree = new Pedigree(body, { selectShowSampleNames: true });
+                this.svg = pedigree.pedigreeFromFamily(pedigree.pedigree);
+                this.svg.style = "display: block; margin: auto";
+                pedigreeView.appendChild(this.svg);
+            }
+
+            _summaryOnClick() {
+                if (this._summaryCollapsed) {
+                    $("#" + this.prefix + "SummaryCollapseIcon").removeClass("fa-plus-square-o").addClass("fa-minus-square-o");
+                } else {
+                    $("#" + this.prefix + "SummaryCollapseIcon").removeClass("fa-minus-square-o").addClass("fa-plus-square-o");
+                }
+                this._summaryCollapsed = !this._summaryCollapsed;
+            }
+
+            updateError() {
+                this.messageError = this.messageErrorFamily.slice();
+            }
+
+            // updates family.phenotypes and ontologyTermsDiseases
+            updatePhenotypesFromSamples() {
+                const phenotypes = [...new Set(this.samples
+                    .map(sample => ((!!sample.individual && sample.individual.phenotypes) || []))
+                    .reduce((acc, cur, idx, src) => acc.concat(cur), []))];
+                this.family.phenotypes = phenotypes;
+                this.ontologyTermsDiseases = phenotypes;
+                // custom diseases son las enfermedades que están en family.phenotypes pero no en customDiseases
+                this.customDiseases = this.family.phenotypes.filter(disease => !this.ontologyTermsDiseases.some(ar2 => ar2.id === disease.id));
+            }
+
+            onSamplesChanged() {
+                this.ontologyTermsDiseases = [];
+                this.customDiseases = [];
+
+                this.readSampleDataFromServer();
+
+                if (!!this.individuals) {
+                    this.fillSampleParentNames();
+                    this.updatePhenotypesFromSamples();
+                    this.updateFamily();
+                }
+
+                const individualsTable = PolymerUtils.getElementById(`${this.prefix}individualsTable`);
+                if (!!individualsTable) {
+                    individualsTable.render();
+                }
+            }
+
+            getIndividualsFromSamples() {
+                const individuals = (this.samples || []).map(sample => sample.individual);
+                const uniqueIndividuals = individuals.filter((individual, index) => index === individuals.findIndex(subject => subject.id === individual.id));
+                return uniqueIndividuals;
+            }
+
+            readSampleDataFromServer() {
+                if (!this.individuals) return;
+
+                const params = { study: this.opencgaSession.study.alias };
+                const _this = this;
+                for (let idx = 0; idx < this.samples.length; ++idx) {
+                    const sample = this.samples[idx];
+                    const hasIndividual = UtilsNew.isNotUndefinedOrNull(sample.individual) && (sample.individual.id > 0);
+                    if (hasIndividual) {
+                        this.opencgaClient.individuals().info(sample.individual.id, params, {method: "GET"}).then(response => {
+                            if (response.response[0].numResults >= 1) {
+                                const individual = response.response[0].result[0];
+                                _this.set(`samples.${idx}.individual`, individual);
+                                _this.fillSampleParentNames();
+                                if (!!individual.phenotypes)    _this.addSourceDiseases(individual.phenotypes);
+                                _this.updateFamily();
+                            }
+                        }).catch(response => {
+                            _this.settingsMessageModal = {
+                                messageHeader: "Error",
+                                messageBody: [response.error],
+                                type: "danger",
+                                height: "100px",
+                                width: "500px"
+                            };
+                            _this.set('settingsMessageModal', _this.settingsMessageModal);
+                            _this.showMessageModal = true;
+                        });
+                    }
+                }
+            }
+        }
+
+        customElements.define(OpencgaFamilyEditorNew.is, OpencgaFamilyEditorNew);
+    </script>
+</dom-module>
