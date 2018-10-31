@@ -1,0 +1,110 @@
+<dom-module id="variant-filter-variant-type-selector">
+    <template>
+        <div class="form-group">
+            <div class="browser-subsection">
+                [[title]]
+                <jsorolla-tooltip header="[[title]]" content="[[tooltip]]"></jsorolla-tooltip>
+            </div>
+            <div style="padding-top: 5px" style="font-size: smaller">
+                <input type="checkbox" value="SNV,SNP" on-click="onCheckboxClick" checked$="[[isVariantTypeSelected('SNV,SNP', query.type)]]"> SNV<br>
+                <input type="checkbox" value="MNV" on-click="onCheckboxClick" checked$="[[isVariantTypeSelected('MNV', query.type)]]"> MNV<br>
+                <input type="checkbox" value="CNV" on-click="onCheckboxClick" checked$="[[isVariantTypeSelected('CNV', query.type)]]"> CNV<br>
+                <input type="checkbox" value="SV" on-click="onCheckboxClick" checked$="[[isVariantTypeSelected('SV', query.type)]]"> SV<br>
+                <input type="checkbox" value="INDEL" on-click="onCheckboxClick" checked$="[[isVariantTypeSelected('INDEL', query.type)]]"> INDEL
+            </div>
+        </div>
+    </template>
+    <script>
+
+        class VariantFilterVariantTypeSelector extends Polymer.Element {
+
+            static get is() {
+                return "variant-filter-variant-type-selector";
+            }
+
+            static get properties() {
+                return {
+                    query: {
+                        type: Object,
+                        notify: true,
+                    },
+                    title: {
+                        type: String,
+                        value: "Variant Type",
+                        readOnly: true,
+                    },
+                    tooltip: {
+                        type: String,
+                        value: "Only considers variants of the selected type",
+                        readOnly: true,
+                    },
+                }
+            }
+
+            static get observers() {
+                return [
+                    'onQueryChanged(query.*)',
+                ];
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            isVariantTypeSelected(variantTypes, queryTs) {
+                const queryTypes = (!!this.query && !!this.query.type && this.query.type.split(",")) || [];
+                const testTypes = variantTypes.split(',');
+                return testTypes.every(testType => queryTypes.includes(testType));
+            }
+
+            onCheckboxClick(e) {
+                const checkbox = !!e && e.target;
+                if (!!checkbox && !!checkbox.value) {
+                    const queryTypes = (!!this.query && !!this.query.type && this.query.type.split(",")) || [];
+                    const testTypes = checkbox.value.split(',');
+                    const checked = !!checkbox.checked;
+                    if (checked) {
+                        let updated = false;
+                        for (const testType of testTypes) {
+                            if (!queryTypes.includes(testType)) {
+                                queryTypes.push(testType);
+                                updated = true;
+                            }
+                        }
+                        if (updated) {
+                            this.query.type = queryTypes.join(',');
+                            this.notifyQueryUpdate();
+                        }
+                    } else {
+                        const newTypes = queryTypes.filter(type => !testTypes.includes(type));
+                        if (newTypes.length < queryTypes.length) {
+                            if (newTypes.length > 0) {
+                                this.query.type = newTypes.join(',');
+                            } else {
+                                delete this.query.type;
+                            }
+                            this.notifyQueryUpdate();
+                        }
+                    }
+                }
+            }
+
+            onQueryChanged() {
+            }
+
+            notifyQueryUpdate() {
+                const params = {
+                    detail: {
+                        value: this.query,
+                    },
+                    bubbles: true,
+                    composed: true
+                };
+                this.dispatchEvent(new CustomEvent("query-changed", params));
+            }
+        }
+
+        customElements.define(VariantFilterVariantTypeSelector.is, VariantFilterVariantTypeSelector);
+
+    </script>
+</dom-module>
