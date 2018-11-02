@@ -1,11 +1,16 @@
-<dom-module id="clinical-family-relations-editor.html">
+<link rel="import" href="../opencga-message-dialog.html">
+
+<dom-module id="clinical-family-relations-editor">
     <template>
+        <button on-click="onDebug" class="btn btn-primary">debug!</button>
+
         <template is="dom-if" if="[[!individuals.length]]">
             <div class="alert alert-warning" role="alert">
                 <h4>No individual selected, please select some individuals.</h4>
             </div>
         </template>
-        <template is="dom-if" if="[[!individuals.length]]">
+        <template is="dom-if" if="[[individuals.length]]">
+            <p>checkpoint001</p>
             <template is="dom-repeat" items="{{messageError}}" as="message">
                 <div class="alert alert-danger" role="alert">
                     [[message]]
@@ -13,26 +18,6 @@
             </template>
             <div class="col-md-12">
                 <form class="form-inline">
-                    <div class="row" style="padding: 15px 10px">
-                        <div class="col-md-3">
-                            <label>Name </label>
-                            <input
-                                    type="text"
-                                    class="form-control"
-                                    placeholder="Family name"
-                                    maxlength="100"
-                                    on-change="_changeName"
-                                    value="{{family.name}}" />
-                        </div>
-                        <div class="col-md-9">
-                            <label class="labels">Description </label>
-                            <input
-                                class="form-control"
-                                on-change="_changeDescription"
-                                value="{{family.description}}" />
-                        </div>
-                    </div>
-
                     <div class="col-md-12">
                         <div class="row">
                             <h4>Diseases</h4>
@@ -43,7 +28,7 @@
                                     <h4 class="panel-title">
                                         <a role="button" class="collapsed" data-toggle="collapse" data-parent="#[[prefix]]accordion" href="#collapseTwo"
                                                 aria-expanded="false" aria-controls="[[prefix]]collapseTwo" on-click="_summaryOnClick">
-                                            <i id="{{prefix}}SummaryCollapseIcon" class="fa fa-plus-square-o" aria-hidden="true"></i> Add custom disease
+                                            <i id="[[prefix]]SummaryCollapseIcon" class="fa fa-plus-square-o" aria-hidden="true"></i> Add custom disease
                                         </a>
                                     </h4>
                                 </div>
@@ -52,15 +37,15 @@
                                         <div class="row" style="padding: 15px 10px">
                                             <div class="col-md-2">
                                                 <label>ID </label>
-                                                <input type="text" class="form-control" id="{{prefix}}idDisease" placeholder="" maxlength="50" type="number">
+                                                <input type="text" class="form-control" id="[[prefix]]idDisease" placeholder="" maxlength="50" type="number">
                                             </div>
                                             <div class="col-md-6">
                                                 <label>Name </label>
-                                                <input type="text" class="form-control" id="{{prefix}}nameDisease" placeholder="" maxlength="100" type="text">
+                                                <input type="text" class="form-control" id="[[prefix]]nameDisease" placeholder="" maxlength="100" type="text">
                                             </div>
                                             <div class="col-md-2">
                                                 <label>Source </label>
-                                                <input type="text" class="form-control" id="{{prefix}}srcDisease" placeholder="" maxlength="100" type="text">
+                                                <input type="text" class="form-control" id="[[prefix]]srcDisease" placeholder="" maxlength="100" type="text">
                                             </div>
                                             <div class="col-md-2">
                                                 <label>Add to diseases</label>
@@ -74,8 +59,8 @@
                         <div class="col-md-8">
                             <div class="row">
                                 <ul class="list-group">
-                                    <template is="dom-repeat" items="{{sourceDiseases}}">
-                                        <li class="list-group-item">{{item.name}}({{item.id}})</li>
+                                    <template is="dom-repeat" items="[[sourceDiseases]]">
+                                        <li class="list-group-item">[[item.name]]([[item.id]])</li>
                                     </template>
                                 </ul>
                             </div>
@@ -114,7 +99,7 @@
                             <td>
                                 <template is="dom-if" if="{{showSelectParents}}">
                                     <div class="dropdown">
-                                        <select class="form-control" id="{{prefix}}[[individual.name]]Father"
+                                        <select class="form-control" id="[[prefix]][[individual.name]]Father"
                                                 data-individual-id$="[[individual.id]]" data-is-father="true"
                                                 on-change="_selectParent">
                                             <option value="none">Select an individual...</option>
@@ -163,12 +148,12 @@
                             <td>
                                 <template is="dom-if" if="{{isCheckedDeceased(individual.id)}}">
 
-                                    <input id="{{prefix}}[[individual.name]]Deceased" data-individual-id$="[[individual.id]]"
+                                    <input id="[[prefix]][[individual.name]]Deceased" data-individual-id$="[[individual.id]]"
                                            type="checkbox" on-change="_selectDeceased" checked>
                                 </template>
                                 <template is="dom-if" if="{{!isCheckedDeceased(individual.id)}}">
 
-                                    <input id="{{prefix}}{{individual.name}}Deceased" data-individual-id$="{{individual.id}}"
+                                    <input id="[[prefix]]{{individual.name}}Deceased" data-individual-id$="{{individual.id}}"
                                            type="checkbox" on-change="_selectDeceased">
                                 </template>
 
@@ -176,13 +161,13 @@
                             <td>
                                 <template is="dom-if" if="{{isCheckedParentalConsanguinity(individual.id)}}">
 
-                                    <input id="{{prefix}}{{individual.name}}ParentalConsanguinity"
+                                    <input id="[[prefix]]{{individual.name}}ParentalConsanguinity"
                                            data-individual-id$="{{individual.id}}" checked
                                            type="checkbox" on-change="_selectParentalConsanguinity">
                                 </template>
 
                                 <template is="dom-if" if="{{!isCheckedParentalConsanguinity(individual.id)}}">
-                                    <input id="{{prefix}}{{individual.name}}ParentalConsanguinity"
+                                    <input id="[[prefix]]{{individual.name}}ParentalConsanguinity"
                                            data-individual-id$="{{individual.id}}"
                                            type="checkbox" on-change="_selectParentalConsanguinity">
                                 </template>
@@ -208,19 +193,16 @@
     </template>
 
     <script>
-        class OpencgaFamilyEditorNew extends Polymer.Element {
+        class ClinicalFamilyRelationsEditor extends Polymer.Element {
 
-
+            onDebug() {
+                debugger;
+            }
 
             /*
             we should update the pedigree render whenever changes
             father.id, mother.id, phenotypes, lifeStatus, parentalConsanguinity
             */
-
-            constructor() {
-                super();
-                this.prefix = "FamEditor" + Utils.randomString(6);
-            }
 
             static get is() {
                 return 'clinical-family-relations-editor';
@@ -239,9 +221,10 @@
                         type: Array,
                         observer: 'onSamplesChanged',
                     },
-                    messageErrorFamily: {
+                    individuals: {
                         type: Array,
-                        observer: 'updateError',
+                        value: [],
+                        observer: 'onIndividualsChanged',
                     },
                     potentialParents: {
                         type: Object,
@@ -264,10 +247,25 @@
                         type: Boolean,
                         computed: 'computeShowSelectParents(individuals)',
                     },
-                    individuals: {
-                        type: Array,
-                    },
+                    prefix: {
+                        type: String,
+                        readOnly: true,
+                    }
                 }
+            }
+
+            _attachDom(dom) {
+                this.appendChild(dom);
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+                this._summaryCollapsed = true;
+            }
+
+            constructor() {
+                super();
+                this._setPrefix(`FamEditor${Utils.randomString(6)}`);
             }
 
             addSourceDiseases(diseases) {
@@ -325,15 +323,6 @@
                 const individualDiseases = this.getPhenotypesFromIndividuals();
                 const diseases = (this.customDiseases || []).concat(individualDiseases || []);
                 return diseases.filter((disease, index) => index === diseases.findIndex(d => (d.id === disease.id)));
-            }
-
-            _attachDom(dom) {
-                this.appendChild(dom);
-            }
-
-            connectedCallback() {
-                super.connectedCallback();
-                this._summaryCollapsed = true;
             }
 
             computeShowSelectParents() {
@@ -414,138 +403,72 @@
                 return parentSelected;
             }
 
-            _changeName(e) {
-                this.family.name = e.target.value;
-                this.updateFamily();
-            }
-
-            _changeDescription(e) {
-                this.family.description = e.target.value;
-                this.updateFamily();
-            }
-
             selectAffected(e) {
-                const sampleId = e.target.getAttribute("data-sample-id");
+                const individualId = e.target.getAttribute("data-individual-id");
                 const diseaseId = e.target.getAttribute("data-disease-id");
-                const sample = this.findSample(sampleId);
-                if (!!sample) {
-                    const isDiseased = sample.individual.phenotypes.some(disease => (disease.id === diseaseId));
+                const individual = this.getIndividual(individualId);
+                if (!!individual) {
+                    const isDiseased = (individual.phenotypes || []).some(disease => (disease.id === diseaseId));
                     if (isDiseased) {
-                        sample.individual.phenotypes = sample.individual.phenotypes.filter(disease => (disease.id !== diseaseId));
+                        individual.phenotypes = (individual.phenotypes || []).filter(disease => (disease.id !== diseaseId));
                     } else {
                         const disease = this.allDiseases.find(disease => (diseaseId === disease.id));
-                        sample.individual.phenotypes.push(disease);
+                        individual.phenotypes.push(disease);
                     }
-                    this.updateFamily();
                 }
             }
 
             _selectDeceased(e) {
-                let sampleId = e.target.getAttribute("data-sample-id");
-                let sampleSelected = this.findSample(sampleId);
-                if(UtilsNew.isNotUndefinedOrNull(sampleSelected)) {
-                    sampleSelected.individual.lifeStatus = (e.target.checked ? 'DECEASED' : 'UNKNOWN');
-                    this.updateFamily();
+                const individualId = e.target.getAttribute("data-individual-id");
+                const individualSelected = this.getIndividual(individualId);
+                if(!!individualSelected) {
+                    individualSelected.lifeStatus = (e.target.checked ? 'DECEASED' : 'UNKNOWN');
                 }
             }
 
-
             _selectParentalConsanguinity(e) {
-                let sampleId = e.target.getAttribute("data-sample-id");
-                let sampleSelected = this.findSample(sampleId);
-                if(UtilsNew.isNotUndefinedOrNull(sampleSelected)) {
-                    sampleSelected.individual.parentalConsanguinity = e.target.checked;
+                const individualId = e.target.getAttribute("data-individual-id");
+                const individualSelected = this.getIndividual(individualId);
+                if(!!individualSelected) {
+                    individualSelected.parentalConsanguinity = e.target.checked;
                 }
-                this.updateFamily();
             }
 
             _selectParent(e) {
-                const sampleId = e.target.getAttribute("data-sample-id");
+                const individualId = e.target.getAttribute("data-individual-id");
+                const parentId = ("none" === e.target.value ? null : parseInt(e.target.value));
                 const isFather = (e.target.getAttribute("data-is-father") === "true");
                 const isMother = (e.target.getAttribute("data-is-mother") === "true");
-
-                // search the sample which is parent selected
-                const parentSampleId = ("none" === e.target.value ? null : parseInt(e.target.value));
-                const sampleSelectedParent = this.samples.find(sample => (sample.id === parentSampleId));
-
-                // search the sample which we are selecting a parent.
-                const sampleSelected = this.samples.find(sample => (sample.id === parseInt(sampleId)));
-
-                const parent = UtilsNew.isNotUndefinedOrNull(sampleSelectedParent) ? {
-                        id: sampleSelectedParent.individual.id,
-                        name: sampleSelectedParent.individual.name,
-                        sex: sampleSelectedParent.individual.sex
-                    } : null;
-                if (!!sampleSelected && !!sampleSelected.individual) {
-                    sampleSelected.individual.sex = sampleSelected.individual.sex || "UNKNOWN";
-                    if (!!parent)   parent.sex = (isMother ? 'FEMALE' : (isFather? 'MALE' : "UNKNOWN"));
-                    if (isMother) sampleSelected.individual.mother = parent || null;
-                    else if (isFather) sampleSelected.individual.father = parent || null;
+                const individual = this.getIndividual(individualId);
+                if (!!individual) {
+                    const parent = this.getIndividual(parentId);
+                    // TODO: why are we setting individual's sex here???
+                    individual.sex = individual.sex || "UNKNOWN";
+                    if (!!parent) {
+                        parent.sex = (isMother ? 'FEMALE' : (isFather? 'MALE' : "UNKNOWN"));
+                    }
+                    if (isMother || isFather) {
+                        const parentProxy = !!parent ? {id: parent.id, name: parent.name, sex: parent.sex } : null;
+                        individual[isMother ? "mother" : "father"] = parentProxy;
+                    }
+                    this.invalidatePotentialParents();
                 }
-                this.updateFamily();
-                this.invalidatePotentialParents();
             }
 
-            updateFamilyMembersFromSamples() {
-                // const members = this.samples.filter(sample => !!sample.individual).map(sample => sample.individual);
-                this.family.members = this.samples.filter(sample => !!sample.individual).map(sample => {
-                    const srcIndividual = sample.individual;
-                    const individual = { name: srcIndividual.name, };
-                    if (!!srcIndividual.sex)    individual.sex = srcIndividual.sex;
-                    if (!!srcIndividual.karyotypicSex)    individual.karyotypicSex = srcIndividual.karyotypicSex;
-                    if (!!srcIndividual.ethnicity)    individual.ethnicity = srcIndividual.ethnicity;
-                    if (!!srcIndividual.population)    individual.population = srcIndividual.population;
-                    if (!!srcIndividual.lifeStatus)    individual.lifeStatus = srcIndividual.lifeStatus;
-                    if (!!srcIndividual.affectationStatus)    individual.affectationStatus = srcIndividual.affectationStatus;
-                    if (!!srcIndividual.parentalConsanguinity)    individual.parentalConsanguinity = srcIndividual.parentalConsanguinity;
-                    // if (!!sample.individual.annotationSets)    individual.annotationSets = Object.assign({}, sample.individual.annotationSets);
-                    if (!!srcIndividual.phenotypes)    individual.phenotypes = srcIndividual.phenotypes.slice();
-                    if (!!srcIndividual.father && !!srcIndividual.father.name)  individual.father = srcIndividual.father.name;
-                    if (!!srcIndividual.mother && !!srcIndividual.mother.name)  individual.mother = srcIndividual.mother.name;
-                    return individual;
-                });
-            }
-
-            updateFamily() {
-                // sync family and parent
-                this.family.phenotypes = this.getPhenotypesFromIndividuals();
-                this.updateFamilyMembersFromSamples();
-
-                // updating family in parents sending an event.
-                this.dispatchEvent(new CustomEvent('familychange', {
-                    detail: { _family: this.family, _samples: this.samples},
-                    bubbles: true,
-                    composed: true
-                }));
-                this.invalidatePotentialParents();
-                this.renderPedigree();
-
-            }
-
-            fillSampleParentNames() {
-                if (!this.samples) return;
-
-                for (const sample of this.samples) {
-                    const individual = sample.individual;
-                    if (!!individual) {
-                        if (!!individual.father && !!individual.father.id && individual.father.id>0) {
-                            const parentId = individual.father.id;
-                            const parentSample = this.samples.find(sample => (!!sample.individual && sample.individual.id === parentId));
-                            if (!!parentSample) {
-                                individual.father.name = parentSample.individual.name;
-                            }
-                        }
-                        if (!!individual.mother && !!individual.mother.id && individual.mother.id>0) {
-                            const parentId = individual.mother.id;
-                            const parentSample = this.samples.find(sample => (!!sample.individual && sample.individual.id === parentId));
-                            if (!!parentSample) {
-                                individual.mother.name = parentSample.individual.name;
+            fillParentNames() {
+                for (const individual of (this.individuals || [])) {
+                    const relations = ["father", "mother"];
+                    for (const relation of relations) {
+                        if (!!individual[relation] && !!individual[relation].id && individual[relation].id>0) {
+                            const parentId = individual[relation].id;
+                            const parent = this.getIndividual(parentId);
+                            if (!!parent) {
+                                individual[relation].name = parent.name;
                             }
                         }
                     }
                 }
             }
-
 
             renderPedigree() {
                 if (!this.showSelectParents)    return;
@@ -553,18 +476,18 @@
                 const pedigreeView = PolymerUtils.getElementById(this.prefix + "PedigreeView");
                 if (!pedigreeView) return;
 
-                if (UtilsNew.isNotUndefined(this.svg)) {
+                if (!!this.svg) {
                     pedigreeView.removeChild(this.svg);
                 }
 
                 // const members = Object.assign({}, this.samples.members);
-                const body = Object.assign({}, this.family);
+                // const body = Object.assign({}, this.family);
 
                 // Render new Pedigree
-                const pedigree = new Pedigree(body, { selectShowSampleNames: true });
-                this.svg = pedigree.pedigreeFromFamily(pedigree.pedigree);
-                this.svg.style = "display: block; margin: auto";
-                pedigreeView.appendChild(this.svg);
+                // const pedigree = new Pedigree(body, { selectShowSampleNames: true });
+                // this.svg = pedigree.pedigreeFromFamily(pedigree.pedigree);
+                // this.svg.style = "display: block; margin: auto";
+                // pedigreeView.appendChild(this.svg);
             }
 
             _summaryOnClick() {
@@ -576,32 +499,23 @@
                 this._summaryCollapsed = !this._summaryCollapsed;
             }
 
-            updateError() {
-                this.messageError = this.messageErrorFamily.slice();
-            }
-
             // updates family.phenotypes and ontologyTermsDiseases
-            updatePhenotypesFromSamples() {
-                const phenotypes = [...new Set(this.samples
-                    .map(sample => ((!!sample.individual && sample.individual.phenotypes) || []))
-                    .reduce((acc, cur, idx, src) => acc.concat(cur), []))];
-                this.family.phenotypes = phenotypes;
+            updatePhenotypesFromIndividuals() {
+                const phenotypes = [...new Set(this.individuals
+                    .map(individual => (individual.phenotypes || []))
+                    .reduce((acc, cur) => acc.concat(cur), [])
+                )];
+                // this.family.phenotypes = phenotypes;
                 this.ontologyTermsDiseases = phenotypes;
                 // custom diseases son las enfermedades que están en family.phenotypes pero no en customDiseases
-                this.customDiseases = this.family.phenotypes.filter(disease => !this.ontologyTermsDiseases.some(ar2 => ar2.id === disease.id));
+                // this.customDiseases = this.family.phenotypes.filter(disease => !this.ontologyTermsDiseases.some(ar2 => ar2.id === disease.id));
             }
 
             onSamplesChanged() {
                 this.ontologyTermsDiseases = [];
                 this.customDiseases = [];
 
-                this.readSampleDataFromServer();
-
-                if (!!this.individuals) {
-                    this.fillSampleParentNames();
-                    this.updatePhenotypesFromSamples();
-                    this.updateFamily();
-                }
+                this.readIndividualsFromServer();
 
                 const individualsTable = PolymerUtils.getElementById(`${this.prefix}individualsTable`);
                 if (!!individualsTable) {
@@ -609,45 +523,56 @@
                 }
             }
 
-            getIndividualsFromSamples() {
-                const individuals = (this.samples || []).map(sample => sample.individual);
-                const uniqueIndividuals = individuals.filter((individual, index) => index === individuals.findIndex(subject => subject.id === individual.id));
-                return uniqueIndividuals;
+
+
+            readIndividualsFromServer() {
+
+                if (!this.samples)  return;
+
+                const individualIds = this.samples
+                    .filter(sample => !!sample.individual && !!sample.individual.id && sample.individual.id>0)
+                    .map(sample => sample.individual.id)
+                    .reduce((acc, id) => acc.includes(id) ? acc : [...acc, id], []);
+                const params = { study: this.opencgaSession.study.alias };
+                const pthis = this;
+                const updatePromises = individualIds.map(individualId => (
+                    this.opencgaClient.individuals().info(individualId, params, {method: "GET"}).then(response => {
+                        if (response.response[0].numResults >= 1) {
+                            const individual = response.response[0].result[0];
+                            return individual;
+                        } else {
+                            return null;
+                        }
+                    })
+                ));
+
+                Promise.all(updatePromises).then(individuals => {
+                    debugger;
+                    pthis.individuals = individuals.filter(individual => !!individual);
+                }).catch(response => {
+                    debugger;
+                    pthis.settingsMessageModal = {
+                        messageHeader: "Error",
+                        messageBody: [ response.error ],
+                        type: "danger",
+                        height: "100px",
+                        width: "500px"
+                    };
+                    pthis.showMessageModal = true;
+                    pthis.set('settingsMessageModal', pthis.settingsMessageModal);
+                    pthis.individuals = [];
+                });
             }
 
-            readSampleDataFromServer() {
-                if (!this.individuals) return;
-
-                const params = { study: this.opencgaSession.study.alias };
-                const _this = this;
-                for (let idx = 0; idx < this.samples.length; ++idx) {
-                    const sample = this.samples[idx];
-                    const hasIndividual = UtilsNew.isNotUndefinedOrNull(sample.individual) && (sample.individual.id > 0);
-                    if (hasIndividual) {
-                        this.opencgaClient.individuals().info(sample.individual.id, params, {method: "GET"}).then(response => {
-                            if (response.response[0].numResults >= 1) {
-                                const individual = response.response[0].result[0];
-                                _this.set(`samples.${idx}.individual`, individual);
-                                _this.fillSampleParentNames();
-                                if (!!individual.phenotypes)    _this.addSourceDiseases(individual.phenotypes);
-                                _this.updateFamily();
-                            }
-                        }).catch(response => {
-                            _this.settingsMessageModal = {
-                                messageHeader: "Error",
-                                messageBody: [response.error],
-                                type: "danger",
-                                height: "100px",
-                                width: "500px"
-                            };
-                            _this.set('settingsMessageModal', _this.settingsMessageModal);
-                            _this.showMessageModal = true;
-                        });
-                    }
-                }
+            onIndividualsChanged() {
+                this.fillParentNames();
+                // if (!!individual.phenotypes) {
+                //     this.addSourceDiseases(individual.phenotypes);
+                // }
+                this.updatePhenotypesFromIndividuals();
             }
         }
 
-        customElements.define(OpencgaFamilyEditorNew.is, OpencgaFamilyEditorNew);
+        customElements.define(ClinicalFamilyRelationsEditor.is, ClinicalFamilyRelationsEditor);
     </script>
 </dom-module>

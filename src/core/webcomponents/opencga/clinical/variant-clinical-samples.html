@@ -16,10 +16,12 @@
 
 <link rel="import" href="../catalog/samples/opencga-sample-grid.html">
 <link rel="import" href="../catalog/samples/opencga-sample-filter.html">
-<link rel="import" href="../catalog/samples/opencga-family-editor-new.html">
 <link rel="import" href="../opencga-active-filters.html">
 <link rel="import" href="../opencga-message-dialog.html">
 <link rel="import" href="./variant-clinical-samples-analyses-table.html">
+
+<link rel="import" href="./clinical-family-relations-editor.html">
+
 
 <dom-module id="variant-clinical-samples">
     <template>
@@ -48,7 +50,8 @@
                         <button type="button" class="btn btn-primary" on-click="addAnalysis" disabled="[[!samples.length]]">
                             Create analysis
                         </button>
-                        <button type="button" class="btn btn-primary" on-click="editFamilyRelations" disabled="[[!samples.length]]">
+                        <!-- <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#[[prefix]]FamilyRelationsEditor" disabled="[[!samples.length]]"> -->
+                            <button type="button" class="btn btn-primary" on-click="onEditFamilyRelations" disabled="[[!samples.length]]">
                             Edit family relations
                         </button>
                     </div>
@@ -77,43 +80,38 @@
             </div>
         </div>
 
-        <!-- Modal dialog for Family Editor-->
-        <div
-                class="modal fade"
-                id="{{prefix}}FamilyEditor"
-                tabindex="-1"
-                role="dialog"
-                aria-labelledby="familyEditorLabel">
+        <!-- =============================================================== -->
+        <!-- NEW: modal dialog for family relations editor -->
+        <!-- =============================================================== -->
+        <div id="[[prefix]]FamilyRelationsEditor" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="[[prefix]]FamilyRelationsEditorLabel">
             <div class="modal-dialog modal-sm" role="document" style="width:90%">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
-                        <h4 class="modal-title" id="{{prefix}}FamilyEditorLabel">Family Editor</h4>
+                        <h4 id="[[prefix]]FamilyRelationsEditorLabel" class="modal-title">Edit family relations</h4>
                     </div>
                     <div class="modal-body">
                         <div class="row">
-                            <template is="dom-if" if="{{showModalFamilyEditor}}" restamp="true">
-                                <opencga-family-editor-new
+                            <template is="dom-if" if="[[showFamilyRelationsEditor]]" restamp="true">
+                                <p>checkpoint-0001</p>
+                                <clinical-family-relations-editor
                                         opencga-session="{{opencgaSession}}"
                                         opencga-client="{{opencgaClient}}"
-                                        samples="{{_samplesAnalysis}}"
-                                        family="{{family}}"
-                                        on-familychange="familyChange"
-                                        message-error-family="{{messageErrorFamily}}">
-                                </opencga-family-editor-new>
+                                        samples="{{samples}}"
+                                ></clinical-family-relations-editor>
+                                <p>checkpoint-0002</p>
                             </template>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" on-click="checkFamily">OK</button>
+                        <button type="button" class="btn btn-primary" on-click="onFamilyRelationsOk">OK</button>
                     </div>
                 </div>
             </div>
         </div>
-
 
         <!-- Modal dialog for warnings -->
         <div class="modal fade" id="{{prefix}}warningModal" tabindex="-1" role="dialog"
@@ -200,6 +198,10 @@
                         type: Array,
                         value: () => [],
                     },
+                    showFamilyRelationsEditor: {
+                        type: Boolean,
+                        value: () => false,
+                    },
                 }
             }
 
@@ -223,16 +225,16 @@
 
             connectedCallback() {
                 super.connectedCallback();
-
-                this.table = PolymerUtils.getElementById(this.prefix + "FamilySelector");
-                const _this = this;
-                $("#"+this.prefix + "FamilyEditor").on('shown.bs.modal', e => {
-                    _this.showModalFamilyEditor = true;
-                });
-
-                $("#"+this.prefix + "FamilyEditor").on('hidden.bs.modal', () => {
-                    _this.showModalFamilyEditor = false;
-                });
+                const familyRelationsEditor = $(`#${this.prefix}FamilyRelationsEditor`);
+                if (!!familyRelationsEditor) {
+                    const pthis = this;
+                    familyRelationsEditor.on('shown.bs.modal', e => {
+                        pthis.showFamilyRelationsEditor = true;
+                    });
+                    familyRelationsEditor.on('hidden.bs.modal', () => {
+                        pthis.showFamilyRelationsEditor = false;
+                    });
+                }
             }
 
             onSamplesChanged(newValue, oldValue) {
@@ -390,7 +392,7 @@
                 this.dispatchEvent(new CustomEvent(this.eventNotifyName, params));
             }
 
-            analysisError(samples, checkDiseases = true) {
+            analysisError(samples) {
                 if (!samples || samples.length == 0) {
                     const message = "An analysis must include at least one sample. Please, select one from the sample browser above.";
                     this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
@@ -407,7 +409,7 @@
                         return false;
                     } else {
                         const anyDiseasedSamples = samples.some(sample => !!sample.phenotypes && sample.phenotypes.length > 0);
-                        if (checkDiseases && !anyDiseasedSamples) {
+                        if (!anyDiseasedSamples) {
                             this.throwMessage("At least one subject should be diseased.", UtilsNew.MESSAGE_ERROR);
                             return false;
                         } else {
@@ -450,25 +452,33 @@
             // family relations
             //======================================================================================
 
-            editFamilyRelations() {
-                if (this.analysisError(this.samples)) {
-                    const message = "An analysis must include at least one sample. Please, select one from the sample browser above.";
-                    this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
-                    return false;
+            onEditFamilyRelations() {
+                if (!this.samples) {
                 } else {
                     const sampleHasIndividual = sample => (
                         !!sample && !!sample.attributes && !!sample.attributes.individual
                         && !!sample.attributes.individual.id && (sample.attributes.individual.id>0)
                     );
-                    const allSamplesHaveIndividual = samples.every(sampleHasIndividual);
+                    const allSamplesHaveIndividual = this.samples.every(sampleHasIndividual);
                     if (!allSamplesHaveIndividual) {
                         const message = "Some samples do not have an associated individual, so they cannot be edited.";
                         this.throwMessage(message, UtilsNew.MESSAGE_ERROR);
-                        return false;
                     } else {
                         // pass them to new family editor
-
+                        const familyRelationsEditor = $(`#${this.prefix}FamilyRelationsEditor`);
+                        if (!!familyRelationsEditor) {
+                            familyRelationsEditor.modal('show');
+                            this.showFamilyRelationsEditor = true;
+                        }
                     }
+                }
+            }
+
+            onFamilyRelationsOk(e) {
+                e.preventDefault();
+                const familyRelationsEditor = $(`#${this.prefix}FamilyRelationsEditor`);
+                if (!!familyRelationsEditor) {
+                    familyRelationsEditor.modal('hide');
                 }
             }
 
