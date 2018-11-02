@@ -133,6 +133,8 @@
 
                     const _table = $('#' + this.prefix + 'SampleBrowserGrid');
                     const _this = this;
+                    let skipCount = false;
+
                     $("#" + this.prefix + 'SampleBrowserGrid').bootstrapTable('destroy');
                     $("#" + this.prefix + 'SampleBrowserGrid').bootstrapTable({
                         url: opencgaHostUrl,
@@ -153,6 +155,9 @@
                               'id', 'name', 'creationDate', 'status', 'type', 'sex', 'version', 'release', 'phenotypes',
                                 'individual.id', 'individual.sex', 'individual.father', 'individual.mother', 'individual.phenotypes'
                             ];
+                            // include: "id,creationDate,status,type,sex,version,release,individual.id,individual.sex,individual.father,individual.mother,individual.phenotypes"
+                            // from opencb
+                            skipCount = (this.pageNumber > 1);
                             const auxParams = {
                                 uniqueId: "id",
                                 study: _this.opencgaSession.study.fqn,
@@ -163,17 +168,19 @@
                                 limit: params.limit,
                                 skip: params.offset,
                                 includeIndividual: true,
-                                include: fieldsToIncludeInSample.join(',')
+                                include: fieldsToIncludeInSample.join(','),
+                                skipCount: skipCount,
                             };
                             return Object.assign(filters || {}, auxParams);
                         },
                         responseHandler: response => {
-                            if (!_this.hasOwnProperty("numTotalResults")) {
-                                _this.numTotalResults = 0;
-                            }
-                            if (_this.numTotalResults !== response.response[0].numTotalResults
-                                && response.queryOptions.skip === 0) {
-                                _this.numTotalResults = response.response[0].numTotalResults;
+                            if (!skipCount) {
+                                if (!_this.hasOwnProperty("numTotalResults")) {
+                                   _this.numTotalResults = 0;
+                                }
+                                if (_this.numTotalResults !== response.response[0].numTotalResults && response.queryOptions.skip === 0) {
+                                    _this.numTotalResults = response.response[0].numTotalResults;
+                                }
                             }
 
                             _this.numTotalResultsText = _this.numTotalResults.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");

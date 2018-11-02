@@ -14,21 +14,23 @@
   ~ limitations under the License.
   -->
 
-<dom-module id="opencga-cohort-grid">
+<link rel="import" href="../../../commons/opencb-grid-toolbar.html">
+
+<dom-module id="opencga-file-grid">
     <template>
         <style include="jso-styles"></style>
 
         <opencb-grid-toolbar from="{{from}}" to="{{to}}" num-total-results-text="{{numTotalResultsText}}"></opencb-grid-toolbar>
 
         <div id="{{prefix}}GridTableDiv" style="margin-top: 10px">
-            <table id="{{prefix}}CohortBrowserGrid" style="cursor: pointer">
+            <table id="{{prefix}}FileBrowserGrid" style="cursor: pointer">
                 <thead style="background-color: #eee"></thead>
             </table>
         </div>
     </template>
 
     <script>
-        class OpencgaCohortGrid extends Polymer.Element {
+        class OpencgaFileGrid extends Polymer.Element {
 
             constructor() {
                 super();
@@ -38,7 +40,7 @@
             }
 
             static get is() {
-                return 'opencga-cohort-grid';
+                return 'opencga-file-grid';
             }
 
             static get properties() {
@@ -47,11 +49,7 @@
                         type: Object,
                         observer: "renderTable"
                     },
-                    opencgaClient: {
-                        type: Object,
-                        observer: 'renderTable'
-                    },
-                    cohorts: {
+                    files: {
                         type: Array,
                         notify: true
                     },
@@ -79,7 +77,7 @@
             }
 
             _init() {
-                this.prefix = "VarCohortGrid" + Utils.randomString(6);
+                this.prefix = "VarFileGrid" + Utils.randomString(6);
 
                 this._config = this.getDefaultConfig();
             }
@@ -102,41 +100,44 @@
             connectedCallback() {
                 super.connectedCallback();
 
-                this.table = PolymerUtils.getElementById(this.prefix + "CohortBrowserGrid");
+                this.table = PolymerUtils.getElementById(this.prefix + "FileBrowserGrid");
                 this.search = {};
 
             }
 
             renderTable() {
-                this.set('cohorts', []);
-                let filters = Object.assign({}, this.search);
+                this.set('files', []);
+
+                // We avoid listing directories in the grid
+                let filters = Object.assign({type: "FILE"}, this.search);
 
                 this.from = 1;
                 this.to = 10;
 
-                if (UtilsNew.isNotUndefined(this.opencgaClient) && UtilsNew.isNotUndefined(this.opencgaSession.study)
+                if (UtilsNew.isNotUndefined(this.opencgaSession.opencgaClient)
+                    && UtilsNew.isNotUndefined(this.opencgaSession.study)
                     && UtilsNew.isNotUndefined(this.opencgaSession.study.fqn)) {
-                    // Make a copy of the cohorts (if they exist), we will use this private copy until it is assigned to this.cohorts
-                    if (UtilsNew.isNotUndefined(this.cohorts)) {
-                        this._cohorts = this.cohorts;
+                    // Make a copy of the files (if they exist), we will use this private copy until it is assigned to this.files
+                    if (UtilsNew.isNotUndefined(this.files)) {
+                        this._files = this.files;
                     } else {
-                        this._cohorts = [];
+                        this._files = [];
                     }
 
                     // Check that HTTP protocol is present and complete the URL
-                    let opencgaHostUrl = this.opencgaClient.getConfig().host;
+                    let opencgaHostUrl = this.opencgaSession.opencgaClient.getConfig().host;
                     if (!opencgaHostUrl.startsWith("http://") && !opencgaHostUrl.startsWith("https://")) {
                         opencgaHostUrl = 'http://' + opencgaHostUrl;
                     }
-                    opencgaHostUrl += '/webservices/rest/v1/cohorts/search';
+                    opencgaHostUrl += '/webservices/rest/v1/files/search';
 
                     let skipCount = false;
 
-                    let _table = $('#' + this.prefix + 'CohortBrowserGrid');
+                    let _table = $('#' + this.prefix + 'FileBrowserGrid');
 
                     let _this = this;
-                    $("#" + this.prefix + 'CohortBrowserGrid').bootstrapTable('destroy');
-                    $("#" + this.prefix + 'CohortBrowserGrid').bootstrapTable({
+                    $("#" + this.prefix + 'FileBrowserGrid').bootstrapTable('destroy');
+                    $("#" + this.prefix + 'FileBrowserGrid').bootstrapTable({
                         url: opencgaHostUrl,
                         columns: _this._columns,
                         method: 'get',
@@ -159,13 +160,13 @@
                             let auxParams = {
                                 study: _this.opencgaSession.study.fqn,
 //                                lazy: "false",
-                                sid: Cookies.get(_this.opencgaClient.getConfig().cookieSessionId),
+                                sid: Cookies.get(_this.opencgaSession.opencgaClient.getConfig().cookieSessionId),
                                 order: params.order,
                                 sort: params.sort,
                                 limit: params.limit,
                                 skip: params.offset,
                                 skipCount: skipCount,
-                                include: "id,creationDate,status,type,samples"
+                                include: "name,path,samples,status,format,bioformat,creationDate,modificationDate,uuid"
                             };
 
                             if (UtilsNew.isUndefined(filters)) {
@@ -202,96 +203,99 @@
                                 let index = element[0].getAttribute("data-index");
                                 // Check and uncheck actions trigger events that are captured below
                                 if ("selected" === element[0].className) {
-                                    $(PolymerUtils.getElementById(_this.prefix + 'CohortBrowserGrid')).bootstrapTable('uncheck', index);
+                                    $(PolymerUtils.getElementById(_this.prefix + 'FileBrowserGrid')).bootstrapTable('uncheck', index);
                                 } else {
-                                    $(PolymerUtils.getElementById(_this.prefix + "CohortBrowserGrid")).bootstrapTable('check', index);
+                                    $(PolymerUtils.getElementById(_this.prefix + "FileBrowserGrid")).bootstrapTable('check', index);
                                 }
                             } else {
                                 $('.success').removeClass('success');
                                 $(element).addClass('success');
                             }
 
-                            _this._onSelectCohort(row);
+                            _this._onSelectFile(row);
                         },
                         onCheck: function (row, elem) {
-                            // check cohort is not already selected
-                            for (let i in _this._cohorts) {
-                                if (_this._cohorts[i].id === row.id) {
+                            // check file is not already selected
+                            for (let i in _this._files) {
+                                if (_this._files[i].id === row.id) {
                                     return;
                                 }
                             }
 
-                            // we add cohorts to selected cohorts
-                            _this.push("_cohorts", row);
-                            _this.set('cohorts', _this._cohorts.slice());
+                            // we add files to selected files
+                            _this.push("_files", row);
+                            _this.set('files', _this._files.slice());
 
                         },
                         onUncheck: function (row, elem) {
-                            let cohortToDeleteIdx = -1;
-                            for (let i in _this.cohorts) {
-                                if (_this.cohorts[i].id === row.id) {
-                                    cohortToDeleteIdx = i;
+                            let fileToDeleteIdx = -1;
+                            for (let i in _this.files) {
+                                if (_this.files[i].id === row.id) {
+                                    fileToDeleteIdx = i;
                                     break;
                                 }
                             }
 
-                            if (cohortToDeleteIdx === -1) {
+                            if (fileToDeleteIdx === -1) {
                                 return;
                             }
 
-                            _this.splice('_cohorts', cohortToDeleteIdx, 1);
-                            _this.set('cohorts', _this._cohorts.slice());
+                            _this.splice('_files', fileToDeleteIdx, 1);
+                            _this.set('files', _this._files.slice());
                         },
                         onCheckAll: function (rows) {
-                            let newCohorts = _this._cohorts.slice();
-                            // check cohort is not already selected
-                            rows.forEach((cohort) => {
-                                let existsNewSelected = _this._cohorts.some((cohortSelected) => {
-                                    return  cohortSelected.id === cohort.id;
+                            let newFiles = _this._files.slice();
+                            // check file is not already selected
+                            rows.forEach((file) => {
+                                let existsNewSelected = _this._files.some((fileSelected) => {
+                                    return fileSelected.id === file.id;
                                 });
 
                                 if(!existsNewSelected) {
-                                    newCohorts.push(cohort);
+                                    newFiles.push(file);
                                 }
                             });
 
-                            // we add cohorts to selected cohorts
-                            _this._cohorts = newCohorts;
-                            _this.set('cohorts', newCohorts.slice());
+                            // we add files to selected files
+                            _this._files = newFiles;
+                            _this.set('files', newFiles.slice());
 
                         },
                         onUncheckAll: function (rows) {
-                            // check cohort is not already selected
-                            rows.forEach((cohort) => {
-                                _this._cohorts = _this._cohorts.filter((cohortSelected) => {
-                                    return cohortSelected.id !== cohort.id;
+                            // check file is not already selected
+                            rows.forEach((file) => {
+                                _this._files = _this._files.filter((fileSelected) => {
+                                    return fileSelected.id !== file.id;
                                 });
 
                             });
 
-                            // we add cohorts to selected cohorts
-//                            _this.push("_cohorts", row);
-                            _this.set('cohorts', _this._cohorts.slice());
+                            // we add files to selected files
+//                            _this.push("_files", row);
+                            _this.set('files', _this._files.slice());
 
                         },
                         onLoadSuccess: function (data) {
-                            // Check all already selected rows. Selected cohorts are stored in this.cohorts array
+                            // Check all already selected rows. Selected files are stored in this.files array
                             if (UtilsNew.isNotUndefinedOrNull(_table)) {
                                 if (!_this._config.multiselection) {
                                     PolymerUtils.querySelector(_table.selector).rows[1].setAttribute('class', 'success');
-                                    _this._onSelectCohort(data.rows[0]);
+                                    _this._onSelectFile(data.rows[0]);
                                 }
-                                if (_this.cohorts !== "undefined") {
-                                    for (let idx in _this.cohorts) {
+
+                                if (_this.files !== "undefined") {
+                                    for (let idx in _this.files) {
                                         for (let j in data.rows) {
-                                            if (_this.cohorts[idx].id === data.rows[j].id) {
-                                                $(PolymerUtils.getElementById(_this.prefix + 'CohortBrowserGrid')).bootstrapTable('check', j);
+                                            if (_this.files[idx].id === data.rows[j].id) {
+                                                $(PolymerUtils.getElementById(_this.prefix + 'FileBrowserGrid')).bootstrapTable('check', j);
                                                 break;
                                             }
                                         }
                                     }
                                 }
                             }
+
+
                         },
                         onPageChange: function (page, size) {
                             _this.from = (page - 1) * size + 1;
@@ -306,7 +310,7 @@
 //                         }
                     });
 
-                    this.opencgaClient.studies().info(this.opencgaSession.study.id)
+                    this.opencgaSession.opencgaClient.studies().info(this.opencgaSession.study.id)
                         .then(function (response) {
                             _this.variableSets = response.response[0].result[0].variableSets;
                         })
@@ -315,7 +319,7 @@
                         });
                 } else {
                     // Delete table
-                    $(PolymerUtils.getElementById(this.prefix + 'CohortBrowserGrid')).bootstrapTable('destroy');
+                    $(PolymerUtils.getElementById(this.prefix + 'FileBrowserGrid')).bootstrapTable('destroy');
                     this.numTotalResults = 0;
                 }
             }
@@ -327,9 +331,9 @@
                 this.updateForms(this.filters);
             }
 
-            _onSelectCohort(row) {
+            _onSelectFile(row) {
                 if (typeof row !== "undefined") {
-                    this.dispatchEvent(new CustomEvent('selectcohort', {detail: {id: row.id, cohort: row}}));
+                    this.dispatchEvent(new CustomEvent('selectfile', {detail: {id: row.id, file: row}}));
                 }
             }
 
@@ -339,8 +343,8 @@
                     return;
                 }
 
-                let cohortName = PolymerUtils.getValue(this.prefix + "NameTextarea");
-                if (!filters.hasOwnProperty("name") && UtilsNew.isNotUndefined(cohortName) && cohortName.length > 0) {
+                let fileName = PolymerUtils.getValue(this.prefix + "NameTextarea");
+                if (!filters.hasOwnProperty("name") && UtilsNew.isNotUndefined(fileName) && fileName.length > 0) {
                     PolymerUtils.getElementById(this.prefix + "NameTextarea").value = "";
                 }
 
@@ -371,18 +375,18 @@
              */
             calculateFilters() {
                 let filters = {};
-                let cohortName = "";
+                let fileName = "";
                 let individual = "";
 
                 if (PolymerUtils.getElementById(this.prefix + "NameTextarea") !== null) {
-                    cohortName = PolymerUtils.getElementById(this.prefix + "NameTextarea").value;
+                    fileName = PolymerUtils.getElementById(this.prefix + "NameTextarea").value;
                 }
                 if (PolymerUtils.getElementById(this.prefix + "IndividualTextarea") !== null) {
                     individual = PolymerUtils.getElementById(this.prefix + "IndividualTextarea").value;
                 }
 
-                if (UtilsNew.isNotUndefined(cohortName) && cohortName.length > 0) {
-                    filters["name"] = "~" + cohortName;
+                if (UtilsNew.isNotUndefined(fileName) && fileName.length > 0) {
+                    filters["name"] = "~" + fileName;
                 }
 
                 if (UtilsNew.isNotUndefined(individual) && individual.length > 0) {
@@ -401,7 +405,7 @@
             }
 
             onSearch() {
-                // Convert the filters to an objectParam that can be directly send to the cohort search
+                // Convert the filters to an objectParam that can be directly send to the file search
                 let filterParams = {};
 
                 let keys = Object.keys(this.filters);
@@ -441,32 +445,26 @@
 
 
             stateFormatter(value, row, index) {
-                if (typeof this.field.context.cohorts != "undefined") {
-                    for (let idx in this.field.context.cohorts) {
-                        if (this.field.context.cohorts[idx].id == row.id) {
+                if (typeof this.field.context.files != "undefined") {
+                    for (let idx in this.field.context.files) {
+                        if (this.field.context.files[idx].name == row.name) {
                             break;
                         }
                     }
                 }
             }
 
-            sampleFormatter(value, row) {
-                if (UtilsNew.isNotUndefined(row.samples)) {
-                    return row.samples.length;
+            individualFormatter(value, row) {
+                if (UtilsNew.isNotUndefined(row.attributes) && UtilsNew.isNotUndefined(row.attributes.individual)
+                    && UtilsNew.isNotUndefined(row.attributes.individual.id)) {
+                    return row.attributes.individual.id;
                 } else {
-                    return 0;
+                    return '-'
                 }
             }
 
             dateFormatter(value, row) {
-                let pattern = /^(\d\d\d\d)(\d\d)(\d\d)/;
-                let matches = pattern.exec(value);
-                if (matches) {
-                    let [year, month, day] = [matches[1], matches[2] - 1, matches[3]];
-                    return year + "-" + month + "-" + day;
-                } else {
-                    return "Invalid date: '" + value + "'";
-                }
+                return moment(value, "YYYYMMDDHHmmss").format('D MMM YYYY');
             }
 
             diagnosisFormatter(value, row) {
@@ -501,8 +499,9 @@
 
             fatherFormatter(value, row) {
                 if (UtilsNew.isNotUndefined(row.attributes) && UtilsNew.isNotUndefined(row.attributes.individual)
-                    && row.attributes.individual.fatherId > 0) {
-                    return row.attributes.individual.fatherId;
+                    && UtilsNew.isNotUndefined(row.attributes.individual.father)
+                    && UtilsNew.isNotUndefined(row.attributes.individual.father.id)) {
+                    return row.attributes.individual.father.id;
                 } else {
                     return '-';
                 }
@@ -510,8 +509,9 @@
 
             motherFormatter(value, row) {
                 if (UtilsNew.isNotUndefined(row.attributes) && UtilsNew.isNotUndefined(row.attributes.individual)
-                    && row.attributes.individual.motherId > 0) {
-                    return row.attributes.individual.motherId;
+                    && UtilsNew.isNotUndefined(row.attributes.individual.mother)
+                    && UtilsNew.isNotUndefined(row.attributes.individual.mother.id)) {
+                    return row.attributes.individual.mother.id;
                 } else {
                     return '-';
                 }
@@ -519,57 +519,6 @@
 
             cellTypeFormatter(value, row) {
                 return (row.somatic) ? "Somatic" : "Germline";
-            }
-
-            downloadFormatter(value, row) {
-                return '<a role="button" type="button" class="'+this.prefix + 'Download btn btn-sm btn-primary" data-cohort-name="'+row.name +'" ><i class="fa fa-download" aria-hidden="true"></i>&nbsp;Download</a>';
-            }
-
-            downloadQCFile(e) {
-                let name = e.target.getAttribute('data-cohort-name') + ".QC.tar.gz";
-                let study = this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias;
-                let sid =  Cookies.get(this.opencgaClient.getConfig().cookieSessionId);
-                let opencgaHostUrl = this.opencgaClient.getConfig().host;
-                if (!opencgaHostUrl.startsWith("http://") && !opencgaHostUrl.startsWith("https://")) {
-                    opencgaHostUrl = 'http://' + opencgaHostUrl;
-                }
-                opencgaHostUrl += '/webservices/rest/v1/files/';
-
-                let paramsInfo= {
-                    study: study
-                };
-
-                this.opencgaClient.files().info(name, paramsInfo)
-                    .then((response) => {
-                        if (response.response.length > 0) {
-                            let url = opencgaHostUrl + name + "/download?sid=" + sid + "&study=" + study;
-                            let a = document.createElement("a");
-                            a.href = url;
-                            a.download = name;
-                            document.body.appendChild(a);
-                            a.click();
-                        } else {
-                            this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                                detail: {
-                                    message: name + " not found.",
-                                    type: UtilsNew.MESSAGE_ERROR
-                                },
-                                bubbles: true,
-                                composed: true
-                            }));
-                        }
-                    })
-                    .catch((response) => {
-                        this.dispatchEvent(new CustomEvent(this.eventNotifyName, {
-                            detail: {
-                                message: name + " not found.",
-                                type: UtilsNew.MESSAGE_ERROR
-                            },
-                            bubbles: true,
-                            composed: true
-                        }));
-                    });
-
             }
 
             _initTableColumns() {
@@ -584,27 +533,41 @@
 
                 this._columns = [
                     columns.concat([
+                        //name,path,samples,status,format,bioformat,creationDate,modificationDate,uuid"
                         {
-                            title: 'Cohort',
-                            field: 'id'
+                            title: 'Uuid',
+                            field: 'uuid',
+                            visible: false
                         },
                         {
-                            title: '#Samples',
-                            field: 'samples',
-                            formatter: this.sampleFormatter
+                            title: 'Name',
+                            field: 'name'
                         },
                         {
-                            title: 'Date',
+                            title: 'Path',
+                            field: 'path'
+                        },
+                        {
+                            title: 'Format',
+                            field: 'format'
+                        },
+                        {
+                            title: 'Bioformat',
+                            field: 'bioformat'
+                        },
+                        {
+                            title: 'Creation date',
                             field: 'creationDate',
+                            formatter: this.dateFormatter
+                        },
+                        {
+                            title: 'Modification date',
+                            field: 'modificationDate',
                             formatter: this.dateFormatter
                         },
                         {
                             title: 'Status',
                             field: 'status.name'
-                        },
-                        {
-                            title: 'Type',
-                            field: 'type'
                         }
                     ])
                 ];
@@ -625,6 +588,6 @@
             }
         }
 
-        customElements.define(OpencgaCohortGrid.is, OpencgaCohortGrid);
+        customElements.define(OpencgaFileGrid.is, OpencgaFileGrid);
     </script>
 </dom-module>

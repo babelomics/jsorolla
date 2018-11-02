@@ -30,76 +30,73 @@
             }
         </style>
 
-
         <!-- Facet Fields -->
+        <div class="row" style="padding: 0px 15px">
+            <div class="col-md-12 panel panel-default">
+                <h3>Select Aggregation Stats</h3>
 
-        <div class="row">
-            <template is="dom-if" if="{{isNotEmpty(_config.defaultStats)}}">
                 <div class="col-md-12">
-                    <h3>Default Stats</h3>
-                    <h4>Compute default stats <button type="button" class="btn btn-primary" on-click="addDefaultStats" style="cursor: pointer">Add</button></h4>
-
+                    <template is="dom-if" if="{{isNotEmpty(_config.defaultStats)}}">
+                        <h4 style="padding-top: 5px">Default Aggregation Stats</h4>
+                        <span style="padding-left: 10px">Add default aggregation stats</span>
+                        <span style="padding-left: 10px">
+                            <button type="button" class="btn btn-primary" on-click="addDefaultStats">Add</button>
+                        </span>
+                    </template>
                 </div>
-            </template>
 
-            <div class="col-md-12">
-                <h3>Fields</h3>
-
-                <div class="row">
-                    <div class="col-md-5" style="padding: 0px 30px 0px 20px">
-                        <opencga-facet-view-selector id="{{prefix}}-ofvs-first" terms="{{dataModelTerms}}" variable-sets="{{processedVariableSets}}"
+                <div class="col-md-12">
+                    <h4 style="padding: 20px 0px 5px 0px">Select Custom Aggregation Fields</h4>
+                    <div class="col-md-5" style="padding: 0px 30px 0px 10px">
+                        <opencga-facet-view-selector id="{{prefix}}-ofvs-first" terms="{{dataModelTerms}}" variable-sets="[[variableSets]]"
                                                      on-variablechange="onVariableSelectedChange" clear$="{{clearSelectedOptions}}">
                         </opencga-facet-view-selector>
                     </div>
-                    <div class="col-md-5" style="padding: 0px 20px 0px 30px">
-                        <opencga-facet-view-selector id="{{prefix}}-ofvs-nested" terms="{{dataModelTerms}}" variable-sets="{{processedVariableSets}}"
+                    <div class="col-md-5" style="padding: 0px 10px 0px 30px">
+                        <opencga-facet-view-selector id="{{prefix}}-ofvs-nested" terms="{{dataModelTerms}}" variable-sets="[[variableSets]]"
                                                      on-variablechange="onVariableSelectedChange" clear$="{{clearSelectedOptions}}"
                                                      disabled$="{{disableNestedSelector}}">
                         </opencga-facet-view-selector>
                     </div>
 
-                    <div class="col-md-offset-1 col-md-1" style="padding-top: 25px">
+                    <div class="col-md-1" style="padding-top: 25px">
                         <button type="button" class="btn btn-primary" on-click="addFacet" style="cursor: pointer">Add</button>
                     </div>
-
                 </div>
-            </div>
 
-            <div class="col-md-12">
-                <div style="padding: 25px">
-                    <template is="dom-if" if="{{facetFilters.length}}">
-                        <span style="font-weight: bold; padding: 0px 20px">Selected Facets:</span>
-                        <template is="dom-repeat" items="{{facetFilters}}">
-                            <button type="button" class$="btn btn-warning btn-sm {{item}}" data-facet$="{{item}}"
-                                    on-click="removeFacet" on-mouseover="_onMouseOver" on-mouseout="_onMouseOut">
-                                {{item}}
-                            </button>
+                <div class="col-md-12">
+                    <div style="padding: 35px 10px 15px 25px">
+                        <template is="dom-if" if="{{facetFilters.length}}">
+                            <span style="font-weight: bold; padding-right: 10px">Selected Aggregation Fields:</span>
+                            <template is="dom-repeat" items="{{facetFilters}}">
+                                <button type="button" class$="btn btn-warning btn-sm {{item}}" data-facet$="{{item}}"
+                                        on-click="removeFacet" on-mouseover="_onMouseOver" on-mouseout="_onMouseOut">
+                                    {{item}}
+                                </button>
+                            </template>
                         </template>
-                    </template>
+                    </div>
+                </div>
+
+                <div class="col-md-10 col-md-offset-1">
+                    <div style="float: right; padding: 10px">
+                        <button type="button" class="btn btn-primary btn-lg" on-click="fetchData">Run</button>
+                    </div>
+
+                    <div style="float: right; padding: 10px">
+                        <button type="button" class="btn btn-primary btn-lg" on-click="clearAll">Clear</button>
+                    </div>
                 </div>
             </div>
-
-            <div class="col-md-8 col-md-offset-4">
-                <div style="float: right; padding: 0px 10px 10px 10px">
-                    <button type="button" class="btn btn-primary btn-lg" on-click="fetchData">Run</button>
-                </div>
-
-                <div style="float: right; padding: 0px 10px 10px 10px">
-                    <button type="button" class="btn btn-primary btn-lg" on-click="clearAll">Clear</button>
-                </div>
-            </div>
-
 
             <!-- RESULTS - Facet Plots -->
-            <h2>Results</h2>
-
+            <h3>Results</h3>
             <template is="dom-if" if="{{_showInitMessage}}">
-                <h3>No facet filters selected</h3>
+                <h4 style="padding-left: 20px">No aggregation fields selected.</h4>
             </template>
 
             <template is="dom-repeat" items="{{facetResults}}" id="facetResultsDiv">
                 <div style="padding: 20px">
-                    <h3>{{item.name}}</h3>
                     <h4>{{item.name}}</h4>
                     <opencga-facet-result-view facet-result="{{item}}" config="{{_config.result}}"></opencga-facet-result-view>
                 </div>
@@ -189,7 +186,12 @@
 
                 this.dataModelTerms = this.getDataModelTerms(entity);
 
-                this.prepareVariablesForSelector(variableSets);
+                // Take variableSets from the opencgaSession if it has not been passed
+                if (UtilsNew.isUndefinedOrNull(variableSets) && UtilsNew.isNotUndefinedOrNull(this.opencgaSession)
+                    && UtilsNew.isNotUndefinedOrNull(this.opencgaSession.study)
+                    && UtilsNew.isNotUndefinedOrNull(this.opencgaSession.study.variableSets)) {
+                    this.variableSets = this.opencgaSession.study.variableSets;
+                }
             }
 
             onVariableSelectedChange(e) {
@@ -206,127 +208,26 @@
                 }
             }
 
-            prepareVariablesForSelector(variableSets) {
-                if (typeof this.processedVariableSets !== "undefined" && this.processedVariableSets.length === variableSets.length) {
-                    // If the variable set ids match, it will mean the variableSets were already processed
-                    let match = true;
-                    for (let i = 0; i < variableSets.length; i++) {
-                        if (this.processedVariableSets[i].id !== variableSets[i].id) {
-                            match = false;
-                        }
-                    }
-                    if (match) {
-                        // They were already processed
-                        return;
-                    }
-                }
-
-                let processedVariableSets = [];
-                for (let i = 0; i < variableSets.length; i++) {
-                    processedVariableSets.push({
-                        id: variableSets[i].id,
-                        variables: this._parseVariableForDisplay(variableSets[i].variables, [],
-                            this._config.variableSelector.marginLeft)
-                    });
-                }
-
-                this.processedVariableSets = processedVariableSets;
-            }
-
-            _parseVariableForDisplay(variables, tags, margin) {
-                let displayVariables = [];
-
-                for (let i in variables) {
-                    let variable = variables[i];
-
-                    if (variable.type !== "OBJECT") {
-                        // let myTags = Array.from(new Set([variable.name, variable.title].concat(tags))).join(" ");
-
-                        // Add variable
-                        displayVariables.push({
-                            id: variable.id,
-                            name: UtilsNew.defaultString(variable.name, variable.id),
-                            category: variable.category,
-                            type: variable.type,
-                            defaultValue: variable.defaultValue,
-                            multiValue: variable.multiValue,
-                            allowedValues: variable.allowedValues,
-                            disabled: false,
-                            margin: margin,
-                            cursor: "pointer",
-
-                            tags: "annotation." + tags.concat(variable.id).join(".")
-                        });
-                    } else {
-                        // Add variable
-                        displayVariables.push({
-                            id: variable.id,
-                            name: UtilsNew.defaultString(variable.name, variable.id),
-                            category: variable.category,
-                            type: variable.type,
-                            defaultValue: variable.defaultValue,
-                            multiValue: variable.multiValue,
-                            allowedValues: variable.allowedValues,
-                            disabled: true,
-                            margin: margin,
-                            cursor: "default",
-
-                            tags: "annotation." + tags.concat(variable.id).join(".")
-                        });
-
-                        displayVariables = displayVariables.concat(this._parseVariableForDisplay(variable.variableSet,
-                            // [variable.name, variable.title].concat(tags), margin + this._config.variableSelector.marginStep));
-                            tags.concat(variable.id), margin + this._config.variableSelector.marginStep));
-                    }
-                }
-                return displayVariables;
-            }
-
-
             getDataModelTerms(entity) {
                 let catalogCommon = [
                     {
                         id: "creationYear",
-                        name: "Creation year",
-                        disabled: false,
-                        margin: this._config.variableSelector.marginLeft,
-                        cursor: "pointer",
-                        tags: "creationYear"
+                        name: "Creation year"
                     }, {
                         id: "creationMonth",
-                        name: "Creation month",
-                        disabled: false,
-                        margin: this._config.variableSelector.marginLeft,
-                        cursor: "pointer",
-                        tags: "creationMonth"
+                        name: "Creation month"
                     }, {
                         id: "creationDay",
-                        name: "Creation day",
-                        disabled: false,
-                        margin: this._config.variableSelector.marginLeft,
-                        cursor: "pointer",
-                        tags: "creationDay"
+                        name: "Creation day"
                     }, {
                         id: "creationDayOfWeek",
-                        name: "Creation day of week",
-                        disabled: false,
-                        margin: this._config.variableSelector.marginLeft,
-                        cursor: "pointer",
-                        tags: "creationDayOfWeek"
+                        name: "Creation day of week"
                     }, {
                         id: "status",
-                        name: "Status",
-                        disabled: false,
-                        margin: this._config.variableSelector.marginLeft,
-                        cursor: "pointer",
-                        tags: "status"
+                        name: "Status"
                     }, {
                         id: "release",
-                        name: "Release",
-                        disabled: false,
-                        margin: this._config.variableSelector.marginLeft,
-                        cursor: "pointer",
-                        tags: "release"
+                        name: "Release"
                     }
                 ];
 
@@ -334,201 +235,93 @@
                     case "COHORT":
                         return catalogCommon.concat([{
                             id: "type",
-                            name: "Type",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "type"
+                            name: "Type"
                         }, {
                             id: "numSamples",
-                            name: "Number of samples",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "numSamples"
+                            name: "Number of samples"
                         }]);
                     case "FILE":
                         return catalogCommon.concat([{
                             id: "name",
-                            name: "Name",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "name"
+                            name: "Name"
                         }, {
                             id: "type",
-                            name: "Type",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "type"
+                            name: "Type"
                         }, {
                             id: "format",
-                            name: "Format",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "format"
+                            name: "Format"
                         }, {
                             id: "bioformat",
-                            name: "Bioformat",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "bioformat"
+                            name: "Bioformat"
                         }, {
                             id: "external",
-                            name: "External",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "external"
+                            name: "External"
                         }, {
                             id: "size",
-                            name: "Size",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "size"
+                            name: "Size"
                         }, {
                             id: "numSamples",
-                            name: "Number of samples",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "numSamples"
+                            name: "Number of samples"
                         }, {
                             id: "numRelatedFiles",
-                            name: "Number of related files",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "numRelatedFiles"
+                            name: "Number of related files"
                         }]);
                     case "SAMPLE":
                         return catalogCommon.concat([{
                             id: "somatic",
-                            name: "Somatic",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "somatic"
+                            name: "Somatic"
                         }, {
                             id: "version",
-                            name: "Version",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "version"
+                            name: "Version"
                         }]);
                     case "INDIVIDUAL":
                         return catalogCommon.concat([{
                             id: "hasFather",
-                            name: "Has father",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "hasFather"
+                            name: "Has father"
                         }, {
                             id: "hasMother",
-                            name: "Has mother",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "hasMother"
+                            name: "Has mother"
                         }, {
                             id: "numMultiples",
-                            name: "Number of multiples",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "numMultiples"
+                            name: "Number of multiples"
                         }, {
                             id: "multiplesType",
-                            name: "Multiples type",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "multiplesType"
+                            name: "Multiples type"
                         }, {
                             id: "sex",
-                            name: "Sex",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "sex"
+                            name: "Sex"
                         }, {
                             id: "karyotypicSex",
-                            name: "Karyotypic sex",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "karyotypicSex"
+                            name: "Karyotypic sex"
                         }, {
                             id: "version",
-                            name: "Version",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "version"
+                            name: "Version"
                         }, {
                             id: "lifeStatus",
-                            name: "Life status",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "lifeStatus"
+                            name: "Life status"
                         }, {
                             id: "affectationStatus",
-                            name: "Affectation status",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "affectationStatus"
+                            name: "Affectation status"
                         }, {
                             id: "numSamples",
-                            name: "Number of samples",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "numSamples"
+                            name: "Number of samples"
                         }, {
                             id: "parentalConsanguinity",
-                            name: "Parental consanguinity",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "parentalConsanguinity"
+                            name: "Parental consanguinity"
                         }]);
                     case "FAMILY":
                         return catalogCommon.concat([{
                             id: "phenotypes",
-                            name: "Phenotypes",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "phenotypes"
+                            name: "Phenotypes"
                         }, {
                             id: "numMembers",
-                            name: "Number of members",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "numMembers"
+                            name: "Number of members"
                         }, {
                             id: "expectedSize",
-                            name: "Expected size",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "expectedSize"
+                            name: "Expected size"
                         }, {
                             id: "version",
-                            name: "Version",
-                            disabled: false,
-                            margin: this._config.variableSelector.marginLeft,
-                            cursor: "pointer",
-                            tags: "version"
+                            name: "Version"
                         }]);
                     default:
                         return [{}];
@@ -602,14 +395,12 @@
                     this.facets.add(this._config.defaultStats[i]);
                 }
                 this.facetFilters =  Array.from(this.facets);
-
-                this.fetchData();
             }
 
             addFacet(e) {
                 let facetField = this._firstVariable.term;
 
-                if (typeof facetField !== "undefined") {
+                if (UtilsNew.isNotEmpty(facetField)) {
                     let facetFieldIncludes = this._firstVariable.value;
 
                     let facet;
@@ -620,7 +411,7 @@
                     }
 
                     let nestedFacetField = this._secondVariable.term;
-                    if (!this.disableNestedSelector && typeof nestedFacetField !== "undefined") {
+                    if (!this.disableNestedSelector && UtilsNew.isNotEmpty(nestedFacetField)) {
                         let nestedFacetFieldIncludes = this._secondVariable.value;
 
                         let nestedFacet;
@@ -716,11 +507,7 @@
 
             getDefaultConfig() {
                 return {
-                    variableSelector: {
-                        marginLeft: 25,
-                        marginStep: 15
-                    },
-                    defaultStats: ["creationYear>>creationMonth", "status"]
+                    defaultStats: ["creationYear>>creationMonth"]
                 }
             }
         }
