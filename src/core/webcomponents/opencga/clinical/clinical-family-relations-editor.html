@@ -77,9 +77,10 @@
                                         <td>
                                             <template is="dom-if" if="{{showSelectParents}}">
                                                 <div class="dropdown">
-                                                    <select class="form-control" id="[[prefix]][[individual.name]]Father"
-                                                            data-individual-id$="[[individual.id]]" data-is-father="true"
-                                                            on-change="_selectParent">
+                                                    <select class="form-control"
+                                                            data-individual-id$="[[individual.id]]"
+                                                            data-is-father="true"
+                                                            on-change="selectParent">
                                                         <option value="none">Select an individual...</option>
                                                         <template is="dom-repeat" items="{{getPotentialFathersFor(individual, potentialParents)}}" as="individualFather">
                                                             <option value="[[individualFather.id]]" selected$="[[isSelectedParent(0, individualFather.id, individual.id)}}">
@@ -96,9 +97,10 @@
                                         <td>
                                             <template is="dom-if" if="{{showSelectParents}}">
                                                 <div class="dropdown">
-                                                    <select class="form-control" id="[[prefix]][[individual.name]]Mother"
-                                                            data-individual-id$="[[individual.id]]" data-is-mother="true"
-                                                            on-change="_selectParent">
+                                                    <select class="form-control"
+                                                            data-individual-id$="[[individual.id]]"
+                                                            data-is-mother="true"
+                                                            on-change="selectParent">
                                                         <option value="none">Select an individual...</option>
                                                         <template is="dom-repeat" items="{{getPotentialMothersFor(individual, potentialParents)}}" as="individualMother">
                                                             <option value="[[individualMother.id]]" selected$="[[isSelectedParent(1, individualMother.id, individual.id)]]">
@@ -118,37 +120,21 @@
                                                 <input data-individual-id$="{{individual.id}}"
                                                     data-disease-id$="{{disease.id}}"
                                                     checked$="{{isCheckedDisease(individual.id, disease.id)}}"
-                                                    type="checkbox" on-change="selectAffected">
+                                                    type="checkbox" on-change="onDiseasedChanged">
                                                 {{disease.id}}
                                                 <br>
                                             </template>
                                         </td>
                                         <td>
-                                            <template is="dom-if" if="{{isCheckedDeceased(individual.id)}}">
-
-                                                <input id="[[prefix]][[individual.name]]Deceased" data-individual-id$="[[individual.id]]"
-                                                    type="checkbox" on-change="_selectDeceased" checked>
-                                            </template>
-                                            <template is="dom-if" if="{{!isCheckedDeceased(individual.id)}}">
-
-                                                <input id="[[prefix]]{{individual.name}}Deceased" data-individual-id$="{{individual.id}}"
-                                                    type="checkbox" on-change="_selectDeceased">
-                                            </template>
-
+                                            <input type="checkbox"
+                                                    on-change="onDeceasedChanged"
+                                                    checked$="[[isCheckedDeceased(individual.id)]]"
+                                                    data-individual-id$="[[individual.id]]">
                                         </td>
                                         <td>
-                                            <template is="dom-if" if="{{isCheckedParentalConsanguinity(individual.id)}}">
-
-                                                <input id="[[prefix]]{{individual.name}}ParentalConsanguinity"
-                                                    data-individual-id$="{{individual.id}}" checked
-                                                    type="checkbox" on-change="_selectParentalConsanguinity">
-                                            </template>
-
-                                            <template is="dom-if" if="{{!isCheckedParentalConsanguinity(individual.id)}}">
-                                                <input id="[[prefix]]{{individual.name}}ParentalConsanguinity"
-                                                    data-individual-id$="{{individual.id}}"
-                                                    type="checkbox" on-change="_selectParentalConsanguinity">
-                                            </template>
+                                            <input type="checkbox" on-change="selectParentalConsanguinity"
+                                                checked$="[[individual.parentalConsanguinity]]"
+                                                data-individual-id$="{{individual.id}}">
                                         </td>
                                         <td>
                                             <span>[[individual.sex]]</span>
@@ -173,7 +159,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" on-click="onSaveChanged">OK</button>
+                <button type="button" class="btn btn-primary" on-click="onSaveAndClose">OK</button>
             </div>
         </div>
     </template>
@@ -258,11 +244,6 @@
                 this.diseases = [];
             }
 
-            connectedCallback() {
-                super.connectedCallback();
-                this._summaryCollapsed = true;
-            }
-
             constructor() {
                 super();
                 this.clear();
@@ -307,7 +288,7 @@
             }
 
             getIndividual(individualId) {
-                return (this.individuals || []).find(individual => individual.id === individualId);
+                return !individualId || !this.individuals ? null : this.individuals.find(individual => individual.id === individualId);
             }
 
             isCheckedDisease(individualId, diseaseId) {
@@ -318,8 +299,8 @@
             }
 
             isCheckedParentalConsanguinity(individualId) {
-                const individualSelected = this.getIndividual(individualId);
-                return !!individualSelected && !!individualSelected.parentalConsanguinity;
+                const individual = this.getIndividual(individualId);
+                return !!individual && !!individual.parentalConsanguinity;
             }
 
             isCheckedDeceased(individualId) {
@@ -380,8 +361,8 @@
                 return parentSelected;
             }
 
-            selectAffected(e) {
-                const individualId = e.target.getAttribute("data-individual-id");
+            onDiseasedChanged(e) {
+                const individualId = parseInt(e.target.getAttribute("data-individual-id"));
                 const diseaseId = e.target.getAttribute("data-disease-id");
                 const individual = this.getIndividual(individualId);
                 if (!!individual) {
@@ -395,23 +376,25 @@
                 }
             }
 
-            _selectDeceased(e) {
-                const individualId = e.target.getAttribute("data-individual-id");
-                const individualSelected = this.getIndividual(individualId);
-                if(!!individualSelected) {
-                    individualSelected.lifeStatus = (e.target.checked ? 'DECEASED' : 'UNKNOWN');
+            onDeceasedChanged(e) {
+                const status = !!e && !!e.target && !!e.target.checked ? 'DECEASED' : 'UNKNOWN';
+                const individualId = parseInt(!!e && !!e.target && e.target.getAttribute("data-individual-id"));
+                const individual = this.getIndividual(individualId);
+                if(!!individual) {
+                    individual.lifeStatus = (e.target.checked ? 'DECEASED' : 'UNKNOWN');
                 }
             }
 
-            _selectParentalConsanguinity(e) {
-                const individualId = e.target.getAttribute("data-individual-id");
-                const individualSelected = this.getIndividual(individualId);
-                if(!!individualSelected) {
-                    individualSelected.parentalConsanguinity = e.target.checked;
+            selectParentalConsanguinity(e) {
+                const consanguinity = !!e && !!e.target && !!e.target.checked;
+                const individualId = parseInt(!!e && !!e.target && e.target.getAttribute("data-individual-id"));
+                const individual = this.getIndividual(individualId);
+                if(!!individual) {
+                    individual.parentalConsanguinity = consanguinity;
                 }
             }
 
-            _selectParent(e) {
+            selectParent(e) {
                 const individualId = e.target.getAttribute("data-individual-id");
                 const parentId = ("none" === e.target.value ? null : parseInt(e.target.value));
                 const isFather = (e.target.getAttribute("data-is-father") === "true");
@@ -467,15 +450,6 @@
                 // pedigreeView.appendChild(this.svg);
             }
 
-            _summaryOnClick() {
-                if (this._summaryCollapsed) {
-                    $("#" + this.prefix + "SummaryCollapseIcon").removeClass("fa-plus-square-o").addClass("fa-minus-square-o");
-                } else {
-                    $("#" + this.prefix + "SummaryCollapseIcon").removeClass("fa-minus-square-o").addClass("fa-plus-square-o");
-                }
-                this._summaryCollapsed = !this._summaryCollapsed;
-            }
-
             onSamplesChanged() {
                 this.readIndividualsFromServer();
             }
@@ -511,6 +485,30 @@
                 });
             }
 
+            saveIndividual(individual) {
+                if (!individual.id) return Promise.resolve();
+                else {
+                    const individualToSave = {
+                        // id: individual.id,
+                        // name: individual.name,
+                        sex: individual.sex,
+                        phenotypes: individual.phenotypes,
+                        parentalConsanguinity: !!individual.parentalConsanguinity,
+                        lifeStatus: individual.lifeStatus,
+                    };
+                    if (!!individual.mother && !!individual.mother.id && individual.mother.id>0) {
+                        individualToSave.mother = { id: individual.mother.id, name: individual.mother.name };
+                    }
+                    if (!!individual.father && !!individual.father.id && individual.father.id>0) {
+                        individualToSave.father = { id: individual.father.id, name: individual.father.name };
+                    }
+                    const params = {
+                        study: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias
+                    };
+                    return this.opencgaClient.individuals().update(individual.id, params, individualToSave, {"method": "POST"});
+                }
+            }
+
             onIndividualsChanged() {
                 this.fillParentNames();
                 this.populateDiseases();
@@ -524,15 +522,29 @@
                 this.isAddDiseaseButtonEnabled = !!this.newDiseaseId && !!this.newDiseaseName && !this.diseases.some(disease => disease.id === this.newDiseaseId.trim());
             }
 
-            onSaveChanged(e) {
+            onSaveAndClose(e) {
                 e.preventDefault();
-                const params = { detail: {}, bubbles: true, composed: true };
-                this.dispatchEvent(new CustomEvent("close", params));
 
                 // save our changed
-                for (const individual of this.individuals) {
-
-                }
+                const promises = this.individuals.map(individual => this.saveIndividual(individual));
+                const pthis = this;
+                Promise.all(promises).then(response => {
+                    const params = { detail: {}, bubbles: true, composed: true };
+                    pthis.dispatchEvent(new CustomEvent("close", params));
+                }).catch(response => {
+                    pthis.settingsMessageModal = {
+                        messageHeader: "Error",
+                        messageBody: [ response.error ],
+                        type: "danger",
+                        height: "100px",
+                        width: "500px"
+                    };
+                    pthis.showMessageModal = true;
+                    pthis.set('settingsMessageModal', pthis.settingsMessageModal);
+                    // pthis.individuals = [];
+                    const params = { detail: {}, bubbles: true, composed: true };
+                    pthis.dispatchEvent(new CustomEvent("close", params));
+                });
             }
         }
 
