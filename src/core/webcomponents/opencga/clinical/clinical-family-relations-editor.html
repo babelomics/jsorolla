@@ -2,8 +2,6 @@
 
 <dom-module id="clinical-family-relations-editor">
     <template>
-        <button on-click="onDebug" class="btn btn-primary">debug!</button>
-
         <template is="dom-if" if="[[!individuals.length]]">
             <div class="alert alert-warning" role="alert">
                 <h4>No individual selected, please select some individuals.</h4>
@@ -194,10 +192,6 @@
 
     <script>
         class ClinicalFamilyRelationsEditor extends Polymer.Element {
-
-            onDebug() {
-                debugger;
-            }
 
             /*
             we should update the pedigree render whenever changes
@@ -547,10 +541,8 @@
                 ));
 
                 Promise.all(updatePromises).then(individuals => {
-                    debugger;
                     pthis.individuals = individuals.filter(individual => !!individual);
                 }).catch(response => {
-                    debugger;
                     pthis.settingsMessageModal = {
                         messageHeader: "Error",
                         messageBody: [ response.error ],

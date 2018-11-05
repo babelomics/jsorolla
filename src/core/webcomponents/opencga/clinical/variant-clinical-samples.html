@@ -95,13 +95,11 @@
                     <div class="modal-body">
                         <div class="row">
                             <template is="dom-if" if="[[showFamilyRelationsEditor]]" restamp="true">
-                                <p>checkpoint-0001</p>
                                 <clinical-family-relations-editor
                                         opencga-session="{{opencgaSession}}"
                                         opencga-client="{{opencgaClient}}"
                                         samples="{{samples}}"
                                 ></clinical-family-relations-editor>
-                                <p>checkpoint-0002</p>
                             </template>
                         </div>
                     </div>
