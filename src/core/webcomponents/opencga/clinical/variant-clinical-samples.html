@@ -83,31 +83,17 @@
         <!-- =============================================================== -->
         <!-- NEW: modal dialog for family relations editor -->
         <!-- =============================================================== -->
+
         <div id="[[prefix]]FamilyRelationsEditor" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="[[prefix]]FamilyRelationsEditorLabel">
             <div class="modal-dialog modal-sm" role="document" style="width:90%">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <h4 id="[[prefix]]FamilyRelationsEditorLabel" class="modal-title">Edit family relations</h4>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <template is="dom-if" if="[[showFamilyRelationsEditor]]" restamp="true">
-                                <clinical-family-relations-editor
-                                        opencga-session="{{opencgaSession}}"
-                                        opencga-client="{{opencgaClient}}"
-                                        samples="{{samples}}"
-                                ></clinical-family-relations-editor>
-                            </template>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" on-click="onFamilyRelationsOk">OK</button>
-                    </div>
-                </div>
+                <template is="dom-if" if="[[showFamilyRelationsEditor]]" restamp="true">
+                    <clinical-family-relations-editor
+                        opencga-session="{{opencgaSession}}"
+                        opencga-client="{{opencgaClient}}"
+                        samples="{{samples}}"
+                        on-close="onFamilyRelationsClose"
+                    ></clinical-family-relations-editor>
+                </template>
             </div>
         </div>
 
@@ -472,7 +458,7 @@
                 }
             }
 
-            onFamilyRelationsOk(e) {
+            onFamilyRelationsClose(e) {
                 e.preventDefault();
                 const familyRelationsEditor = $(`#${this.prefix}FamilyRelationsEditor`);
                 if (!!familyRelationsEditor) {
@@ -577,3 +563,4 @@
         customElements.define(VariantClinicalSamples.is, VariantClinicalSamples);
     </script>
 </dom-module>
+l

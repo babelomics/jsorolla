@@ -2,192 +2,180 @@
 
 <dom-module id="clinical-family-relations-editor">
     <template>
-        <template is="dom-if" if="[[!individuals.length]]">
-            <div class="alert alert-warning" role="alert">
-                <h4>No individual selected, please select some individuals.</h4>
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">Edit family relations</h4>
             </div>
-        </template>
-        <template is="dom-if" if="[[individuals.length]]">
-            <p>checkpoint001</p>
-            <template is="dom-repeat" items="{{messageError}}" as="message">
-                <div class="alert alert-danger" role="alert">
-                    [[message]]
-                </div>
-            </template>
-            <div class="col-md-12">
-                <form class="form-inline">
-                    <div class="col-md-12">
-                        <div class="row">
-                            <h4>Diseases</h4>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- main body -->
+                    <template is="dom-if" if="[[!individuals.length]]">
+                        <div class="alert alert-warning" role="alert">
+                            <h4>No individual selected, please select some individuals.</h4>
                         </div>
-                        <div class="panel-group" id="[[prefix]]accordion" role="tablist" aria-multiselectable="true">
-                            <div class="panel panel-default">
-                                <div class="panel-heading" role="tab" id="[[prefix]]headingTwo">
-                                    <h4 class="panel-title">
-                                        <a role="button" class="collapsed" data-toggle="collapse" data-parent="#[[prefix]]accordion" href="#collapseTwo"
-                                                aria-expanded="false" aria-controls="[[prefix]]collapseTwo" on-click="_summaryOnClick">
-                                            <i id="[[prefix]]SummaryCollapseIcon" class="fa fa-plus-square-o" aria-hidden="true"></i> Add custom disease
-                                        </a>
-                                    </h4>
-                                </div>
-                                <div id="[[prefix]]collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="[[prefix]]headingTwo">
-                                    <div class="col-md-12">
-                                        <div class="row" style="padding: 15px 10px">
-                                            <div class="col-md-2">
-                                                <label>ID </label>
-                                                <input type="text" class="form-control" id="[[prefix]]idDisease" placeholder="" maxlength="50" type="number">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label>Name </label>
-                                                <input type="text" class="form-control" id="[[prefix]]nameDisease" placeholder="" maxlength="100" type="text">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label>Source </label>
-                                                <input type="text" class="form-control" id="[[prefix]]srcDisease" placeholder="" maxlength="100" type="text">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label>Add to diseases</label>
-                                                <button  class="button-form" type="button" class="btn btn-secondary" on-click="addAddedDisease">Add</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="row">
-                                <ul class="list-group">
-                                    <template is="dom-repeat" items="[[sourceDiseases]]">
-                                        <li class="list-group-item">[[item.name]]([[item.id]])</li>
-                                    </template>
-                                </ul>
-                            </div>
-                            <div class="row">
-                                <ul class="list-group">
-                                    <template is="dom-repeat" items="{{addedDiseases}}" >
-                                        <li class="list-group-item">{{item.name}}({{item.id}})
-                                            <button type="button" class="btn danger" on-click="removeAddedDisease" data-selected-term$="{{item}}">X</button>
-                                        </li>
-                                    </template>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <div class="col-md-12">
-                <table class="table hover">
-                    <thead>
-                        <tr class="active">
-                            <th>Individual ID</th>
-                            <th>Father</th>
-                            <th>Mother</th>
-                            <th>Phenotypes</th>
-                            <th>Deceased</th>
-                            <th>Parental Consanguinity</th>
-                            <th>Sex</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                    <template id="[[prefix]]individualsTable" is="dom-repeat" items="{{individuals}}" as="individual">
-                        <tr>
-                            <td>[[individual.name]]</td>
-                            <td>
-                                <template is="dom-if" if="{{showSelectParents}}">
-                                    <div class="dropdown">
-                                        <select class="form-control" id="[[prefix]][[individual.name]]Father"
-                                                data-individual-id$="[[individual.id]]" data-is-father="true"
-                                                on-change="_selectParent">
-                                            <option value="none">Select an individual...</option>
-                                            <template is="dom-repeat" items="{{getPotentialFathersFor(individual, potentialParents)}}" as="individualFather">
-                                                <option value="[[individualFather.id]]" selected$="[[isSelectedParent(0, individualFather.id, individual.id)}}">
-                                                    [[individualFather.name]]
-                                                </option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                </template>
-                                <template is="dom-if" if="{{!showSelectParents}}">
-                                    <span>Unknown</span>
-                                </template>
-                            </td>
-                            <td>
-                                <template is="dom-if" if="{{showSelectParents}}">
-                                    <div class="dropdown">
-                                        <select class="form-control" id="[[prefix]][[individual.name]]Mother"
-                                                data-individual-id$="[[individual.id]]" data-is-mother="true"
-                                                on-change="_selectParent">
-                                            <option value="none">Select an individual...</option>
-                                            <template is="dom-repeat" items="{{getPotentialMothersFor(individual, potentialParents)}}" as="individualMother">
-                                                <option value="[[individualMother.id]]" selected$="[[isSelectedParent(1, individualMother.id, individual.id)]]">
-                                                    [[individualMother.name]]
-                                                </option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                </template>
-                                <template is="dom-if" if="{{!showSelectParents}}">
-                                    <span>Unknown</span>
-                                </template>
-                            </td>
-
-                            <td style="width: 150px;">
-                                <template is="dom-repeat" items="{{allDiseases}}" as="disease">
-                                    <input data-individual-id$="{{individual.id}}"
-                                           data-disease-id$="{{disease.id}}"
-                                           checked$="{{isCheckedDisease(individual.id, disease.id)}}"
-                                           type="checkbox" on-change="selectAffected">
-                                    {{disease.id}}
-                                    <br>
-                                </template>
-                            </td>
-                            <td>
-                                <template is="dom-if" if="{{isCheckedDeceased(individual.id)}}">
-
-                                    <input id="[[prefix]][[individual.name]]Deceased" data-individual-id$="[[individual.id]]"
-                                           type="checkbox" on-change="_selectDeceased" checked>
-                                </template>
-                                <template is="dom-if" if="{{!isCheckedDeceased(individual.id)}}">
-
-                                    <input id="[[prefix]]{{individual.name}}Deceased" data-individual-id$="{{individual.id}}"
-                                           type="checkbox" on-change="_selectDeceased">
-                                </template>
-
-                            </td>
-                            <td>
-                                <template is="dom-if" if="{{isCheckedParentalConsanguinity(individual.id)}}">
-
-                                    <input id="[[prefix]]{{individual.name}}ParentalConsanguinity"
-                                           data-individual-id$="{{individual.id}}" checked
-                                           type="checkbox" on-change="_selectParentalConsanguinity">
-                                </template>
-
-                                <template is="dom-if" if="{{!isCheckedParentalConsanguinity(individual.id)}}">
-                                    <input id="[[prefix]]{{individual.name}}ParentalConsanguinity"
-                                           data-individual-id$="{{individual.id}}"
-                                           type="checkbox" on-change="_selectParentalConsanguinity">
-                                </template>
-                            </td>
-                            <td>
-                                <span>[[individual.sex]]</span>
-                            </td>
-                        </tr>
                     </template>
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-md-12">
-                <div id="[[prefix]]PedigreeView"></div>
-            </div>
+                    <template is="dom-if" if="[[individuals.length]]">
+                        <template is="dom-repeat" items="{{messageError}}" as="message">
+                            <div class="alert alert-danger" role="alert">
+                                [[message]]
+                            </div>
+                        </template>
+                        <div class="col-md-12">
+                            <form class="form-inline">
+                                <div class="form-group">
+                                    <label>
+                                        ID
+                                        <input type="text" class="form-control" placeholder="" maxlength="50" type="number" value="{{newDiseaseId::input}}">
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        Name
+                                        <input type="text" class="form-control" placeholder="" maxlength="100" type="text" value="{{newDiseaseName::input}}">
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        Source
+                                        <input type="text" class="form-control" placeholder="" maxlength="100" type="text" value="{{newDiseaseSource::input}}">
+                                    </label>
+                                </div>
+                                <button  class="btn btn-secondary" type="button" disabled="[[!isAddDiseaseButtonEnabled]]" on-click="addDisease">Add disease</button>
+                            </form>
+                            <div class="col-md-12">
+                                <div class="row">
+                                    <ul class="list-group">
+                                        <template is="dom-repeat" items="[[diseases]]" as="disease">
+                                            <li class="list-group-item">[[disease.name]]([[disease.id]])</li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
 
-            <opencga-message-dialog
-                    opencga-client="{{opencgaClient}}"
-                    show-message-modal="{{showMessageModal}}"
-                    settings-message-modal="{{settingsMessageModal}}">
-            </opencga-message-dialog>
-        </template>
+                        <div class="col-md-12">
+                            <table class="table hover">
+                                <thead>
+                                    <tr class="active">
+                                        <th>Individual ID</th>
+                                        <th>Father</th>
+                                        <th>Mother</th>
+                                        <th>Phenotypes</th>
+                                        <th>Deceased</th>
+                                        <th>Parental Consanguinity</th>
+                                        <th>Sex</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                <template is="dom-repeat" items="{{individuals}}" as="individual">
+                                    <tr>
+                                        <td>[[individual.name]]</td>
+                                        <td>
+                                            <template is="dom-if" if="{{showSelectParents}}">
+                                                <div class="dropdown">
+                                                    <select class="form-control" id="[[prefix]][[individual.name]]Father"
+                                                            data-individual-id$="[[individual.id]]" data-is-father="true"
+                                                            on-change="_selectParent">
+                                                        <option value="none">Select an individual...</option>
+                                                        <template is="dom-repeat" items="{{getPotentialFathersFor(individual, potentialParents)}}" as="individualFather">
+                                                            <option value="[[individualFather.id]]" selected$="[[isSelectedParent(0, individualFather.id, individual.id)}}">
+                                                                [[individualFather.name]]
+                                                            </option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                            </template>
+                                            <template is="dom-if" if="{{!showSelectParents}}">
+                                                <span>Unknown</span>
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <template is="dom-if" if="{{showSelectParents}}">
+                                                <div class="dropdown">
+                                                    <select class="form-control" id="[[prefix]][[individual.name]]Mother"
+                                                            data-individual-id$="[[individual.id]]" data-is-mother="true"
+                                                            on-change="_selectParent">
+                                                        <option value="none">Select an individual...</option>
+                                                        <template is="dom-repeat" items="{{getPotentialMothersFor(individual, potentialParents)}}" as="individualMother">
+                                                            <option value="[[individualMother.id]]" selected$="[[isSelectedParent(1, individualMother.id, individual.id)]]">
+                                                                [[individualMother.name]]
+                                                            </option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                            </template>
+                                            <template is="dom-if" if="{{!showSelectParents}}">
+                                                <span>Unknown</span>
+                                            </template>
+                                        </td>
+
+                                        <td style="width: 150px;">
+                                            <template is="dom-repeat" items="{{diseases}}" as="disease">
+                                                <input data-individual-id$="{{individual.id}}"
+                                                    data-disease-id$="{{disease.id}}"
+                                                    checked$="{{isCheckedDisease(individual.id, disease.id)}}"
+                                                    type="checkbox" on-change="selectAffected">
+                                                {{disease.id}}
+                                                <br>
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <template is="dom-if" if="{{isCheckedDeceased(individual.id)}}">
+
+                                                <input id="[[prefix]][[individual.name]]Deceased" data-individual-id$="[[individual.id]]"
+                                                    type="checkbox" on-change="_selectDeceased" checked>
+                                            </template>
+                                            <template is="dom-if" if="{{!isCheckedDeceased(individual.id)}}">
+
+                                                <input id="[[prefix]]{{individual.name}}Deceased" data-individual-id$="{{individual.id}}"
+                                                    type="checkbox" on-change="_selectDeceased">
+                                            </template>
+
+                                        </td>
+                                        <td>
+                                            <template is="dom-if" if="{{isCheckedParentalConsanguinity(individual.id)}}">
+
+                                                <input id="[[prefix]]{{individual.name}}ParentalConsanguinity"
+                                                    data-individual-id$="{{individual.id}}" checked
+                                                    type="checkbox" on-change="_selectParentalConsanguinity">
+                                            </template>
+
+                                            <template is="dom-if" if="{{!isCheckedParentalConsanguinity(individual.id)}}">
+                                                <input id="[[prefix]]{{individual.name}}ParentalConsanguinity"
+                                                    data-individual-id$="{{individual.id}}"
+                                                    type="checkbox" on-change="_selectParentalConsanguinity">
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <span>[[individual.sex]]</span>
+                                        </td>
+                                    </tr>
+                                </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-12">
+                            <div id="[[prefix]]PedigreeView"></div>
+                        </div>
+
+                        <opencga-message-dialog
+                                opencga-client="{{opencgaClient}}"
+                                show-message-modal="{{showMessageModal}}"
+                                settings-message-modal="{{settingsMessageModal}}">
+                        </opencga-message-dialog>
+                    </template>
+                    <!-- end of main body -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" on-click="onSaveChanged">OK</button>
+            </div>
+        </div>
     </template>
 
     <script>
@@ -225,17 +213,28 @@
                         observer: 'onPotentialParentsChange',
                         value: {a: 0},
                     },
-                    sourceDiseases: {
+                    // disease form (should be an independent component)
+                    diseases: {
                         type: Array,
                         value: () => [],
                     },
-                    addedDiseases: {
-                        type: Array,
-                        value: () => [],
+                    newDiseaseId: {
+                        type: String,
+                        value: () => "",
+                        observer: "onNewDiseaseChanged",
                     },
-                    allDiseases: {
-                        type: Array,
-                        computed: 'concatenateSourceAndAddedDiseases(sourceDiseases.*, addedDiseases.*, potentialParents)',
+                    newDiseaseName: {
+                        type: String,
+                        value: () => "",
+                        observer: "onNewDiseaseChanged",
+                    },
+                    newDiseaseSource: {
+                        type: String,
+                        value: () => "",
+                    },
+                    isAddDiseaseButtonEnabled: {
+                        type: Boolean,
+                        value: false,
                     },
                     showSelectParents: {
                         type: Boolean,
@@ -244,12 +243,19 @@
                     prefix: {
                         type: String,
                         readOnly: true,
-                    }
+                    },
                 }
             }
 
             _attachDom(dom) {
                 this.appendChild(dom);
+            }
+
+            clear() {
+                this.newDiseaseId = "";
+                this.newDiseaseName = "";
+                this.newDiseaseSource = "";
+                this.diseases = [];
             }
 
             connectedCallback() {
@@ -259,34 +265,30 @@
 
             constructor() {
                 super();
+                this.clear();
                 this._setPrefix(`FamEditor${Utils.randomString(6)}`);
             }
 
-            addSourceDiseases(diseases) {
-                const newDiseases = (diseases || []).filter(disease => !this.sourceDiseases.some(d => (d.id === disease.id)));
-                if (diseases.length > 0) {
-                    this.sourceDiseases = this.sourceDiseases.concat(newDiseases);
+            populateDiseases() {
+                this.diseases = (this.individuals || [])
+                    .map(individual => (!!individual.phenotypes && individual.phenotypes) || [])
+                    .filter(phenotypes => phenotypes.length > 0)
+                    .reduce((phenotypes, newPhenotypes) => phenotypes.concat(
+                        newPhenotypes.filter(phenotype => !phenotypes.some(disease => disease.id === phenotype.id))
+                        ), []);
+            }
+
+            addDisease(e) {
+                if (!!this.newDiseaseId && !!this.newDiseaseName && !this.diseases.some(disease => disease.id === this.newDiseaseId)) {
+                    const disease = { id: this.newDiseaseId, name: this.newDiseaseName, source: this.newDiseaseSource };
+                    this.push('diseases', disease);
+                    this.newDiseaseId = "";
+                    this.newDiseaseName = "";
+                    this.newDiseaseSource = "";
                 }
             }
 
-            addAddedDisease(e) {
-                // customDiseases
-                const newDisease = {
-                    id: PolymerUtils.getValue(this.prefix + "idDisease"),
-                    name: PolymerUtils.getValue(this.prefix + "nameDisease"),
-                    source: PolymerUtils.getValue(this.prefix + "srcDisease"),
-                };
-                PolymerUtils.setValue(this.prefix + "idDisease", "");
-                PolymerUtils.setValue(this.prefix + "nameDisease", "");
-                PolymerUtils.setValue(this.prefix + "srcDisease", "");
-
-                if (!this.addedDiseases.some(disease => (disease.id == newDisease.id))
-                        && !this.sourceDiseases.some(disease => (disease.id == newDisease.id))) {
-                    this.push('addedDiseases', newDisease);
-                }
-            }
-
-            removeAddedDisease(e) {
+            removeDisease(e) {
                 const diseaseToRemove = JSON.parse(e.target.getAttribute("data-selected-term"));
                 if (!!diseaseToRemove.id)  return;
 
@@ -297,26 +299,7 @@
                         this.set(`individuals.${idx}.phenotypes`, individual.phenotypes.filter(disease => (disease.id !== diseaseToRemove.id)));
                     }
                 }
-                this.set('addedDiseases', this.addedDiseases.filter(disease => (disease.id !== diseaseToRemove.id)));
-            }
-
-
-            concatenateSourceAndAddedDiseases() {
-                return (this.sourceDiseases || []).concat(this.addedDiseases || []);
-            }
-
-            getPhenotypesFromIndividuals() {
-                const diseases = this.individuals
-                    .filter(individual => !!individual.phenotypes)
-                    .map(individual.phenotypes)
-                    .reduce((accum, diseases) => accum.concat(diseases), []);
-                return diseases.filter((disease, idx) => idx === diseases.findIndex(d => disease.id === d.id));
-            }
-
-            computeOntologyTermsDiseases() {
-                const individualDiseases = this.getPhenotypesFromIndividuals();
-                const diseases = (this.customDiseases || []).concat(individualDiseases || []);
-                return diseases.filter((disease, index) => index === diseases.findIndex(d => (d.id === disease.id)));
+                this.set('diseases', this.diseases.filter(disease => (disease.id !== diseaseToRemove.id)));
             }
 
             computeShowSelectParents() {
@@ -324,7 +307,7 @@
             }
 
             getIndividual(individualId) {
-                return !!this.individuals && this.individuals.find(individual => individualId === individual) || null;
+                return (this.individuals || []).find(individual => individual.id === individualId);
             }
 
             isCheckedDisease(individualId, diseaseId) {
@@ -406,7 +389,7 @@
                     if (isDiseased) {
                         individual.phenotypes = (individual.phenotypes || []).filter(disease => (disease.id !== diseaseId));
                     } else {
-                        const disease = this.allDiseases.find(disease => (diseaseId === disease.id));
+                        const disease = this.diseases.find(disease => (diseaseId === disease.id));
                         individual.phenotypes.push(disease);
                     }
                 }
@@ -493,34 +476,11 @@
                 this._summaryCollapsed = !this._summaryCollapsed;
             }
 
-            // updates family.phenotypes and ontologyTermsDiseases
-            updatePhenotypesFromIndividuals() {
-                const phenotypes = [...new Set(this.individuals
-                    .map(individual => (individual.phenotypes || []))
-                    .reduce((acc, cur) => acc.concat(cur), [])
-                )];
-                // this.family.phenotypes = phenotypes;
-                this.ontologyTermsDiseases = phenotypes;
-                // custom diseases son las enfermedades que están en family.phenotypes pero no en customDiseases
-                // this.customDiseases = this.family.phenotypes.filter(disease => !this.ontologyTermsDiseases.some(ar2 => ar2.id === disease.id));
-            }
-
             onSamplesChanged() {
-                this.ontologyTermsDiseases = [];
-                this.customDiseases = [];
-
                 this.readIndividualsFromServer();
-
-                const individualsTable = PolymerUtils.getElementById(`${this.prefix}individualsTable`);
-                if (!!individualsTable) {
-                    individualsTable.render();
-                }
             }
-
-
 
             readIndividualsFromServer() {
-
                 if (!this.samples)  return;
 
                 const individualIds = this.samples
@@ -530,14 +490,9 @@
                 const params = { study: this.opencgaSession.study.alias };
                 const pthis = this;
                 const updatePromises = individualIds.map(individualId => (
-                    this.opencgaClient.individuals().info(individualId, params, {method: "GET"}).then(response => {
-                        if (response.response[0].numResults >= 1) {
-                            const individual = response.response[0].result[0];
-                            return individual;
-                        } else {
-                            return null;
-                        }
-                    })
+                    this.opencgaClient.individuals().info(individualId, params, {method: "GET"}).then(response => (
+                        response.response[0].numResults > 0 ? response.response[0].result[0] : null
+                    ))
                 ));
 
                 Promise.all(updatePromises).then(individuals => {
@@ -558,10 +513,26 @@
 
             onIndividualsChanged() {
                 this.fillParentNames();
-                // if (!!individual.phenotypes) {
-                //     this.addSourceDiseases(individual.phenotypes);
-                // }
-                this.updatePhenotypesFromIndividuals();
+                this.populateDiseases();
+
+                this.newDiseaseId = "";
+                this.newDiseaseName = "";
+                this.newDiseaseSource = "";
+            }
+
+            onNewDiseaseChanged() {
+                this.isAddDiseaseButtonEnabled = !!this.newDiseaseId && !!this.newDiseaseName && !this.diseases.some(disease => disease.id === this.newDiseaseId.trim());
+            }
+
+            onSaveChanged(e) {
+                e.preventDefault();
+                const params = { detail: {}, bubbles: true, composed: true };
+                this.dispatchEvent(new CustomEvent("close", params));
+
+                // save our changed
+                for (const individual of this.individuals) {
+
+                }
             }
         }
 
