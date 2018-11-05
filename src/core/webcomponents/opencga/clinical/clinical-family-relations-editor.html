@@ -395,8 +395,8 @@
             }
 
             selectParent(e) {
-                const individualId = e.target.getAttribute("data-individual-id");
-                const parentId = ("none" === e.target.value ? null : parseInt(e.target.value));
+                const individualId = !!e && !!e.target && parseInt(e.target.getAttribute("data-individual-id"));
+                const parentId = (!e || !e.target || !e.target.value || "none" === e.target.value ? null : parseInt(e.target.value));
                 const isFather = (e.target.getAttribute("data-is-father") === "true");
                 const isMother = (e.target.getAttribute("data-is-mother") === "true");
                 const individual = this.getIndividual(individualId);
@@ -486,21 +486,20 @@
             }
 
             saveIndividual(individual) {
-                if (!individual.id) return Promise.resolve();
-                else {
+                if (!individual.id) {
+                    return Promise.resolve();
+                } else {
                     const individualToSave = {
-                        // id: individual.id,
-                        // name: individual.name,
                         sex: individual.sex,
                         phenotypes: individual.phenotypes,
                         parentalConsanguinity: !!individual.parentalConsanguinity,
                         lifeStatus: individual.lifeStatus,
                     };
                     if (!!individual.mother && !!individual.mother.id && individual.mother.id>0) {
-                        individualToSave.mother = { id: individual.mother.id, name: individual.mother.name };
+                        individualToSave.mother = individual.mother.id;
                     }
                     if (!!individual.father && !!individual.father.id && individual.father.id>0) {
-                        individualToSave.father = { id: individual.father.id, name: individual.father.name };
+                        individualToSave.father = individual.father.id;
                     }
                     const params = {
                         study: this.opencgaSession.project.alias + ":" + this.opencgaSession.study.alias
@@ -533,7 +532,6 @@
                 }).catch(response => {
                     const params = { detail: {}, bubbles: true, composed: true };
                     pthis.dispatchEvent(new CustomEvent("close", params));
-
                     pthis.settingsMessageModal = {
                         messageHeader: "Error",
                         messageBody: [ response.error ],
