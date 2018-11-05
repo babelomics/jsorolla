@@ -47,12 +47,11 @@
                 <h3>Actions</h3>
                 <div>
                     <div class="btn-group">
+                        <button type="button" class="btn btn-primary" on-click="onEditDiseasesAndFamilyRelations" disabled="[[!samples.length]]">
+                            Edit diseases and family relations
+                        </button>
                         <button type="button" class="btn btn-primary" on-click="addAnalysis" disabled="[[!samples.length]]">
                             Create analysis
-                        </button>
-                        <!-- <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#[[prefix]]FamilyRelationsEditor" disabled="[[!samples.length]]"> -->
-                            <button type="button" class="btn btn-primary" on-click="onEditFamilyRelations" disabled="[[!samples.length]]">
-                            Edit family relations
                         </button>
                     </div>
                 <br>
@@ -436,7 +435,7 @@
             // family relations
             //======================================================================================
 
-            onEditFamilyRelations() {
+            onEditDiseasesAndFamilyRelations() {
                 if (!this.samples) {
                 } else {
                     const sampleHasIndividual = sample => (
@@ -464,99 +463,6 @@
                 if (!!familyRelationsEditor) {
                     familyRelationsEditor.modal('hide');
                 }
-            }
-
-            //======================================================================================
-            // TODO: remove family related methods from this class
-            //======================================================================================
-
-            createFamily(params, body, rowInfo, subjectName, samplesName, analysisInfo){
-                let _this = this;
-                this.opencgaClient.families().create(params, body)
-                    .then(function (response) {
-                        if (response.response[0].numResults >= 1) {
-                            _this.createAnalysis(analysisInfo);
-                        }
-                    })
-                    .catch(function (response) {
-                        _this.messageError = true;
-                        _this.messageErrorText.push(analysisInfo.analysisID + " " + response.error);
-//                        PolymerUtils.innerHTML(_this.prefix + "messageError", _this.messageErrorText);
-                    });
-            }
-
-            initFamily() {
-                if (!!this._samplesAnalysis) {
-                    this.family = {};
-                    this.family.name = "FA-" + Math.floor(Math.random() * 10000) + 1;
-                    this.family.description = "";
-                    this.family.phenotypes = [];
-                    this.family.members = [];
-                    this.family.annotationSets = [];
-                    this.family.attributes = {};
-                    let _this = this;
-                    this._samplesAnalysis.forEach((sample) => {
-                        _this.family.members[sample.id] = {
-                            father: undefined,
-                            mother: undefined,
-                            phenotypes: [],
-                            parentalConsanguinity: false
-                        }
-                    });
-                }
-            }
-
-            familyFormatter(familyEditor, randomString) {
-                if (familyEditor) {
-                    return '<button data-toggle="modal" id="' + this.prefix + 'Editor' + randomString + '" role="button" type="button" class="btn btn-sm btn-success" data-target="#' + this.prefix + 'FamilyEditor" ><i class="fa fa-cog" aria-hidden="true"></i>&nbsp;Edit</button>';
-                } else { // Is not a family analysis -> a family cannot be edited
-                    return '<button data-toggle="modal" id="' + this.prefix + 'Editor' + randomString + '" role="button" type="button" class="btn btn-sm btn-success disabled" disabled data-target="#' + this.prefix + 'FamilyEditor"><i class="fa fa-cog" aria-hidden="true"></i>&nbsp;Edit</button>';
-                }
-            }
-
-            familyChange(e) { // Event fired by opencga-family-editor web component
-                this.family = e.detail._family;
-                this._samplesAnalysis = e.detail._samples;
-            }
-
-            checkFamily(e) {
-                e.preventDefault();
-
-                let _this = this;
-                let selectedRow = this.selectedRow;
-                let family = this.family;
-                let samples = this._samplesAnalysis
-                let checkFamilyValidate = true;
-                let messageErrorFamily = [];
-                if (UtilsNew.isUndefinedOrNull(this.family.name) || UtilsNew.isEmpty(this.family.name)) {
-                    checkFamilyValidate = false;
-                    messageErrorFamily.push("Name is required.");
-                }
-
-                if (UtilsNew.isUndefinedOrNull(this.family.members) || UtilsNew.isEmptyArray(this.family.members)) {
-                    checkFamilyValidate = false;
-                    messageErrorFamily.push("Members are required.");
-                }
-
-                if (checkFamilyValidate) {
-                    // We have to do this before updateRow to get the last selectedValue in member select. Instead we will get the first value of the all options
-                    let subjectSelected = PolymerUtils.getValue(this.prefix + "selectedSubject" + this.currentAnalysis.analysisIDinternal);
-                    let diseaseSelected = PolymerUtils.getValue(this.prefix + "selectedDisease" + this.currentAnalysis.analysisIDinternal);
-                    $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable('updateRow', {
-                        index: selectedRow, row: {
-                            family: family,
-                            samples: samples
-                        }
-                    });
-                    // $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable("updateCell",{ index: selectedRow, field: "subjectSelected", value: _this.subjectFormatter(this.currentAnalysis.analysisIDinternal,samples, subjectSelected)});
-                    // $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable("updateCell",{ index: selectedRow, field: "diseaseSelected", value: _this.diseaseFormatter(this.currentAnalysis.analysisIDinternal, samples, family.phenotypes , diseaseSelected)});
-                    PolymerUtils.getElementById(this.prefix + 'selectedSubject' + this.currentAnalysis.analysisIDinternal).addEventListener('change', e => this.selectSubject(e));
-                    PolymerUtils.removeAttribute(this.prefix + "Save" + this.currentAnalysis.analysisIDinternal, "disabled");
-                    PolymerUtils.removeClass(this.prefix + "Save" + this.currentAnalysis.analysisIDinternal, "disabled");
-                    $(PolymerUtils.getElementById(this.prefix + "FamilyEditor")).modal('hide');
-                }
-
-                this.messageErrorFamily = messageErrorFamily.slice();
             }
         }
 

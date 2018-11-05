@@ -525,13 +525,15 @@
             onSaveAndClose(e) {
                 e.preventDefault();
 
-                // save our changed
                 const promises = this.individuals.map(individual => this.saveIndividual(individual));
                 const pthis = this;
                 Promise.all(promises).then(response => {
                     const params = { detail: {}, bubbles: true, composed: true };
                     pthis.dispatchEvent(new CustomEvent("close", params));
                 }).catch(response => {
+                    const params = { detail: {}, bubbles: true, composed: true };
+                    pthis.dispatchEvent(new CustomEvent("close", params));
+
                     pthis.settingsMessageModal = {
                         messageHeader: "Error",
                         messageBody: [ response.error ],
@@ -541,9 +543,6 @@
                     };
                     pthis.showMessageModal = true;
                     pthis.set('settingsMessageModal', pthis.settingsMessageModal);
-                    // pthis.individuals = [];
-                    const params = { detail: {}, bubbles: true, composed: true };
-                    pthis.dispatchEvent(new CustomEvent("close", params));
                 });
             }
         }
