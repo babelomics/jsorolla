@@ -30,9 +30,9 @@
                             [[analysis.date]]
                         </td>
                         <td>
-                            <select class="form-control form-control-sm">
+                            <select class="form-control form-control-sm" on-change="onProbandChanged" data-analysis="[[analysis.id]]">
                                 <template is="dom-repeat" items="[[getMembers(analysis)]]" as="member">
-                                    <option value="[[member.name]]">[[member.name]]</option>
+                                    <option value="[[member.id]]">[[member.name]]</option>
                                 </template>
                             </select>
                         </td>
@@ -121,6 +121,15 @@
                 this.dispatchEvent(new CustomEvent("message", params));
             }
 
+            onProbandChanged(e) {
+                const analysisId = !!e && !!e.target && e.target.dataAnalysis;
+                const analysis = !!analysisId && this.analyses.find(analysis => analysis.id === analysisId);
+                const proband = !!e && !!e.target && e.target.value;
+                if (!!analysis && !!proband) {
+                    analysis.proband = proband;
+                }
+            }
+
             onDiseaseChanged(e) {
                 const analysisId = !!e && !!e.target && e.target.dataAnalysis;
                 const disease = !!e && !!e.target && e.target.value;
@@ -146,11 +155,13 @@
                     const params = {
                       study: `${this.opencgaSession.project.alias}:${this.opencgaSession.study.alias}`,
                     };
-
-
-
                     let subjects = (analysis.samples || []).map(sample => sample.individual);
                     subjects = subjects.filter((individual, idx) => subjects.findIndex(ind2 => ind2.id === individual.id) === idx);
+                    // reorder individuals so the proband is the first one
+                    const probandId = parseInt(analysis.proband) || subjects[0].id;
+                    if (!!probandId) {
+                        subjects.sort((ind1, ind2) => (ind2.id === probandId ? 1 : 0) - (ind1.id === probandId ? 1 : 0));
+                    }
                     subjects = subjects.map(individual => ({ id: individual.id, name: individual.name }));
                     for (const individual of subjects) {
                         individual.samples = analysis.samples
