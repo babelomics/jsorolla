@@ -11,18 +11,19 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <!-- main body -->
+                    <template is="dom-repeat" items="{{messageError}}" as="message">
+                        <div class="alert alert-danger" role="alert">
+                            [[message]]
+                        </div>
+                    </template>
+                    <!-- no individuals -->
                     <template is="dom-if" if="[[!individuals.length]]">
                         <div class="alert alert-warning" role="alert">
                             <h4>No individual selected, please select some individuals.</h4>
                         </div>
                     </template>
+                    <!-- individuals -->
                     <template is="dom-if" if="[[individuals.length]]">
-                        <template is="dom-repeat" items="{{messageError}}" as="message">
-                            <div class="alert alert-danger" role="alert">
-                                [[message]]
-                            </div>
-                        </template>
                         <div class="col-md-12">
                             <form class="form-inline">
                                 <div class="form-group">
@@ -78,6 +79,7 @@
                                             <template is="dom-if" if="{{showSelectParents}}">
                                                 <div class="dropdown">
                                                     <select class="form-control"
+                                                            disabled="[[hasPreviousParent('false', individual.id, individual)]]"
                                                             data-individual-id$="[[individual.id]]"
                                                             data-is-father="true"
                                                             on-change="selectParent">
@@ -98,6 +100,7 @@
                                             <template is="dom-if" if="{{showSelectParents}}">
                                                 <div class="dropdown">
                                                     <select class="form-control"
+                                                            disabled="[[hasPreviousParent('true', individual.id, individual)]]"
                                                             data-individual-id$="[[individual.id]]"
                                                             data-is-mother="true"
                                                             on-change="selectParent">
@@ -229,6 +232,10 @@
                     prefix: {
                         type: String,
                         readOnly: true,
+                    },
+                    fixedParents: {
+                        type: Object,
+                        value: { mothers: [], fathers: [] },
                     },
                 }
             }
@@ -470,6 +477,11 @@
                 ));
 
                 Promise.all(updatePromises).then(individuals => {
+                    // compute fixed (initial) parents
+                    pthis.fixedParents = {
+                        mothers: individuals.filter(individual => !!individual && !!individual.mother && !!individual.mother.id && individual.mother.id>0).map(individual => individual.id),
+                        fathers: individuals.filter(individual => !!individual && !!individual.father && !!individual.father.id && individual.father.id>0).map(individual => individual.id),
+                    };
                     pthis.individuals = individuals.filter(individual => !!individual);
                 }).catch(response => {
                     pthis.settingsMessageModal = {
@@ -483,6 +495,12 @@
                     pthis.set('settingsMessageModal', pthis.settingsMessageModal);
                     pthis.individuals = [];
                 });
+            }
+
+            hasPreviousParent(isMother, individualId) {
+                const id = parseInt(individualId);
+                const list = this.fixedParents[isMother==='true' ? "mothers" : "fathers"] || [];
+                return list.includes(id);
             }
 
             saveIndividual(individual) {
