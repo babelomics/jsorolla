@@ -95,12 +95,13 @@
             }
 
             getDiseases(analysis) {
-                const diseases = [].concat(...analysis.samples.map(sample => sample.phenotypes));
-                return diseases;
+                return analysis.samples
+                    .filter(sample => !!sample.individual && !!sample.individual.phenotypes)
+                    .map(sample => sample.individual.phenotypes)
+                    .reduce((accum, phenotypes) => accum.concat(phenotypes.filter(phenotype => !accum.some(pt => pt.id === phenotype.id))));
             }
 
             onAnalysisChanged(e) {
-
             }
 
             removeAnalysis(analysisId) {
@@ -186,67 +187,6 @@
                 }
             }
 
-
-            // TODO: delete
-//
-//             _getClinicalAnalysisColumns() {
-//                 return [
-//                     {
-//                         field: 'state',
-//                         checkbox: true,
-//                         align: 'center',
-//                         valign: 'middle'
-//                     },
-//                     {
-//                         field: 'analysisID',
-//                         title: 'Analysis ID'
-//                     },
-//                     {
-//                         field: 'description',
-//                         title: 'Description'
-//                     },
-//                     {
-//                         field: 'analysisSamples',
-//                         title: 'Samples'
-//                     },
-//                     {
-//                         field: 'analysisType',
-//                         title: 'Analysis Type'
-//                     },
-//                     {
-//                         field: 'editFamily',
-//                         title: 'Definition'
-//                     },
-//                     {
-//                         field: 'analysisDate',
-//                         title: 'Date'
-//                     },
-//                     {
-//                         field: 'subjectSelected',
-//                         title: 'Subject'
-//                     },
-//                     {
-//                         field: 'diseaseSelected',
-//                         title: 'Disease'
-//                     },
-//                     {
-//                         field: 'action',
-//                         title: 'Action'
-//                     },
-//                     {
-//                         field: 'sampleList',
-//                         visible: false
-//                     },
-//                     {
-//                         field: 'analysisIDinternal',
-//                         visible: false
-//                     },
-//                     {
-//                         field: 'family',
-//                         visible: false
-//                     }
-//                 ];
-//             }
 
 //             renderAnalysisTable() {
 //                 let _this = this;

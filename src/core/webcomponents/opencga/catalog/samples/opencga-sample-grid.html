@@ -436,33 +436,17 @@
             }
 
             diagnosisFormatter(value, row) {
-                if (UtilsNew.isNotUndefined(row.attributes) && UtilsNew.isNotUndefined(row.attributes.individual)
-                    && UtilsNew.isNotEmptyArray(row.attributes.individual.phenotypes)) {
-                    let diagnosisPhenotypes = row.attributes.individual.phenotypes.filter((disease) => {
-                        return disease.source === "ICD10";
-                    }).map((icd10disease) => {
-                        return icd10disease.name;
-                    });
-                    if (UtilsNew.isNotEmptyArray(diagnosisPhenotypes)) {
-                        return diagnosisPhenotypes.join(",");
-                    }
-                }
-                return '-';
+                const diseases = ((!!row.attributes && !!row.attributes.individual && row.attributes.individual.phenotypes) || [])
+                    .filter(disease => disease.source === "ICD10")
+                    .map(disease => disease.name);
+                return diseases.length > 0 ? diseases.join(',') : '-';
             }
 
             hpoFormatter(value, row) {
-                if (UtilsNew.isNotUndefined(row.attributes) && UtilsNew.isNotUndefined(row.attributes.individual)
-                    && UtilsNew.isNotEmptyArray(row.attributes.individual.phenotypes)) {
-                    let hpoPhenotypes = row.attributes.individual.phenotypes.filter((disease) => {
-                        return disease.source === "HPO";
-                    }).map((hpoDisease) => {
-                        return hpoDisease.name;
-                    });
-                    if (UtilsNew.isNotEmptyArray(hpoPhenotypes)) {
-                        return hpoPhenotypes.join(",");
-                    }
-                }
-                return '-';
+                const diseases = ((!!row.attributes && !!row.attributes.individual && row.attributes.individual.phenotypes) || [])
+                    .filter(disease => disease.source === "HPO")
+                    .map(disease => disease.name);
+                return diseases.length > 0 ? diseases.join(',') : '-';
             }
 
             fatherFormatter(value, row) {
