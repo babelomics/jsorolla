@@ -267,13 +267,13 @@
                     const pthis = this;
                     this.opencgaClient.clinical().info(this.clinicalAnalysisId, params, {})
                         .then(response => {
-                            _this.showSummary = false;
+                            pthis.showSummary = false;
                             if (response.response[0].numResults === 1) {
-                                _this.clinicalAnalysis = response.response[0].result[0];
-                                _this.clinicalAnalysisCreationDateFormat = moment(_this.clinicalAnalysis.creationDate, "YYYYMMDDHHmmss").format('D MMM YY');
-                                _this.showSummary = true;
+                                pthis.clinicalAnalysis = response.response[0].result[0];
+                                pthis.clinicalAnalysisCreationDateFormat = moment(pthis.clinicalAnalysis.creationDate, "YYYYMMDDHHmmss").format('D MMM YY');
+                                pthis.showSummary = true;
 //                                _this.title =  "Clinical Analysis Summary: " + _this.clinicalAnalysis.name;
-                                _this.pedigreeRender();
+                                pthis.pedigreeRender();
                             }
                         });
                 }
