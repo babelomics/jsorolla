@@ -435,6 +435,22 @@
             // family relations
             //======================================================================================
 
+            updateIndividuals(individuals) {
+                for (const sample of this.samples) {
+                    if (!!sample.individual && !!sample.individual.id && sample.individual.id>0) {
+                        const updatedIndividual = individuals.find(individual => individual.id === sample.individual.id);
+                        if (!!updatedIndividual) {
+                            sample.individual.phenotypes = updatedIndividual.phenotypes;
+                            sample.individual.parentalConsanguinity = updatedIndividual.parentalConsanguinity;
+                            sample.individual.lifeStatus = updatedIndividual.lifeStatus;
+                        }
+                        sample.attributes.individual = sample.individual;
+                    }
+                }
+                // this.samples = [ ...this.samples ];
+                // this.search = Object.assign({}, this.search);
+            }
+
             onEditDiseasesAndFamilyRelations() {
                 if (!this.samples) {
                 } else {
@@ -462,6 +478,10 @@
                 const familyRelationsEditor = $(`#${this.prefix}FamilyRelationsEditor`);
                 if (!!familyRelationsEditor) {
                     familyRelationsEditor.modal('hide');
+                    const individuals = !!e && !!e.detail && e.detail.individuals;
+                    if (individuals) {
+                        this.updateIndividuals(individuals);
+                    }
                 }
             }
         }

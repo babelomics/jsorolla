@@ -122,7 +122,18 @@
                         type: String,
                         notify: true,
                     },
+                    individuals: {
+                        type: Array,
+                        computed: 'getIndividualsFromSamples(samples)',
+                    },
                 };
+            }
+
+            getIndividualsFromSamples() {
+                return this.samples
+                    .filter(sample => !!sample.individual)
+                    .map(sample => sample.individual)
+                    .reduce((accum, individual) => accum.some(ind => ind.id === individual.id) ? accum : accum.concat([individual]), []);
             }
 
             static get observers() {
@@ -135,17 +146,62 @@
                 this.appendChild(dom);
             }
 
+            //==================================================================
+            // for modes of inheritance
+            //==================================================================
+
+            isAffected(individual) {
+                return !!individual.affectationStatus && individual.affectationStatus === 'AFFECTED';
+            }
+
+            getParents(individual) {
+                if (!individual || !individual.id || individual.id === 0) {
+                    return []
+                } else {
+                    const parentIds = ['mother', 'father'].map(relation => !!individual[relation] && individual[relation].id).filter(id => !!id);
+                    return 0 === parentIds.length ? [] : this.individuals
+                        .filter(parent => !!parent.id && parent.id>0 && parentIds.includes(parent.id));
+                }
+            }
+
+            getChildren(individual) {
+                if (!individual || !individual.id || individual.id === 0) {
+                    return [];
+                } else {
+                    return this.individuals.filter(child =>
+                        (!!child.mother && !!child.mother.id && child.mother.id === individual.id)
+                        || (!!child.father && !!child.father.id && child.father.id === individual.id)
+                    ).reduce((accum, child) => accum.some(ind => ind.id === child.id) ? accum : accum.concat([child]), []);
+                }
+            }
+
+            hasHealthyChildren(individual) {
+                return !!individual && this.getChildren(individual).some(child => !this.isAffected(child));
+            }
+
+            hasDiseasedChildren(individual) {
+                return !!individual && this.getChildren(individual).some(child => this.isAffected(child));
+            }
+
+            hasHealthyParent(individual) {
+                return !!individual && this.getParents(individual).some(parent => !this.isAffected(parent));
+            }
+
+            hasDiseasedParent(individual) {
+                return !!individual && this.getParents(individual).some(parent => this.isAffected(parent));
+            }
+
             onModeOfInheritanceChanged(e) {
                 const value = (!!e && !!e.target && e.target.value) || "none";
                 switch (value) {
                     case 'autoDominant':
                         this.removeRegion();
                         for (const sample of this.samples) {
-                            this.setSampleGenotypes(sample.name,
-                                !!sample.individual && 'AFFECTED' === sample.individual.affectationStatus
-                                ? ['0/1', '1/1']
-                                : ['0/0']
-                            );
+                            const individual = sample.individual;
+                            const genotypes = !!individual && this.isAffected(individual) ? (
+                                this.hasHealthyChildren(individual) || this.hasHealthyParent(individual) ? ['0/1'] : ['0/1', '1/1']
+                            ) : ['0/0'];
+                            this.setSampleGenotypes(sample.name, genotypes);
                         }
                         this.updateSampleGenotypeCheckboxes();
                         this.notifyQueryUpdate();
@@ -153,11 +209,11 @@
                     case 'autoRecessive':
                         this.removeRegion();
                         for (const sample of this.samples) {
-                            this.setSampleGenotypes(sample.name,
-                                !!sample.individual && 'AFFECTED' === sample.individual.affectationStatus
-                                ? ['1/1']
-                                : ['0/0', '0/1']
+                            const individual = sample.individual;
+                            const genotypes = !!individual && this.isAffected(individual) ? ['1/1'] : (
+                                this.hasDiseasedChildren(individual) || this.hasDiseasedParent(individual) ? ['0/1'] : ['0/0', '0/1']
                             );
+                            this.setSampleGenotypes(sample.name, genotypes);
                         }
                         this.updateSampleGenotypeCheckboxes();
                         this.notifyQueryUpdate();
@@ -165,12 +221,16 @@
                     case 'xLinked':
                         this.setRegion("X");
                         for (const sample of this.samples) {
-                            if (!!sample.individual && !!sample.individual.karyotypicSex && !!sample.individual.affectationStatus) {
-                                const numXs = (sample.individual.karyotypicSex.match(/X/g) || []).length;
-                                const diseased = ('AFFECTED' === sample.individual.affectationStatus);
+                            const individual = sample.individual;
+                            if (!!individual && !!individual.karyotypicSex && !!individual.affectationStatus) {
+                                const numXs = (individual.karyotypicSex.match(/X/g) || []).length;
+                                const diseased = this.isAffected(individual);
                                 const isFemale = (numXs > 1);
                                 if (isFemale) {
-                                    this.setSampleGenotypes(sample.name, diseased ? ['1/1'] : ['0/0', '0/1']);
+                                    const genotypes = diseased ? ['1/1'] : (
+                                        this.hasDiseasedChildren(individual) || this.hasDiseasedParent(individual) ? ['0/1'] : ['0/0', '0/1']
+                                    );
+                                    this.setSampleGenotypes(sample.name, genotypes);
                                 } else {
                                     this.setSampleGenotypes(sample.name, diseased ? ['1/1'] : ['0/0']);
                                 }
@@ -184,10 +244,11 @@
                     case 'yLinked':
                         this.setRegion("Y");
                         for (const sample of this.samples) {
-                            if (!!sample.individual && !!sample.individual.karyotypicSex && !!sample.individual.affectationStatus) {
-                                const numYs = (sample.individual.karyotypicSex.match(/Y/g) || []).length;
-                                const diseased = ('AFFECTED' === sample.individual.affectationStatus);
-                                const isMale = (numYs > 1);
+                            const individual = sample.individual;
+                            if (!!individual && !!individual.karyotypicSex && !!individual.affectationStatus) {
+                                const numYs = (individual.karyotypicSex.match(/Y/g) || []).length;
+                                const diseased = this.isAffected(individual);
+                                const isMale = (numYs > 0);
                                 if (isMale) {
                                     this.setSampleGenotypes(sample.name, diseased ? ['1/1'] : ['0/0']);
                                 } else {
@@ -196,16 +257,13 @@
                             } else {
                                 this.setSampleGenotypes(sample.name, []);
                             }
-
-
-
-                            if (!!sample.individual && !!sample.individual.karyotypicSex) {
-                                const numYs = (sample.individual.karyotypicSex.match(/Y/g) || []).length;
-                                if (0 === numYs)    this.setSampleGenotypes(sample.name, []);
-                                else this.setSampleGenotypes(sample.name, ['1/1']);
-                            } else {
-                                this.setSampleGenotypes(sample.name, []);
-                            }
+                            // if (!!sample.individual && !!sample.individual.karyotypicSex) {
+                            //     const numYs = (sample.individual.karyotypicSex.match(/Y/g) || []).length;
+                            //     if (0 === numYs)    this.setSampleGenotypes(sample.name, []);
+                            //     else this.setSampleGenotypes(sample.name, ['1/1']);
+                            // } else {
+                            //     this.setSampleGenotypes(sample.name, []);
+                            // }
                         }
                         this.updateSampleGenotypeCheckboxes();
                         this.notifyQueryUpdate();

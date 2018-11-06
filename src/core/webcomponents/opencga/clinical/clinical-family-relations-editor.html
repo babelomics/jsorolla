@@ -545,7 +545,7 @@
                 const promises = this.individuals.map(individual => this.saveIndividual(individual));
                 const pthis = this;
                 Promise.all(promises).then(response => {
-                    const params = { detail: {}, bubbles: true, composed: true };
+                    const params = { detail: { individuals: this.individuals }, bubbles: true, composed: true };
                     pthis.dispatchEvent(new CustomEvent("close", params));
                 }).catch(response => {
                     const params = { detail: {}, bubbles: true, composed: true };
