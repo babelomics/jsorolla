@@ -27,75 +27,6 @@
         </div>
         <br>
         <div class="panel-group" id="{{prefix}}Accordion" role="tablist" aria-multiselectable="true">
-            <!-- Analysis Selection -->
-            <div class="panel panel-default">
-                <div class="panel-heading" role="tab" id="{{prefix}}AnalysisSelectionHeading">
-                    <h4 class="panel-title">
-                        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#{{prefix}}Accordion"
-                           href="#{{prefix}}AnalysisSelection" aria-expanded="true"
-                           aria-controls="{{prefix}}AnalysisSelection">
-                            Analysis Selection
-                            <div style="float: right" class="tooltip-div">
-                                <a data-toggle="tooltip" title="Analysis selection">
-                                    <i class="fa fa-info-circle" aria-hidden="true"></i>
-                                </a>
-                            </div>
-                        </a>
-                    </h4>
-                </div>
-                <div id="{{prefix}}AnalysisSelection" class="panel-collapse collapse in" role="tabpanel"
-                     aria-labelledby="{{prefix}}AnalysisSelectionHeading">
-                    <div class="panel-body">
-                        <div class="form-group">
-                            <form>
-                                <label>Select</label>
-                                <br>
-                                <input type="radio" name="selectionButtons" id="allRadio" value="all"
-                                       class$="{{prefix}}FilterRadio" checked on-change="calculateFilterDate"
-                                       style="padding-left: 20px"> All<br>
-                                <!--<input type="radio" name="selectionButtons" id="recentlyRadio" value="recently"-->
-                                       <!--class$="{{prefix}}FilterRadio" on-change="updateQueryFilters"-->
-                                       <!--style="padding-left: 20px"> Recently Created<br>-->
-                                <input type="radio" name="selectionButtons" id="rangeRadio" value="range"
-                                       class$="{{prefix}}FilterRadio" on-change="calculateFilterDate"
-                                       style="padding-left: 20px"> Date (Year-Month-Day)
-                            </form>
-                            <div style="padding: 15px 0px 0px 25px">
-                                <form class="form-inline">
-                                    <div class="form-group row">
-                                        <select class$="form-control {{prefix}}SelectInput codeDis input-sm"
-                                                id="{{prefix}}YearSelect" name="yearInput" required
-                                                on-change="updateQueryFilters" disabled>
-                                            <template is="dom-repeat" items="{{yearsToSearch}}">
-                                                <option value="{{item}}">{{item}}</option>
-                                            </template>
-                                        </select>
-
-                                        <label style="padding: 0px 2px">-</label>
-                                        <select class$="form-control {{prefix}}SelectInput codeDis input-sm"
-                                                id="{{prefix}}MonthSelect" name="monthInput" required
-                                                on-change="updateQueryFilters" disabled>
-                                            <option></option>
-                                            <template is="dom-repeat" items="{{monthToSearch}}">
-                                                <option value="{{item}}">{{item}}</option>
-                                            </template>
-                                        </select>
-                                        <label style="padding: 0px 2px">-</label>
-                                        <select class$="form-control {{prefix}}SelectInput codeDis input-sm"
-                                                id="{{prefix}}DaySelect" name="dayInput" required
-                                                on-change="updateQueryFilters" disabled>
-                                            <option></option>
-                                            <template is="dom-repeat" items="{{daysToSearch}}">
-                                                <option value="{{item}}">{{item}}</option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <!-- Analysis Characteristics -->
             <div class="panel panel-default">
                 <div class="panel-heading" role="tab" id="{{prefix}}AnalysisCharacteristicsHeading">
@@ -207,38 +138,21 @@
             }
 
             updateQueryFilters() {
-                let _query = {};
-
-                let analysisID = PolymerUtils.getElementById(this.prefix + "analysisID").value;
-                let sampleID = PolymerUtils.getElementById(this.prefix + "sampleID").value;
-                let analysisType = PolymerUtils.getElementById(this.prefix + "analysisType").value;
-                let yearInput = PolymerUtils.getElementById(this.prefix + "YearSelect").value;
-                let monthInput = PolymerUtils.getElementById(this.prefix + "MonthSelect").value;
-                let dayInput = PolymerUtils.getElementById(this.prefix + "DaySelect").value;
-                if (this.customDate && UtilsNew.isNotEmpty(yearInput) && UtilsNew.isNotEmpty(monthInput) && UtilsNew.isNotEmpty(dayInput) ) {
-                    let monthNumber = 0;
-                    this.monthToSearch.forEach((month,index) => {
-                        if (month === monthInput) {
-                            monthNumber = index;
-                        }
-                    });
-                    _query.creationDate = new Date(yearInput, monthNumber, dayInput).getTime();
+                const query = {};
+                const analysisID = PolymerUtils.getElementById(this.prefix + "analysisID").value;
+                if (!!analysisID) {
+                    query.name = analysisID;
                 }
-
-                if (UtilsNew.isNotEmpty(analysisID)) {
-                    _query.name = analysisID;
+                const sampleID = PolymerUtils.getElementById(this.prefix + "sampleID").value;
+                if (!!sampleID) {
+                    query.sample = sampleID;
                 }
-
-                if (UtilsNew.isNotEmpty(sampleID)) {
-                    _query.sample = sampleID;
+                const analysisType = PolymerUtils.getElementById(this.prefix + "analysisType").value;
+                if (!!analysisType) {
+                    query.type = analysisType;
                 }
-
-                if (UtilsNew.isNotEmpty(analysisType)) {
-                    _query.type = analysisType;
-                }
-
                 this._reset = false;
-                this.query = _query;
+                this.query = query;
                 this._reset = true;
             }
 
