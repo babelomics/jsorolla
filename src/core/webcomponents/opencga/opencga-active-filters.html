@@ -203,7 +203,7 @@
                 const filter = !!this.filters && this.filters.find(filter => filter.active);
                 if (!!filter) {
                     const queryList = Object.assign({}, filter.query);
-                    this.dispatchEvent(new CustomEvent("filterchange", {detail: queryList, bubbles: true, composed: true}));
+                    // this.dispatchEvent(new CustomEvent("filterchange", {detail: queryList, bubbles: true, composed: true}));
                 }
             }
 
@@ -375,7 +375,7 @@
 
                         // We convert the Query entry object into an array of small objects (queryList)
                         let value = this.query[key];
-                        if (typeof value === "boolean") {
+                        if (['number', 'boolean'].includes(typeof value)) {
                             value = value.toString();
                         }
 

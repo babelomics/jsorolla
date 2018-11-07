@@ -151,17 +151,17 @@
                         _this.numTotalResultsText = _numTotal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                         return {total: _numTotal, rows: resp.response[0].result}
                     },
-                    onLoadSuccess: function (data) {
-                        if (UtilsNew.isUndefinedOrNull(_this.analysis)) {
-                            // The first time we mark as selected the first row
+                    onLoadSuccess: data => {
+                        if (!_this.analysis && !!data && data.total>0) {
                             const _table = $('#' + _this.prefix + 'tableAnalysis');
-                            _table.bootstrapTable('check', 0);
-
+                            if (!!_table) {
+                                _table.bootstrapTable('check', 0);
+                            }
                         } else {
                             _this.analysisObserver();
                         }
                     },
-                    onCheck: function (row, elem) {
+                    onCheck: (row, elem) => {
                         _this.dispatchEvent(new CustomEvent("analysis-selected", {
                             detail: row,
                             bubbles: true,
