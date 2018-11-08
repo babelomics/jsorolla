@@ -127,7 +127,7 @@
                     samples="[[samples]]"
                     query="{{query}}"
                     on-query-changed="onQueryChanged"
-                    modeOfInheritance="{{modeInheritance}}"
+                    mode-of-inheritance="{{modeOfInheritance}}"
                 ></opencga-variant-filter-sec-sample>
                 <opencga-variant-filter-sec-mmp-panel
                     query="{{query}}"
@@ -207,7 +207,7 @@
                     mmpExtensionConfig: {
                         type: Object
                     },
-                    modeInheritance: {
+                    modeOfInheritance: {
                         type: String,
                         notify: true
                     },
@@ -440,13 +440,7 @@
                 // Check 'query' is not null or empty there is nothing else to do
                 if (0 === Object.keys(this.query || []).length) return;
 
-                // inheritance Mode
-                // if (UtilsNew.isNotUndefinedOrNull(this.modeInheritance)) {
-                //     PolymerUtils.setValue(this.prefix + "SegregationOperator", this.modeInheritance)
-                // }
-
                 // Cohorts
-
                 if (!!this.query.maf) {
                     const cohortArray = this.query.maf.split(new RegExp("[,;]"));
                     for (const cohortItem of cohortArray) {

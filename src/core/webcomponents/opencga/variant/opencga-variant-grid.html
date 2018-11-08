@@ -263,11 +263,11 @@
                         showExport: _this._config.showExport,
                         detailView: _this._config.detailView,
                         detailFormatter: _this._config.detailFormatter,
-
+                        // showRefresh: true,
                         // this makes the opencga-variant-grid properties available in the bootstrap-table formatters
                         variantGrid: _this,
 
-                        queryParams: function (params) {
+                        queryParams: params => {
                             queryParams.limit = params.limit;
                             queryParams.skip = params.offset;
                             queryParams.skipCount = false;
@@ -343,8 +343,9 @@
                                 }
                             }
                         },
-                        onLoadError: function (status, res) {
-                            _this.variantTable.bootstrapTable('load', []);
+                        onLoadError: (status, res) => {
+                            // debugger;
+                            // _this.variantTable.bootstrapTable('load', []);
                         },
                         onPageChange: function (page, size) {
                             _this.from = (page - 1) * size + 1;

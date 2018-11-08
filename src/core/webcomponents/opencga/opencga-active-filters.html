@@ -72,7 +72,7 @@
                 </span>
 
                 <!-- TODO we probably need a new property for this -->
-                <template is="dom-if" if="{{showSelectFilters(opencgaClient._config)}}">
+                <template is="dom-if" if="{{showSelectFilters(opencgaClient._config, enableLoadSave)}}">
                     <div class="btn-group" style="float: right">
                         <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fa fa-filter" aria-hidden="true" style="padding-right: 5px"></i> Filters <span class="caret"></span>
@@ -182,6 +182,14 @@
                     saveDialogFilterName: {
                         type: String,
                     },
+                    enableLoadSave: {
+                        type: Boolean,
+                        value: false,
+                    },
+                    modeOfInheritance: {
+                        type: String,
+                        value: "",
+                    },
                 }
             }
 
@@ -203,7 +211,7 @@
                 const filter = !!this.filters && this.filters.find(filter => filter.active);
                 if (!!filter) {
                     const queryList = Object.assign({}, filter.query);
-                    // this.dispatchEvent(new CustomEvent("filterchange", {detail: queryList, bubbles: true, composed: true}));
+                    this.dispatchEvent(new CustomEvent("filterchange", {detail: queryList, bubbles: true, composed: true}));
                 }
             }
 
@@ -228,7 +236,7 @@
             }
 
             showSelectFilters(config) {
-                return (this.filters !== undefined && this.filters.length > 0) || !UtilsNew.isEmpty(config.sessionId);
+                return !!this.enableLoadSave && ((this.filters !== undefined && this.filters.length > 0) || !UtilsNew.isEmpty(config.sessionId));
             }
 
             checkSid(config) {
@@ -250,13 +258,23 @@
             save() {
                 const filterName = this.saveDialogFilterName;
                 const filterDescription = PolymerUtils.getValue(this.prefix + "filterDescription");
+
+                const filterQuery = Object.assign({}, this.query);
+                if (!!filterQuery.genotype) {
+                    delete filterQuery.genotype;
+                }
+                if (!!this.modeOfInheritance) {
+                    filterQuery.modeOfInheritance = this.modeOfInheritance;
+                }
+
                 const params = {
                     name: filterName,
                     description: filterDescription,
                     bioformat: this.filterBioformat,
-                    query: this.query,
+                    query: filterQuery,
                     options: {},
                 };
+
                 const _this = this;
                 this.opencgaClient.users().getFilters({name: filterName}, {serverVersion: this.opencgaClient._config.serverVersion})
                     .then(response => {
@@ -291,17 +309,19 @@
             }
 
             onServerFilterChange(e) {
-                if (!UtilsNew.isUndefinedOrNull(this.filters)) {
-                    // We look for the filter name in the filters array
-                    for (let filter of this.filters) {
-                        if (filter.name === e.target.dataset.filterName) {
-                            PolymerUtils.addStyleByClass('filtersLink', 'color', 'black');
-                            e.target.style.color = "green";
-
-                            let _queryList = Object.assign({}, filter.query);
-                            this.dispatchEvent(new CustomEvent("filterchange", {detail: _queryList, bubbles: true, composed: true}));
-                            break;
-                        }
+                const filterName = !!e && !!e.target && !!e.target.dataset && e.target.dataset.filterName;
+                if (!!this.filters && !!filterName) {
+                    // we look for the filter name in the filters array
+                    const filter = (this.filters || []).find(filter => filter.name === filterName);
+                    if (!!filter) {
+                        PolymerUtils.addStyleByClass('filtersLink', 'color', 'black');
+                        e.target.style.color = "green";
+                        const queryList = Object.assign({}, filter.query);
+                        const modeOfInheritance = queryList.modeOfInheritance || "";
+                        delete queryList.modeOfInheritance;
+                        delete queryList.genotype;
+                        this.dispatchEvent(new CustomEvent("filterchange", {detail: queryList, bubbles: true, composed: true}));
+                        this.dispatchEvent(new CustomEvent("mode-of-inheritance-changed", {detail: modeOfInheritance, bubbles: true, composed: true}));
                     }
                 }
             }

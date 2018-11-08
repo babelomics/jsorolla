@@ -71,10 +71,10 @@
                                                 query="{{query}}"
                                                 search="{{search}}"
                                                 on-samplechange="onSampleChange"
-                                                on-inheritancemode="_onInheritanceMode"
-                                                mode-inheritance="{{modeInheritance}}"
+                                                mode-of-inheritance="[[modeOfInheritance]]"
                                                 samples="[[samples]]"
                                                 mmp-extension-config="[[mmpExtensionConfig]]"
+                                                on-mode-of-inheritance-changed="onModeOfInheritanceChanged"
                         ></opencga-variant-filter>
                     </div>
                     <!--</template>-->
@@ -92,6 +92,9 @@
                                                 refresh="{{search}}"
                                                 genotype-samples="{{genotypeSamples}}"
                                                 mode-inheritance="[[modeInheritance]]"
+                                                enable-load-save="true"
+                                                mode-of-inheritance="[[modeOfInheritance]]"
+                                                on-mode-of-inheritance-changed="onModeOfInheritanceChanged"
                         ></opencga-active-filters>
 
                         <div class="col-md-12" style="padding: 5px 0px 5px 0px">
@@ -443,6 +446,10 @@
                         type: Array,
                         value: () => [],
                     },
+                    modeOfInheritance: {
+                        type: String,
+                        value: "",
+                    }
                 }
             }
 
@@ -962,6 +969,13 @@
                 // Get genotype values
                 this.genotypeSamples = Segregations.inheritanceMode(this.modeInheritance, this.clinicalAnalysis, this.genotypeSamples, this.samples);
                 this.query = Object.assign({}, this.query, {genotype: this.getGenotypeFilter(this.genotypeSamples)});
+            }
+
+            onModeOfInheritanceChanged(e) {
+                const mode = !!e && e.detail;
+                if (mode !== this.modeOfInheritance) {
+                    this.modeOfInheritance = mode;
+                }
             }
         }
 

@@ -121,6 +121,7 @@
                     modeOfInheritance: {
                         type: String,
                         notify: true,
+                        observer: 'onModeOfInheritanceChanged2',
                     },
                     individuals: {
                         type: Array,
@@ -269,6 +270,8 @@
                         this.notifyQueryUpdate();
                         break;
                 }
+
+                this.dispatchEvent(new CustomEvent('mode-of-inheritance-changed', {detail: value, bubbles: true, composed: true}));
             }
 
             isGenotypeIncluded(sample, genotype) {
@@ -348,6 +351,7 @@
                             this.removeSampleGenotype(sampleName, genotype);
                         }
                         document.getElementById(this.modesOfInheritanceId).value = "none";
+                        this.dispatchEvent(new CustomEvent('mode-of-inheritance-changed', {detail: "", bubbles: true, composed: true}));
                         this.notifyQueryUpdate();
                     }
                 }
@@ -434,6 +438,18 @@
                                 checkbox.checked = checkboxExpectedValue;
                             }
                         }
+                    }
+                }
+            }
+
+            onModeOfInheritanceChanged2() {
+                const moiElement = document.getElementById(this.modesOfInheritanceId);
+                if (!!moiElement) {
+                    const moiValue = moiElement.value;
+                    if (moiValue !== this.modeOfInheritance) {
+                        moiElement.value = this.modeOfInheritance || "none";
+                        this.onModeOfInheritanceChanged({target: { value: this.modeOfInheritance }});
+                        // const value = (!!e && !!e.target && e.target.value) || "none";
                     }
                 }
             }
