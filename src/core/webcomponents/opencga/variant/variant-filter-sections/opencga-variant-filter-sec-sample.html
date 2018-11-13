@@ -96,11 +96,6 @@
                         type: Object,
                         notify: true,
                     },
-                    modesOfInheritance: {
-                        type: Array,
-                        readOnly: true,
-                        value: inheritanceModes,
-                    },
                     prefix: {
                         type: String,
                         readOnly: true,
@@ -113,15 +108,20 @@
                         type: String,
                         readOnly: true,
                     },
-                    potentialGenotypes: {
-                        type: Array,
-                        readOnly: true,
-                        value: ['0/0', '0/1', '1/1', './.'],
-                    },
                     modeOfInheritance: {
                         type: String,
                         notify: true,
                         observer: 'onModeOfInheritanceChanged2',
+                    },
+                    modesOfInheritance: {
+                        type: Array,
+                        readOnly: true,
+                        value: inheritanceModes,
+                    },
+                    potentialGenotypes: {
+                        type: Array,
+                        readOnly: true,
+                        value: ['0/0', '0/1', '1/1', './.'],
                     },
                     individuals: {
                         type: Array,
@@ -410,6 +410,9 @@
             }
 
             onSamplesChanged() {
+                // check if any sample has an haploid Y
+                this.checkHaploidSamples();
+
                 this.onQueryChanged();
             }
 
@@ -452,6 +455,11 @@
                         // const value = (!!e && !!e.target && e.target.value) || "none";
                     }
                 }
+            }
+
+            checkHaploidSamples() {
+                // just make a query looking for haploid samples
+
             }
         }
 

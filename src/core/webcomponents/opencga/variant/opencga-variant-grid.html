@@ -17,7 +17,7 @@
 <dom-module id="opencga-variant-grid">
     <template>
         <style include="jso-styles">
-            span.redText, span.orangeText {
+            span.redText, span.orangeText, span.blackText {
                 margin-left: 0;
             }
 
@@ -983,123 +983,6 @@
                 return phenotypeHtml;
             }
 
-            sampleFormatter(value, row, index) {
-                // TODO: this function is severely broken, as it depends on the order of the columns implicitly
-                // as shown in the comment "NOTE: There are always 4 columns before the samples"
-                // this SHOULD be fixed
-
-                const sampleColumnIndex = 5;
-                let res = "-";
-
-                if (!!row && !!row.studies && row.studies.length > 0) {
-                    // NOTE: There are always 4 columns before the samples
-                    // This context is for row
-                    if (this.nucleotideGenotype) {
-                        let alternateSequence = row.alternate;
-                        let referenceSequence = row.reference;
-                        let genotypeMatch = new Map();
-                        let colText = "";
-                        let referenceValueColText = "-";
-                        let alternateValueColText = "-";
-
-                        genotypeMatch.set(0, referenceSequence === "" ? "-" : referenceSequence);
-                        genotypeMatch.set(1, alternateSequence === "" ? "-" : alternateSequence);
-
-                        row.studies.forEach((study) => {
-                            if (!!study.secondaryAlternates && study.secondaryAlternates.length > 0) {
-                                study.secondaryAlternates.forEach((secondary) => {
-                                    genotypeMatch.set(genotypeMatch.size, secondary.alternate === "" ? "-" : secondary.alternate);
-                                });
-                            }
-                            if (!!study.samplesData && study.samplesData.length > 0) {
-                                if (UtilsNew.isNotUndefinedOrNull(study.samplesData[this.fieldIndex - sampleColumnIndex])) {
-                                    let currentGenotype = study.samplesData[this.fieldIndex - sampleColumnIndex][0];
-                                    let reference = currentGenotype.split("/")[0];
-                                    let alternate = currentGenotype.split("/")[1];
-                                    let tooltipText = reference + " / " + alternate;
-                                    if (UtilsNew.isNotEqual(reference, ".") && UtilsNew.isNotEqual(alternate, ".")) {
-                                        reference = parseInt(reference);
-                                        alternate = parseInt(alternate);
-                                        let referenceValue = genotypeMatch.get(reference);
-                                        let alternateValue = genotypeMatch.get(alternate);
-                                        // Cases which this will cover.
-                                        // referenceValue.length <= 5 && alternateVAlue.length <= 5
-                                        // referenceValue.length <= 10 && alternateValue == "-"
-                                        // alternateValue.length <= 10 && referenceValue == "-"
-                                        referenceValueColText = referenceValue;
-                                        alternateValueColText = alternateValue;
-
-                                        // Not equal X/- or -/X
-                                        if (UtilsNew.isNotEqual(referenceValue, "-") && UtilsNew.isNotEqual(alternateValue, "-")) {
-                                            if ((referenceValue.length <= 5 && alternateValue.length > 5) || (referenceValue.length > 5 && alternateValue.length <= 5)) {
-                                                if (referenceValue.length > 5) {
-                                                    // referenceValue > 5
-                                                    referenceValueColText = referenceValue.substring(0, 3) + "...";
-//                                                    tooltipText += "<br>" + referenceValue +" / " + alternateValue;
-                                                }  else {
-                                                    // alternateValue > 5
-                                                    alternateValueColText = alternateValue.substring(0, 3) + "...";
-//                                                    tooltipText += "<br>" + referenceValue +" / " + alternateValue;
-                                                }
-                                            } else if (referenceValue.length > 5 && alternateValue.length > 5){
-                                                // Both > 5 It will never happen
-                                                referenceValueColText = referenceValue.substring(0, 3) + "...";
-                                                alternateValueColText = alternateValue.substring(0, 3) + "...";
-//                                                tooltipText += "<br>" +   referenceValue +" / " + alternateValue;
-                                            }
-                                        } else if (UtilsNew.isNotEqual(referenceValue, "-") && referenceValue.length > 10) {
-                                            // X/-
-                                            let substringReference = referenceValue.substring(0, 5) + "...";
-                                            referenceValueColText = substringReference;
-                                            alternateValueColText = "-";
-//                                                tooltipText += "<br>" +   referenceValue +" / " + alternateValue;
-                                        } else if (UtilsNew.isNotEqual(alternateValue, "-") && alternateValue.length > 10) {
-                                            // -/X
-                                            let substringAlternate = alternateValue.substring(0, 5) + "...";
-                                            alternateValueColText = substringAlternate;
-                                            referenceValueColText = "-";
-//                                                tooltipText += "<br>" +   referenceValue + " / " + alternateValue;
-                                        }
-                                        tooltipText += "<br>" +   referenceValue + " / " + alternateValue;
-                                    } else {
-                                        referenceValueColText = reference;
-                                        alternateValueColText = alternate;
-                                        tooltipText += "<br>" +   reference + " / " + alternate;
-                                    }
-
-                                    let referenceIndex = parseInt(reference);
-                                    let alternateIndex = parseInt(alternate);
-                                    if (referenceIndex === 1 && (referenceValueColText !== "-" && referenceValueColText !== "*")) {
-                                        referenceValueColText = "<span class='orangeText'>" + referenceValueColText +"</span>"
-                                    } else if(referenceIndex > 1 && (referenceValueColText !== "-" && referenceValueColText !== "*")) {
-                                        referenceValueColText = "<span class='redText'>" + referenceValueColText +"</span>"
-                                    }
-                                    if (alternateIndex === 1 && (alternateValueColText !== "-" && alternateValueColText !== "*")) {
-                                        alternateValueColText = "<span class='orangeText'>" + alternateValueColText +"</span>"
-                                    } else if(alternateIndex > 1 && (alternateValueColText !== "-" && alternateValueColText !== "*")) {
-                                        alternateValueColText = "<span class='redText'>" + alternateValueColText +"</span>"
-                                    }
-                                    colText = referenceValueColText + " / " + alternateValueColText;
-                                    res = "<span class='sampleGenotype' data-text='"+tooltipText+"'> "+ colText + " </span>";
-                                    return;
-                                }
-                            }
-                        });
-                    } else {
-                        row.studies.forEach((study) => {
-                            if (study.samplesData.length > 0) {
-                                let currentGenotype = study.samplesData[this.fieldIndex - sampleColumnIndex];
-                                if (UtilsNew.isNotUndefinedOrNull(currentGenotype)) {
-                                    res = currentGenotype[0];
-                                    return;
-                                }
-                            }
-                        });
-                    }
-                }
-                return res;
-            }
-
             _refreshTableColumns() {
                 this.cols = this._createDefaultColumns();
                 // TODO: this function is severely broken
@@ -1191,9 +1074,10 @@
                         colspan: this.samples.length,
                         align: 'center'
                     });
-                    for(let i = 0; i < this.samples.length; i++) {
-                        this.cols[1].splice(i, 0, {
-                            title: this.samples[i].name,
+                    for (let idx=0; idx<this.samples.length; ++idx) {
+                        const sample = this.samples[idx];
+                        this.cols[1].splice(idx, 0, {
+                            title: sample.name,
                             field: 'samples',
                             rowspan: 1,
                             colspan: 1,
@@ -1468,6 +1352,60 @@
                     showSelectCheckbox: true,
                     nucleotideGenotype: true,
                     alleleStringLengthMax: 15
+                }
+            }
+
+            sampleFormatter(value, row, index) {
+                // TODO: this function is severely broken, as it depends on the order of the columns implicitly
+                // as shown in the comment "NOTE: There are always 4 columns before the samples"
+                // this SHOULD be fixed
+                const sampleColumnIndex = 5;
+                let res = "-";
+                if (!!row && !!row.studies && row.studies.length > 0) {
+                    // NOTE: There are always 4 columns before the samples
+                    // This context is for row
+                    if (!!this.nucleotideGenotype) {
+                        for (const study of (row.studies || [])) {
+                            const genotypeMatch = new Map();
+                            genotypeMatch.set(0, row.reference || "-");
+                            genotypeMatch.set(1, row.alternate || "-");
+                            for (const secondary of (study.secondaryAlternates || [])) {
+                                genotypeMatch.set(genotypeMatch.size, secondary.alternate || '-');
+                            }
+                            const currentGenotype = !!study.samplesData
+                                && study.samplesData.length > (this.fieldIndex - sampleColumnIndex)
+                                && !!study.samplesData[this.fieldIndex - sampleColumnIndex]
+                                && study.samplesData[this.fieldIndex - sampleColumnIndex].length > 0
+                                && study.samplesData[this.fieldIndex - sampleColumnIndex][0];
+                            if (!!currentGenotype) {
+                                const genotypeParts = currentGenotype.split('/').map(item => item.trim());
+                                const columnText = genotypeParts
+                                    .map(item => {
+                                        const itemIdx = parseInt(item);
+                                        const classText = itemIdx > 1 ? " class='redText'" : itemIdx > 0 ? " class='orangeText'" : " class='blackText'";
+                                        let seq = genotypeMatch.get(itemIdx);
+                                        if (!!seq && seq.length > 5) {
+                                            seq = `${seq.substring(0, 3)}...`;
+                                        }
+                                        return `<span${classText}>${seq || item || '-'}</span>`;
+                                    }).join('&nbsp;/&nbsp;');
+                                const tooltip = genotypeParts.join("&nbsp;/&nbsp;") + "<br>" + genotypeParts
+                                    .map(item => {
+                                        const itemIdx = parseInt(item);
+                                        const seq = genotypeMatch.get(itemIdx);
+                                        return seq || item || '-';
+                                    }).join('&nbsp;/&nbsp;');
+                                const res = `<span class='sampleGenotype' data-text='${tooltip}'>${columnText}</span>`;
+                                return res;
+                            }
+                        }
+                        return '';
+                    } else {
+                        return (row.studies || [])
+                            .map(study => !!study && !!study.samplesData && study.samplesData.length > (this.fieldIndex - sampleColumnIndex) && study.samplesData[this.fieldIndex - sampleColumnIndex])
+                            .filter(item => !!item)
+                            .join("<br>");
+                    }
                 }
             }
         }
