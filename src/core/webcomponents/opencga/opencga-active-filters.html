@@ -21,16 +21,11 @@
                 text-decoration: line-through;
             }
         </style>
-
-        <div>showWarning = [[showWarning]]</div>
         <template is="dom-if" if="[[showWarning]]">
             <div class="alert alert-warning" role="alert" style="padding: 12px;margin-bottom: 10px">
                 <span style="font-weight: bold;font-size: 1.20em">Warning!</span>&nbsp;&nbsp;Filters changed, please click on Search button to update the results.
             </div>
         </template>
-
-
-
         <div class="panel panel-default" style="margin-bottom: 5px">
             <div class="panel-body" style="padding: 10px">
                 <button type="button" class="btn btn-primary" on-click="clear">
