@@ -124,6 +124,8 @@
             <div class="panel-group" id="{{prefix}}Accordion" role="tablist" aria-multiselectable="true" style="padding-top: 20px">
                 <!-- <template is="dom-if" if="[[config." -->
                 <opencga-variant-filter-sec-sample
+                    opencga-session="[[opencgaSession]]"
+                    opencga-client="[[opencgaClient]]"
                     samples="[[samples]]"
                     query="{{query}}"
                     on-query-changed="onQueryChanged"

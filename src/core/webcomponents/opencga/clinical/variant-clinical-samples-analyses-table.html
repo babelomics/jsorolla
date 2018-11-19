@@ -175,7 +175,7 @@
                     const body = {
                         "name": analysis.id,
                         "description": analysis.description,
-                        "type": analysis.samples == 1 ? "SINGLE" : "MULTISAMPLE",
+                        "type": analysis.samples.length == 1 ? "SINGLE" : "MULTISAMPLE",
                         "subjects": subjects,
                         "disease": analysis.disease || this.getDiseases(analysis)[0],
                     };

@@ -321,6 +321,7 @@
                         delete queryList.modeOfInheritance;
                         delete queryList.genotype;
                         this.dispatchEvent(new CustomEvent("filterchange", {detail: queryList, bubbles: true, composed: true}));
+                        this.dispatchEvent(new CustomEvent("mode-of-inheritance-changed", {detail: "none", bubbles: true, composed: true}));
                         this.dispatchEvent(new CustomEvent("mode-of-inheritance-changed", {detail: modeOfInheritance, bubbles: true, composed: true}));
                     }
                 }

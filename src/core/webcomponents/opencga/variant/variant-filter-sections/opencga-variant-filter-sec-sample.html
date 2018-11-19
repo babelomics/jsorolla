@@ -55,8 +55,20 @@
                                 </template>
                             </tbody>
                         </table>
-
                     </div>
+                    <template is="dom-repeat" items="[[hasHaploidSamples.length]]">
+                        <div class="form-group">
+                            <div class="browser-subsection">
+                                <jsorolla-tooltip
+                                    header="With haploid samples"
+                                    content="Shows samples with haploid genes in the source VCF"
+                                ></jsorolla-tooltip>
+                            </div>
+                            <template is="dom-repeat" items="[[hasHaploidSamples]]" as="sample">
+                                [[sample]]<br>
+                            </template>
+                        </div>
+                    </template>
                 </div>
             </div>
         </template>
@@ -87,6 +99,12 @@
                 ];
 
                 return {
+                    opencgaClient: {
+                        type: Object,
+                    },
+                    opencgaSession: {
+                        type: Object,
+                    },
                     samples: {
                         type: Array,
                         value: () => [],
@@ -126,6 +144,10 @@
                     individuals: {
                         type: Array,
                         computed: 'getIndividualsFromSamples(samples)',
+                    },
+                    hasHaploidSamples: {
+                        type: Array,
+                        value: () => [],
                     },
                 };
             }
@@ -276,8 +298,7 @@
 
             isGenotypeIncluded(sample, genotype) {
                 const genos = this.parseGenotypeString();
-                const xs = genos[sample] || [];
-                return xs.includes(genotype);
+                return (genos[sample] || []).includes(genotype);
             }
 
             addSampleGenotype(sample, genotype) {
@@ -315,7 +336,6 @@
                 const sampleNames = Object.keys(genotypes).filter(sampleName => (genotypes[sampleName].length>0));
                 const genoString = sampleNames.map(sampleName => `${sampleName}:${genotypes[sampleName].join(',')}`).join(';');
                 return !!genoString ? genoString + ";" : genoString;
-                // return genoString;
             }
 
             parseGenotypeString(genoString) {
@@ -412,7 +432,6 @@
             onSamplesChanged() {
                 // check if any sample has an haploid Y
                 this.checkHaploidSamples();
-
                 this.onQueryChanged();
             }
 
@@ -458,8 +477,30 @@
             }
 
             checkHaploidSamples() {
-                // just make a query looking for haploid samples
-
+                /*
+                debugger;
+                this.hasHaploidSamples = [];
+                for (const sample of this.samples) {
+                    // just make a query looking for haploid samples
+                    const pthis = this;
+                    const params = {
+                        limit: 1,
+                        skipCount: false,
+                        count: true,
+                        includeSample: sample.name,
+                        includeGenotype: `${sample.name}:0,1`,
+                    };
+                    this.opencgaClient.variants().query(params).then(response => {
+                        debugger;
+                        if (!!response && !!response.response && response.response.length>0 && response.response[0].result && response.response[0].result.length>0) {
+                            const numResults = response.response[0].result[0];
+                            if (numResults > 0) {
+                                pthis.hasHaploidSamples.push(sample.name);
+                            }
+                        }
+                    });
+                }
+                */
             }
         }
 

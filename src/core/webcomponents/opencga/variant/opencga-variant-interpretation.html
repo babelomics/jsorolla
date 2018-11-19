@@ -463,14 +463,14 @@
                 if (!this.interactive) {
                     this.collapseFilter();
                 }
+
                 // cellbase version
+                const pthis = this;
                 this.cellbaseClient.getMeta("about").then(response => {
-                    if (UtilsNew.isNotUndefinedOrNull(response) && UtilsNew.isNotEmptyArray(response.response)) {
-                        if (UtilsNew.isNotUndefinedOrNull(response.response[0].result) && UtilsNew.isNotEmptyArray(response.response[0].result)) {
-                            this.cellbaseVersion = response.response[0].result[0]["Version: "];
-                        }
+                    if (!!response && !!response.response && !!response.response[0].result && !!response.response[0].result[0]) {
+                        this.cellbaseVersion = response.response[0].result[0]["Version: "];
                     }
-                });
+                }).catch(() => {});
             }
 
             _init() {
@@ -673,19 +673,19 @@
             }
 
             _initGenotypeSamples(samples, force, value) {
-                if (UtilsNew.isUndefinedOrNull(this.genotypeSamples)) {
+                if (!this.genotypeSamples) {
                     this.genotypeSamples = {};
                 }
-                samples.forEach((sample) => {
-                    if (UtilsNew.isUndefinedOrNull(this.genotypeSamples[sample.name]) || force){
+                for (const sample of samples) {
+                    if (!this.genotypeSamples[sample.name] || force) {
                         this.genotypeSamples[sample.name] = {};
-                        this.genotypeSamples[sample.name]["0/0"] = UtilsNew.isNotUndefinedOrNull(value)? value : true;
+                        // this.genotypeSamples[sample.name]["0/0"] = UtilsNew.isNotUndefinedOrNull(value)? value : true;
                         this.genotypeSamples[sample.name]["0/1"] = UtilsNew.isNotUndefinedOrNull(value)? value : true;
                         this.genotypeSamples[sample.name]["1/1"] = UtilsNew.isNotUndefinedOrNull(value)? value : true;
                         // this.genotypeSamples[sample.name]["./."] = UtilsNew.isNotUndefinedOrNull(value)? value : true;
                     }
-                });
-                this.query = Object.assign({}, this.query, {genotype: this.getGenotypeFilter(this.genotypeSamples)});
+                }
+                this.query = Object.assign({}, this.query, { genotype: this.getGenotypeFilter(this.genotypeSamples) });
             }
 
             _changeView(e) {
