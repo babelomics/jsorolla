@@ -22,9 +22,14 @@
             }
         </style>
 
-        <div class="alert alert-warning" role="alert" id="{{prefix}}Warning" style="display: none;padding: 12px;margin-bottom: 10px">
-            <span style="font-weight: bold;font-size: 1.20em">Warning!</span>&nbsp;&nbsp;Filters changed, please click on Search button to update the results.
-        </div>
+        <div>showWarning = [[showWarning]]</div>
+        <template is="dom-if" if="[[showWarning]]">
+            <div class="alert alert-warning" role="alert" style="padding: 12px;margin-bottom: 10px">
+                <span style="font-weight: bold;font-size: 1.20em">Warning!</span>&nbsp;&nbsp;Filters changed, please click on Search button to update the results.
+            </div>
+        </template>
+
+
 
         <div class="panel panel-default" style="margin-bottom: 5px">
             <div class="panel-body" style="padding: 10px">
@@ -139,7 +144,6 @@
 
             constructor() {
                 super();
-
                 this.prefix = "oaf" + Utils.randomString(6);
             }
 
@@ -190,6 +194,10 @@
                         type: String,
                         value: "",
                     },
+                    showWarning: {
+                        type: Boolean,
+                        value: false,
+                    }
                 }
             }
 
@@ -323,6 +331,7 @@
                         this.dispatchEvent(new CustomEvent("filterchange", {detail: queryList, bubbles: true, composed: true}));
                         this.dispatchEvent(new CustomEvent("mode-of-inheritance-changed", {detail: "none", bubbles: true, composed: true}));
                         this.dispatchEvent(new CustomEvent("mode-of-inheritance-changed", {detail: modeOfInheritance, bubbles: true, composed: true}));
+                        this.showWarning = true;
                     }
                 }
             }
@@ -382,11 +391,7 @@
                 for (let keyIdx in keys) {
                     let key = keys[keyIdx];
                     if (UtilsNew.isNotEmpty(this.query[key])) {
-                        if (JSON.stringify(this.query) !== JSON.stringify(this._previousQuery)) {
-                            PolymerUtils.show(this.prefix + 'Warning');
-                        } else {
-                            PolymerUtils.hide(this.prefix + 'Warning');
-                        }
+                        this.showWarning = (JSON.stringify(this.query) !== JSON.stringify(this._previousQuery));
 
                         // We use the alias to rename the key
                         let title = key;
@@ -455,7 +460,7 @@
             }
 
             searchClicked() {
-                PolymerUtils.hide(this.prefix + "Warning");
+                this.showWarning = false;
                 this._previousQuery = this.query;
             }
 

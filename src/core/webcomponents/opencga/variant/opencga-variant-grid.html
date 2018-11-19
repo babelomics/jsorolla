@@ -148,6 +148,10 @@
                     config: {
                         type: Object,
                         observer: "configObserver"
+                    },
+                    serverQueryId: {
+                        type: Number,
+                        value: 0,
                     }
                 }
             }
@@ -251,6 +255,9 @@
 
                 if (!!this.opencgaClient && this.opencgaClient instanceof OpenCGAClient && !!this.opencgaSession.project && !!this.opencgaSession.study && !!this.opencgaSession.study.alias) {
 
+                    this.serverQueryId = (this.serverQueryId || 0) + 1;
+                    const serverQueryId = this.serverQueryId;
+
                     let urlQueryParams = this._getUrlQueryParams();
                     let queryParams = urlQueryParams.queryParams;
                     let _numTotal = -1;
@@ -282,14 +289,16 @@
                             queryParams.skipCount = false;
                             return queryParams;
                         },
-                        responseHandler: function (resp) {
+                        responseHandler: resp => {
+                            if (_this.serverQueryId !== serverQueryId)  return;
+
                             if (_numTotal === -1) {
                                 _numTotal = resp.response[0].numTotalResults;
                             }
                             // Format the number string with commas
                             _this.numTotalResultsText = _numTotal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                             _this.approximateCountResult = resp.response[0].approximateCount;
-                            return {total: _numTotal, rows: resp.response[0].result}
+                            return { total: _numTotal, rows: resp.response[0].result }
                         },
                         onClickRow: function (row, $element, field) {
                             $('.success').removeClass('success');
@@ -333,6 +342,8 @@
                             }));
                         },
                         onLoadSuccess: data => {
+                            if (_this.serverQueryId !== serverQueryId)  return;
+
                             // debugger;
                             // The first time we mark as selected the first row that is rows[2] since the first two rows are the header
                             if (!!_this.variantTable) {
