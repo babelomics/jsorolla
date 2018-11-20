@@ -49,26 +49,21 @@
                                     <tr>
                                         <td>[[sample.name]]</td>
                                         <template is="dom-repeat" items="[[potentialGenotypes]]" as="genotype">
-                                            <td><input id="[[prefix]]-sgcb-[[sample.name]]-[[genotype]]" type="checkbox" on-click="onGenotypeCheckboxClick" data-sample="[[sample.name]]" data-genotype="[[genotype]]" checked$="[[isGenotypeIncluded(sample.name, genotype, query.*)]]"></td>
+                                            <td><input id="[[prefix]]-sgcb-[[sample.name]]-[[genotype]]" type="checkbox" on-click="onGenotypeCheckboxClick" data-sample="[[sample.name]]" data-genotype="[[genotype]]" checked$="[[isGenotypeIncluded(sample.name, genotype, query.*)]]" disabled$="[[!isSampleGenotypeAvailable(sample.name, genotype, query.*)]]"></td>
                                         </template>
                                     </tr>
                                 </template>
                             </tbody>
                         </table>
+                        <template is="dom-if" if="[[hasHaploidGenes.length]]">
+                            About haploidity
+                            <jsorolla-tooltip
+                                header="With haploid samples"
+                                content="[[getHaploidGenesText(hasHaploidGenes)]]"
+                            ></jsorolla-tooltip>
+                        </template>
+
                     </div>
-                    <template is="dom-repeat" items="[[hasHaploidSamples.length]]">
-                        <div class="form-group">
-                            <div class="browser-subsection">
-                                <jsorolla-tooltip
-                                    header="With haploid samples"
-                                    content="Shows samples with haploid genes in the source VCF"
-                                ></jsorolla-tooltip>
-                            </div>
-                            <template is="dom-repeat" items="[[hasHaploidSamples]]" as="sample">
-                                [[sample]]<br>
-                            </template>
-                        </div>
-                    </template>
                 </div>
             </div>
         </template>
@@ -145,11 +140,23 @@
                         type: Array,
                         computed: 'getIndividualsFromSamples(samples)',
                     },
-                    hasHaploidSamples: {
+                    hasHaploidGenes: {
                         type: Array,
                         value: () => [],
                     },
                 };
+            }
+
+            isSampleGenotypeAvailable(sampleName, genotype) {
+                return !(['0', '1'].includes(genotype)) || this.hasHaploidGenes.includes(sampleName);
+            }
+
+            getHaploidGenesText() {
+                if (0 < this.hasHaploidGenes.length) {
+                    return `Some samples in this analysis (${this.hasHaploidGenes.join(',')}) have variants in genes treated as haploid in the source. Please, use 0/0 and 1/1 for genotypes 0 and 1 respectively and set inheritance mode genotypes manually.`;
+                } else {
+                    return '';
+                }
             }
 
             getIndividualsFromSamples() {
@@ -477,30 +484,40 @@
             }
 
             checkHaploidSamples() {
-                /*
-                debugger;
-                this.hasHaploidSamples = [];
+
+                this.hasHaploidGenes = [];
+                this._setPotentialGenotypes(['0/0', '0/1', '1/1', './.']);
+
                 for (const sample of this.samples) {
                     // just make a query looking for haploid samples
                     const pthis = this;
                     const params = {
+                        sample: sample.name,
+                        genotype: `${sample.name}:1`,
+                        summary: false,
+                        histogram: false,
+                        skipCount: true,
+                        count: false,
                         limit: 1,
-                        skipCount: false,
-                        count: true,
-                        includeSample: sample.name,
-                        includeGenotype: `${sample.name}:0,1`,
+                        interval: 2000,
+                        // includeSample: sample.name,
+                        // includeGenotype: `${sample.name}:1`,
                     };
+                    if (!!this.opencgaSession && !!this.opencgaSession.study && !!this.opencgaSession.study.alias) {
+                        if (!!this.opencgaSession.project && !!this.opencgaSession.project.alias) {
+                            params.study = `${this.opencgaSession.project.alias}:${this.opencgaSession.study.alias}`;
+                        } else {
+                            params.study = this.opencgaSession.study.alias;
+                        }
+                    }
                     this.opencgaClient.variants().query(params).then(response => {
-                        debugger;
-                        if (!!response && !!response.response && response.response.length>0 && response.response[0].result && response.response[0].result.length>0) {
-                            const numResults = response.response[0].result[0];
-                            if (numResults > 0) {
-                                pthis.hasHaploidSamples.push(sample.name);
-                            }
+                        if (!!response && !!response.response && response.response.length>0 && response.response[0].result && response.response[0].numResults>0) {
+                            pthis.push("hasHaploidGenes", sample.name);
+                            pthis._setPotentialGenotypes(['0/0', '0/1', '1/1', './.', '0', '1']);
+
                         }
                     });
                 }
-                */
             }
         }
 

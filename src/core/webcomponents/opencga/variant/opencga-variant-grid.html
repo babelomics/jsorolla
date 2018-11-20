@@ -510,7 +510,7 @@
                     }
                 }
 
-                // let's try to sort this
+                // TODO: this breaks performance; should redesign (probably on server)
                 queryParams.sort = "id";
 
                 return { host: host, queryParams: queryParams };

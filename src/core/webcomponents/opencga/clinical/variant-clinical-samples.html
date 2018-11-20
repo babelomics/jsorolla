@@ -392,7 +392,8 @@
                         return false;
                     } else {
                         const anyDiseasedSamples = samples.some(sample => !!sample.phenotypes && sample.phenotypes.length > 0);
-                        if (!anyDiseasedSamples) {
+                        const anyDiseasedIndividuals = samples.map(sample => sample.individual && !!sample.individual.phenotypes && sample.individual.phenotypes.length>0);
+                        if (!anyDiseasedSamples && !anyDiseasedIndividuals) {
                             this.throwMessage("At least one subject should be diseased.", UtilsNew.MESSAGE_ERROR);
                             return false;
                         } else {
