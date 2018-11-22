@@ -91,7 +91,7 @@
             fireSelectStudy(e) {
                 e.preventDefault();
                 this.dispatchEvent(new CustomEvent('study', {
-                    detail: {study: e.target.dataStudy},
+                    detail: {study: e.target.dataStudy, project: this.project},
                     bubble: true,
                     composed: true
                 }));
