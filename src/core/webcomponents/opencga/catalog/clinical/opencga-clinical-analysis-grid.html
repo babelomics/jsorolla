@@ -22,11 +22,11 @@
 
         <span>Showing <label>{{from}}-{{to}}</label> of <label>{{numTotalResultsText}}</label> analysis</span>
         <table id="{{prefix}}tableAnalysis"
-               data-detail-view="true"
-               data-detail-formatter="detailFormatter"  data-icons-prefix="fa" data-icons="icons" data-show-refresh="true">
+                data-toggle="table"
+                data-detail-view="true"
+                data-detail-formatter="detailFormatter"  data-icons-prefix="fa" data-icons="icons" data-show-refresh="true">
             <thead style="background-color: #eee"></thead>
         </table>
-
     </template>
 
     <script>
@@ -114,28 +114,27 @@
             }
 
             renderTable() {
-                let _config = Object.assign(this.defaultConfig, this.config);
-
                 this.from = 1;
-                this.to = Math.max(UtilsNew.isNotUndefinedOrNull(this.query.limit) ? this.query.limit : 0, this.config.pageSize);
+                this.to = Math.max(this.query.limit || 0, this.config.pageSize);
 
                 let urlQueryParams = this._getUrlQueryParams();
                 let queryParams = urlQueryParams.queryParams;
                 let _numTotal = -1;
 
-                let _this = this;
-                $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable('destroy');
-                $(PolymerUtils.getElementById(this.prefix + "tableAnalysis")).bootstrapTable({
+                const  _this = this;
+                const table = $(PolymerUtils.getElementById(this.prefix + "tableAnalysis"));
+                table.bootstrapTable('destroy');
+                table.bootstrapTable({
                     url: urlQueryParams.host,
                     columns: this._getTableColumns(),
                     method: 'get',
+                    // pagination: true,
                     sidePagination: 'server',
 
                     // Set table properties, these are read from config property
-                    pagination: _config.pagination,
-                    pageSize: _config.pageSize,
-                    pageList: _config.pageList,
-
+                    pagination: true,
+                    pageSize: 10,
+                    pageList: [5, 10, 20],
                     queryParams: function (params) {
                         if ((queryParams.limit === undefined || params.limit !== queryParams.limit) && UtilsNew.isNotUndefinedOrNull(params.limit)) {
                             queryParams.limit = params.limit;
@@ -143,23 +142,27 @@
                         queryParams.skip = params.offset;
                         return queryParams;
                     },
-                    responseHandler: function (resp) {
+                    responseHandler: resp => {
                         if (_numTotal === -1) {
                             _numTotal = resp.response[0].numTotalResults;
                         }
                         // Format the number string with commas
                         _this.numTotalResultsText = _numTotal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                        return {total: _numTotal, rows: resp.response[0].result}
+                        return { rows: resp.response[0].result, total: _numTotal };
+                        // return resp.response[0].result;
                     },
                     onLoadSuccess: data => {
                         if (!_this.analysis && !!data && data.total>0) {
-                            const _table = $('#' + _this.prefix + 'tableAnalysis');
-                            if (!!_table) {
-                                _table.bootstrapTable('check', 0);
+                            const table = $('#' + _this.prefix + 'tableAnalysis');
+                            if (!!table && table.bootstrapTable('getData').length > 0) {
+                                table.bootstrapTable('check', 0);
                             }
                         } else {
                             _this.analysisObserver();
                         }
+                    },
+                    onLoadError: (state, res) => {
+                        debugger;
                     },
                     onCheck: (row, elem) => {
                         _this.dispatchEvent(new CustomEvent("analysis-selected", {

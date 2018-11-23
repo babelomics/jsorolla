@@ -248,7 +248,7 @@
                                 _this.set('samples', newSamples);
                             }
                         },
-                        onLoadSuccess: function (data) {
+                        onLoadSuccess: data => {
                             // Check all already selected rows. Selected samples are stored in this.samples array
                             if (!!_table) {
                                 if (!_this._config.multiselection) {
@@ -266,8 +266,6 @@
                                     }
                                 }
                             }
-
-
                         },
                         onPageChange: function (page, size) {
                             _this.from = (page - 1) * size + 1;
