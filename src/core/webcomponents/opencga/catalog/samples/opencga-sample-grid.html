@@ -34,6 +34,9 @@
 
             constructor() {
                 super();
+
+                this.downloadFormatter = this.downloadFormatter.bind(this);
+                this.downloadQCFile = this.downloadQCFile.bind(this);
                 this._init();
             }
 
@@ -273,13 +276,12 @@
                             _this.from = (page - 1) * size + 1;
                             _this.to = page * size;
                         },
-//                         onPostBody: function() {
-//                             if(PolymerUtils.getElementsByClassName(_this.prefix + 'Download')) {
-//                                 PolymerUtils.querySelectorAll("." + _this.prefix + "Download").forEach(elem => elem.addEventListener("click", _this.downloadQCFile.bind(_this), true));
-//
-// //                                PolymerUtils.getElementById(_this.prefix + 'Download').addEventListener('click', _this.downloadQCFile.bind(_this));
-//                             }
-//                         }
+                        onPostBody: function() {
+                            if(PolymerUtils.getElementsByClassName(_this.prefix + 'Download')) {
+                                PolymerUtils.querySelectorAll("." + _this.prefix + "Download").forEach(elem => elem.addEventListener("click", _this.downloadQCFile, false));
+//                                PolymerUtils.getElementById(_this.prefix + 'Download').addEventListener('click', _this.downloadQCFile.bind(_this));
+                            }
+                        }
                     });
 
                     this.opencgaClient.studies().info(this.opencgaSession.study.id)
@@ -473,15 +475,18 @@
             // and apparently are not used, so we should just remove them
             // but I am not sure if the merge guess was correct on this
 
-            /*
+
             downloadFormatter(value, row) {
                 return '<button role="button" type="button" class="'+this.prefix + 'Download btn btn-sm btn-primary" data-sample-name="'+row.name +'" ><i class="fa fa-download"  data-sample-name="' + row.name + '" aria-hidden="true"></i>&nbsp;Download</button>';
             }
 
             downloadQCFile(e) {
+                e.stopPropagation();
                 let name = e.target.getAttribute('data-sample-name') + ".QC.tar.gz";
-                let study = this.project.alias + ":" + this.study.alias;
-                let sid =  Cookies.get(this.opencgaClient.getConfig().cookieSessionId);
+                // let study = this.project.alias + ":" + this.study.alias;
+                // let sid =  Cookies.get(this.opencgaClient.getConfig().cookieSessionId);
+                const study = this.opencgaSession.study.fqn;
+                const sid = this.opencgaSession.token;
                 let opencgaHostUrl = this.opencgaClient.getConfig().host;
                 if (!opencgaHostUrl.startsWith("http://") && !opencgaHostUrl.startsWith("https://")) {
                     opencgaHostUrl = 'http://' + opencgaHostUrl;
@@ -524,7 +529,6 @@
                     });
 
             }
-            */
 
             _initTableColumns() {
                 let columns = [];
@@ -575,6 +579,11 @@
                         {
                             title: 'Mother',
                             formatter: this.motherFormatter,
+                        },
+                        {
+                            title: 'QC',
+                            field: 'download',
+                            formatter: this.downloadFormatter,
                         },
                         {
                             title: 'Cell Line',
