@@ -429,12 +429,7 @@
             }
 
             individualFormatter(value, row) {
-                if (UtilsNew.isNotUndefined(row.attributes) && UtilsNew.isNotUndefined(row.attributes.individual)
-                    && UtilsNew.isNotUndefined(row.attributes.individual.id)) {
-                    return row.attributes.individual.id;
-                } else {
-                    return '-'
-                }
+				return (!!row && !!row.attributes && !!row.attributes.individual && row.attributes.individual.name) || '-';
             }
 
             dateFormatter(value, row) {
