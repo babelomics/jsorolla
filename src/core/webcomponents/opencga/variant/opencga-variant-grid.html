@@ -858,40 +858,42 @@
             }
 
             populationFrequenciesFormatter(value, row, index) {
-                if (!!row && !!row.annotation && !!row.annotation.populationFrequencies && row.annotation.populationFrequencies.length > 0) {
-                    const data = new Map();
-                    for (let popFreqIdx in row.annotation.populationFrequencies) {
-                        let popFreq = row.annotation.populationFrequencies[popFreqIdx];
-                        if (this.field.study === popFreq.study && this.field.populationMap[popFreq.population] === true) {
-                            data.set(popFreq.population, Number(popFreq.altAlleleFreq).toFixed(4));
-                        }
-                    }
 
-                    const tableSize = this.field.populations.length * 15;
-                    // Creates the colored table with one row and as many columns as populations
-                    let htmlPopFreqTable = "<table style='width: " + tableSize + "px'><tr>";
-                    for (let p in this.field.populations) {
-                        let popFreq = this.field.populations[p];
-                        if (typeof data.get(popFreq) !== "undefined") {
-                            let freq = data.get(this.field.populations[p]);
-                            if (freq < 0.001) {
-                                htmlPopFreqTable += "<td style='width: 15px; background: " + this.field.colors.veryRare + "' title='" + popFreq + ": " + freq + "'>&nbsp;</td>";
-                            } else if (freq < 0.005) {
-                                htmlPopFreqTable += "<td style='width: 15px; background: " + this.field.colors.rare + "' title='" + popFreq + ": " + freq + "'>&nbsp;</td>";
-                            } else if (freq < 0.05) {
-                                htmlPopFreqTable += "<td style='width: 15px; background: " + this.field.colors.average + "' title='" + popFreq + ": " + freq + "'>&nbsp;</td>";
-                            } else {
-                                htmlPopFreqTable += "<td style='width: 15px; background: " + this.field.colors.common + "' title='" + popFreq + ": " + freq + "'>&nbsp;</td>";
-                            }
-                        } else  {
-                            htmlPopFreqTable += "<td style='width: 15px; background: black;' title='" + popFreq + ": NA'>&nbsp;</td>";
-                        }
-                    }
-                    htmlPopFreqTable += "</tr></table>";
+				// FIX: the case with no populationFrequencies should behave the same as having it with no data
+				const populationFrequencies = (!!row && !!row.annotation && row.annotation.populationFrequencies) || [];
 
-                    return htmlPopFreqTable;
-                }
-                return '-';
+				const data = new Map();
+				for (let popFreqIdx in row.annotation.populationFrequencies) {
+					let popFreq = row.annotation.populationFrequencies[popFreqIdx];
+					if (this.field.study === popFreq.study && this.field.populationMap[popFreq.population] === true) {
+						data.set(popFreq.population, Number(popFreq.altAlleleFreq).toFixed(4));
+					}
+				}
+
+				const tableSize = this.field.populations.length * 15;
+				// Creates the colored table with one row and as many columns as populations
+				let htmlPopFreqTable = "<table style='width: " + tableSize + "px'><tr>";
+				for (let p in this.field.populations) {
+					let popFreq = this.field.populations[p];
+					if (typeof data.get(popFreq) !== "undefined") {
+						let freq = data.get(this.field.populations[p]);
+						if (freq < 0.001) {
+							htmlPopFreqTable += "<td style='width: 15px; background: " + this.field.colors.veryRare + "' title='" + popFreq + ": " + freq + "'>&nbsp;</td>";
+						} else if (freq < 0.005) {
+							htmlPopFreqTable += "<td style='width: 15px; background: " + this.field.colors.rare + "' title='" + popFreq + ": " + freq + "'>&nbsp;</td>";
+						} else if (freq < 0.05) {
+							htmlPopFreqTable += "<td style='width: 15px; background: " + this.field.colors.average + "' title='" + popFreq + ": " + freq + "'>&nbsp;</td>";
+						} else {
+							htmlPopFreqTable += "<td style='width: 15px; background: " + this.field.colors.common + "' title='" + popFreq + ": " + freq + "'>&nbsp;</td>";
+						}
+					} else  {
+						htmlPopFreqTable += "<td style='width: 15px; background: black;' title='" + popFreq + ": NA'>&nbsp;</td>";
+					}
+				}
+				htmlPopFreqTable += "</tr></table>";
+
+				return htmlPopFreqTable;
+
             }
 
             //======================================================================================
@@ -1043,7 +1045,7 @@
                 }
 
                 if (!!this.populationFrequencies && !!this.populationFrequencies.studies && this.populationFrequencies.studies.length > 0) {
-                    let popIdx = 7;
+                    let popIdx = 8;
                     let subPopIdx = 6;
                     if (!!this.cohorts && Object.keys(this.cohorts).length > 0 && !!this.config.filter.menu.skipSubsections && !this.config.filter.menu.skipSubsections.includes("cohort")) {
                         popIdx++;
