@@ -1,0 +1,93 @@
+<dom-module id="iva-variant-sample-grid">
+  <template>
+    <div class="col-md-8 col-md-offset-1" style="padding-top: 20px; overflow: auto;">
+      <table class="table table-bordered" style="width: 50%">
+        <thead>
+          <tr>
+            <th>Sample</th>
+            <th>Variant</th>
+          </tr>
+        </thead>
+        <tbody id="{{prefix}}TableTBody">
+          <template is="dom-repeat" items="{{variantObj}}" as="attrs">
+            <tr id="{{attrs.name}}" class$="samples-table-{{attrs.name}}">
+              <td><span style="font-weight: bold">{{attrs.name}}</span></td>
+
+              <template is="dom-repeat" items="{{attrs.values}}" as="attr">
+                <td>{{attr}}</td>
+              </template>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </template>
+  <script>
+    class IvaVariantSampleGrid extends Polymer.Element {
+      static get is() {
+        return "iva-variant-sample-grid";
+      }
+
+      static get properties() {
+        return {
+          opencgaSession: {
+            type: Object
+          },
+          opencgaClient: {
+            type: Object
+          },
+          studyId: {
+            type: String
+          },
+          variantId: {
+            type: String,
+            observer: "onVariantIdChange"
+          },
+          analysis: {
+            type: Object
+          }
+        };
+      }
+
+      constructor() {
+        super();
+        this.onVariantIdChange = this.onVariantIdChange.bind(this);
+      }
+
+      ready() {
+        super.ready();
+        console.dir(this.analysis);
+        //  console.log(this.variantId);
+      }
+
+      _attachDom(dom) {
+        this.appendChild(dom);
+      }
+
+      onVariantIdChange() {
+        // TODO
+      }
+
+      fetchSamplesFromServer() {
+        // BLAH BLAH
+        // escucha pollita que aquí leemos de Opencga
+        const params = {
+          study: this.studyId,
+          genotypes: "0/1",
+          id: this.variantId
+        };
+        const options = {
+          include: "id,name"
+        };
+        const pThis = this;
+        this.opencgaClient
+          .variants()
+          .samples(params, options)
+          .then(response => {
+            pThis.setResults(getResultsFromResponse(response));
+          });
+      }
+    }
+    customElements.define(IvaVariantSampleGrid.is, IvaVariantSampleGrid);
+  </script>
+</dom-module>

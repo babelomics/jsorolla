@@ -1,186 +1,189 @@
-<link rel="import" href="variant-beacon-network.html">
+<link rel="import" href="variant-beacon-network.html" />
 
 <dom-module id="variant-beacon">
-    <template>
-        <style include="jso-styles"></style>
+  <template>
+    <style include="jso-styles"></style>
 
-        <div class="panel">
-            <h3 style="margin: 10px 10px 10px 15px">
-                <i class="fa fa-share-alt" aria-hidden="true"></i>
-                &nbsp;Beacon
-            </h3>
+    <div class="panel">
+      <h3 style="margin: 10px 10px 10px 15px"><i class="fa fa-share-alt" aria-hidden="true"></i> &nbsp;Beacon</h3>
+    </div>
+
+    <div class="col-md-12">
+      <!--<h3 style="margin: 10px 5px 15px 25px">Beacon</h3>-->
+      <div style="width: 60%; margin: 0px 0px 0px 100px">
+        <span> <label>Example: </label> <a on-click="loadExample">Click to load example</a> </span> <br />
+        <br />
+        <div class="form-group row">
+          <label for="datasetInput" class="col-xs-2 col-form-label">Dataset</label>
+          <div class="col-xs-6">
+            <select class="form-control" name="dataset" id="datasetInput">
+              <template is="dom-repeat" items="{{studies}}">
+                <option value="{{item.alias}}">{{item.name}}</option>
+              </template>
+            </select>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="refNameInput" class="col-xs-2 col-form-label">Reference Name</label>
+          <div class="col-xs-3">
+            <input class="form-control" type="text" value="" id="refNameInput" on-keyup="updateVariant" />
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="startInput" class="col-xs-2 col-form-label">Start</label>
+          <div class="col-xs-3">
+            <input class="form-control" type="text" value="" id="startInput" on-keyup="updateVariant" />
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="alleleInput" class="col-xs-2 col-form-label">Allele</label>
+          <div class="col-xs-3">
+            <input class="form-control" type="text" value="" id="alleleInput" on-keyup="updateVariant" />
+          </div>
+        </div>
+        <!--<div class="form-group row">-->
+        <!--<label class="col-xs-2 col-form-label">Format Type</label>-->
+        <!--<div class="col-xs-3">-->
+        <!--<input class="form-check-input" type="checkbox" name="formatType" id="textType" value="text" checked> Text-->
+        <!--<input class="form-check-input" type="checkbox" name="formatType" id="jsonType" value="json"> JSON-->
+        <!--</div>-->
+        <!--</div>-->
+        <div class="form-group row" style="padding-left: 14px">
+          <button type="reset" class="btn btn-default" on-click="clearFields">Reset</button>
+          <button type="submit" class="btn btn-default" on-click="execute">Submit</button>
         </div>
 
-        <div class="col-md-12">
-            <!--<h3 style="margin: 10px 5px 15px 25px">Beacon</h3>-->
-            <div style="width: 60%; margin: 0px 0px 0px 100px">
-                <span>
-                    <label>Example: </label>
-                    <a on-click="loadExample">Click to load example</a>
-                </span>
-                <br>
-                <br>
-                <div class="form-group row">
-                    <label for="datasetInput" class="col-xs-2 col-form-label">Dataset</label>
-                    <div class="col-xs-6">
-                        <select class="form-control" name="dataset" id="datasetInput">
-                            <template is="dom-repeat" items="{{studies}}">
-                                <option value="{{item.alias}}">{{item.name}}</option>
-                            </template>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label for="refNameInput" class="col-xs-2 col-form-label">Reference Name</label>
-                    <div class="col-xs-3">
-                        <input class="form-control" type="text" value="" id="refNameInput" on-keyup="updateVariant">
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label for="startInput" class="col-xs-2 col-form-label">Start</label>
-                    <div class="col-xs-3">
-                        <input class="form-control" type="text" value="" id="startInput" on-keyup="updateVariant">
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label for="alleleInput" class="col-xs-2 col-form-label">Allele</label>
-                    <div class="col-xs-3">
-                        <input class="form-control" type="text" value="" id="alleleInput" on-keyup="updateVariant">
-                    </div>
-                </div>
-                <!--<div class="form-group row">-->
-                <!--<label class="col-xs-2 col-form-label">Format Type</label>-->
-                <!--<div class="col-xs-3">-->
-                <!--<input class="form-check-input" type="checkbox" name="formatType" id="textType" value="text" checked> Text-->
-                <!--<input class="form-check-input" type="checkbox" name="formatType" id="jsonType" value="json"> JSON-->
-                <!--</div>-->
-                <!--</div>-->
-                <div class="form-group row" style="padding-left: 14px">
-                    <button type="reset" class="btn btn-default" on-click="clearFields">Reset</button>
-                    <button type="submit" class="btn btn-default" on-click="execute">Submit</button>
-                </div>
-
-                <!-- Result -->
-                <template is="dom-if" if="{{checkResult(result)}}">
-                    <div class="col-xs-3" style="padding-left: 0px">
-                        <div class="panel panel-primary">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">Response</h3>
-                            </div>
-                            <div class="panel-body">
-                                <span id="BeaconResponse">Exists: {{result}}</span>
-                            </div>
-                        </div>
-                    </div>
-                </template>
+        <!-- Result -->
+        <template is="dom-if" if="{{checkResult(result)}}">
+          <div class="col-xs-3" style="padding-left: 0px">
+            <div class="panel panel-primary">
+              <div class="panel-heading"><h3 class="panel-title">Response</h3></div>
+              <div class="panel-body"><span id="BeaconResponse">Exists: {{result}}</span></div>
             </div>
-        </div>
+          </div>
+        </template>
+      </div>
+    </div>
 
-        <br>
-        <div class="col-md-12">
-            <h3 style="margin: 10px 5px 15px 50px">Beacon Network</h3>
-            <div style="width: 60%; margin-left: 100px">
-                <variant-beacon-network variant="{{variant}}" clear="{{clear}}" config="{{_config}}"></variant-beacon-network>
-            </div>
-        </div>
-    </template>
+    <br />
+    <div class="col-md-12">
+      <h3 style="margin: 10px 5px 15px 50px">Beacon Network</h3>
+      <div style="width: 60%; margin-left: 100px">
+        <variant-beacon-network variant="{{variant}}" clear="{{clear}}" config="{{_config}}"></variant-beacon-network>
+      </div>
+    </div>
+  </template>
 
-    <script>
-        class VariantBeacon extends Polymer.Element {
+  <script>
+    class VariantBeacon extends Polymer.Element {
+      constructor() {
+        super();
 
-            constructor() {
-                super();
+        this._config = this.getDefaultConfig();
+      }
 
-                this._config = this.getDefaultConfig();
-            }
+      static get is() {
+        return "variant-beacon";
+      }
 
-            static get is() {
-                return 'variant-beacon'
-            }
+      static get properties() {
+        return {
+          opencgaClient: {
+            type: Object
+          },
+          project: {
+            type: Object
+          },
+          studies: {
+            type: Array
+          },
+          config: {
+            type: Object,
+            observer: "configObserver"
+          }
+        };
+      }
 
-            static get properties() {
-                return {
-                    opencgaClient: {
-                        type: Object
-                    },
-                    project: {
-                        type: Object
-                    },
-                    studies: {
-                        type: Array
-                    },
-                    config: {
-                        type: Object,
-                        observer: "configObserver"
-                    }
-                }
-            }
+      _attachDom(dom) {
+        this.appendChild(dom);
+      }
 
-            _attachDom(dom) {
-                this.appendChild(dom);
-            }
+      configObserver() {
+        this._config = Object.assign(this.getDefaultConfig(), this.config);
+      }
 
-            configObserver() {
-                this._config = Object.assign(this.getDefaultConfig(), this.config);
-            }
+      clearFields(e) {
+        this.$.datasetInput.value = "";
+        this.$.refNameInput.value = "";
+        this.$.startInput.value = "";
+        this.$.alleleInput.value = "";
+        //                this.$.textType.checked = false;
+        //                this.$.jsonType.checked = false;
+        this.result = "";
+        this.clear = Utils.randomString(4); // Clear beacon network response
+        this.variant = ""; // reset variant to empty
+      }
 
-            clearFields(e) {
-                this.$.datasetInput.value = "";
-                this.$.refNameInput.value = "";
-                this.$.startInput.value = "";
-                this.$.alleleInput.value = "";
-//                this.$.textType.checked = false;
-//                this.$.jsonType.checked = false;
-                this.result = "";
-                this.clear = Utils.randomString(4); // Clear beacon network response
-                this.variant = "" // reset variant to empty
-            }
+      loadExample() {
+        this.$.datasetInput.value = this.studies[0].alias;
+        this.$.refNameInput.value = "21";
+        this.$.startInput.value = "46047686";
+        this.$.alleleInput.value = "T";
 
-            loadExample() {
-                this.$.datasetInput.value = this.studies[0].alias;
-                this.$.refNameInput.value = "21";
-                this.$.startInput.value = "46047686";
-                this.$.alleleInput.value = "T";
+        this.updateVariant();
+      }
 
-                this.updateVariant();
-            }
-
-            execute(e) {
-                this.clear = Utils.randomString(4); // Clear beacon network response
-                let queryParams = {
-                    chrom: this.$.refNameInput.value,
-                    pos: Number(this.$.startInput.value) - 1,
-                    allele: this.$.alleleInput.value,
-                    beacon: this.project.alias + ":" + this.$.datasetInput.value,
-                };
-                let _this = this;
-                if (this.opencgaClient instanceof OpenCGAClient) {
-                    this.opencgaClient.ga4gh().beacon(queryParams, {})
-                        .then(function (response) {
-                            let exists = response[0].response.toString();
-                            _this.result = exists.charAt(0).toUpperCase() + exists.slice(1);
-                        })
-                }
-            }
-
-            updateVariant(e) {
-                this.variant = this.$.refNameInput.value + ":" + this.$.startInput.value + "::" + this.$.alleleInput.value;
-            }
-
-            checkResult(result) {
-                return UtilsNew.isNotEmpty(result);
-            }
-
-            getDefaultConfig() {
-                return {
-                    hosts: [
-                        "brca-exchange", "cell_lines", "cosmic", "wtsi", "wgs", "ncbi", "ebi", "ega", "broad", "gigascience",
-                        "ucsc", "lovd", "hgmd", "icgc", "sahgp"
-                    ]
-                }
-            }
+      execute(e) {
+        this.clear = Utils.randomString(4); // Clear beacon network response
+        let queryParams = {
+          chrom: this.$.refNameInput.value,
+          pos: Number(this.$.startInput.value) - 1,
+          allele: this.$.alleleInput.value,
+          beacon: this.project.alias + ":" + this.$.datasetInput.value
+        };
+        let _this = this;
+        if (this.opencgaClient instanceof OpenCGAClient) {
+          this.opencgaClient
+            .ga4gh()
+            .beacon(queryParams, {})
+            .then(function(response) {
+              let exists = response[0].response.toString();
+              _this.result = exists.charAt(0).toUpperCase() + exists.slice(1);
+            });
         }
+      }
 
-        customElements.define(VariantBeacon.is, VariantBeacon);
-    </script>
+      updateVariant(e) {
+        this.variant = this.$.refNameInput.value + ":" + this.$.startInput.value + "::" + this.$.alleleInput.value;
+      }
+
+      checkResult(result) {
+        return UtilsNew.isNotEmpty(result);
+      }
+
+      getDefaultConfig() {
+        return {
+          hosts: [
+            "brca-exchange",
+            "cell_lines",
+            "cosmic",
+            "wtsi",
+            "wgs",
+            "ncbi",
+            "ebi",
+            "ega",
+            "broad",
+            "gigascience",
+            "ucsc",
+            "lovd",
+            "hgmd",
+            "icgc",
+            "sahgp"
+          ]
+        };
+      }
+    }
+
+    customElements.define(VariantBeacon.is, VariantBeacon);
+  </script>
 </dom-module>

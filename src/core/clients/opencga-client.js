@@ -184,12 +184,12 @@ class OpenCGAClient {
      */
     createSession() {
         let _this = this;
-        return new Promise(function(resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // check that a session exists
             // TODO sould we check the session has not expired?
             if (UtilsNew.isNotUndefined(_this._config.sessionId)) {
                 _this.users().info()
-                    .then(function(response) {
+                    .then(function (response) {
                         let session = {};
                         session.user = response.response[0].result[0];
                         session.token = _this._config.sessionId;
@@ -213,17 +213,17 @@ class OpenCGAClient {
                                         study.fqn = study.fqn || `${project.fqn}:${study.alias}`;
                                     }
                                 }
-                                session.project = !!session.projects ? session.projects[0] : null;
+                                session.project = session.projects ? session.projects[0] : null;
                                 session.study = !!session.project && !!session.project.studies ? session.project.studies[0] : null;
 
                                 resolve(session);
                             })
                             .catch(function (response) {
-                                reject({message: "An error when getting projects", value: response});
+                                reject({ message: "An error when getting projects", value: response });
                             });
                     });
             } else {
-                reject({message: "No valid token", value: _this._config.sessionId});
+                reject({ message: "No valid token", value: _this._config.sessionId });
             }
         });
     }
@@ -260,6 +260,7 @@ class OpenCGAClient {
         }
         return undefined;
     }
+
 }
 
 // parent class
@@ -466,7 +467,7 @@ class Users extends OpenCGAParentClass {
                 return Promise.resolve(JSON.parse(loginResponse));
             }
         }
-        return this.get("users", userId, "login", params, options).then(function(response) {
+        return this.get("users", userId, "login", params, options).then(function (response) {
             if (response.error === "") {
                 this._config.userId = userId;
                 this._config.sessionId = response.response[0].result[0].id;
@@ -488,7 +489,7 @@ class Users extends OpenCGAParentClass {
     refresh() {
         let userId = this._getUserId();
 
-        return this.post("users", userId, "login", {}, {}).then(function(response) {
+        return this.post("users", userId, "login", {}, {}).then(function (response) {
             if (response.error === "") {
                 if (this._config.useCookies) {
                     // Cookies being used

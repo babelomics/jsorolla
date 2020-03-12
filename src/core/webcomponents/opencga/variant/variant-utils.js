@@ -33,10 +33,10 @@ class VariantUtils {
         });
         variantString.push("Clinvar");
         variantString.push("Cosmic");
-        dataString.push(variantString.join('\t'));
+        dataString.push(variantString.join("\t"));
         variantString = [];
         for (let i = 0; i < json.length; i++) {
-            variantString.push(json[i].chromosome + ':' + json[i].start + " " + json[i].reference + '/' + json[i].alternate);
+            variantString.push(json[i].chromosome + ":" + json[i].start + " " + json[i].reference + "/" + json[i].alternate);
             if (typeof json[i].id !== "undefined" && json[i].id.startsWith("rs")) {
                 variantString.push(json[i].id);
             } else if (typeof json[i].annotation !== "undefined" && typeof json[i].annotation.xrefs !== "undefined" && json[i].annotation.xrefs.length > 0) {
@@ -90,18 +90,18 @@ class VariantUtils {
                             for (let ss = 0; ss < json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores.length; ss++) {
                                 let source = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].source;
                                 switch (source) {
-                                    case "sift":
-                                        if (json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score < min) {
-                                            min = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score;
-                                            description.sift = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].description + " ("+json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score+")";
-                                        }
-                                        break;
-                                    case "polyphen":
-                                        if (json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score >= max) {
-                                            max = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score;
-                                            description.polyphen = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].description + " ("+json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score+")";
-                                        }
-                                        break;
+                                case "sift":
+                                    if (json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score < min) {
+                                        min = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score;
+                                        description.sift = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].description + " ("+json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score+")";
+                                    }
+                                    break;
+                                case "polyphen":
+                                    if (json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score >= max) {
+                                        max = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score;
+                                        description.polyphen = json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].description + " ("+json[i].annotation.consequenceTypes[j].proteinVariantAnnotation.substitutionScores[ss].score+")";
+                                    }
+                                    break;
                                 }
                             }
                         }
@@ -124,15 +124,15 @@ class VariantUtils {
                 if (typeof json[i].annotation.conservation !== "undefined") {
                     for (let cons = 0; cons < json[i].annotation.conservation.length; cons++) {
                         switch (json[i].annotation.conservation[cons].source) {
-                            case "phylop":
-                                phylop = Number(json[i].annotation.conservation[cons].score).toFixed(3);
-                                break;
-                            case "phastCons":
-                                phastCons = Number(json[i].annotation.conservation[cons].score).toFixed(3);
-                                break;
-                            case "gerp":
-                                gerp = Number(json[i].annotation.conservation[cons].score).toFixed(3);
-                                break;
+                        case "phylop":
+                            phylop = Number(json[i].annotation.conservation[cons].score).toFixed(3);
+                            break;
+                        case "phastCons":
+                            phastCons = Number(json[i].annotation.conservation[cons].score).toFixed(3);
+                            break;
+                        case "gerp":
+                            gerp = Number(json[i].annotation.conservation[cons].score).toFixed(3);
+                            break;
                         }
                     }
                 }
@@ -156,7 +156,7 @@ class VariantUtils {
                             if (UtilsNew.isNotUndefinedOrNull(popFreq)) {
                                 let population = popFreq.population;
                                 if (study.id === popFreq.study && populationStudyBidimensional[study.id][population] === true) {
-                                    populationMap[study.id + "_" + population] = 'NA';
+                                    populationMap[study.id + "_" + population] = "NA";
                                 }
                             }
                         }
@@ -165,7 +165,7 @@ class VariantUtils {
 
                 if (typeof json[i].annotation.populationFrequencies !== "undefined") {
                     for (let pf = 0; pf < json[i].annotation.populationFrequencies.length; pf++) {
-                        let pop = json[i].annotation.populationFrequencies[pf].study + '_' + json[i].annotation.populationFrequencies[pf].population;
+                        let pop = json[i].annotation.populationFrequencies[pf].study + "_" + json[i].annotation.populationFrequencies[pf].population;
                         if (typeof populationMap[pop] !== "undefined" && populationMap[pop] == "NA") {
                             populationMap[pop] = Number(json[i].annotation.populationFrequencies[pf].altAlleleFreq).toFixed(4);
                         }
@@ -180,12 +180,12 @@ class VariantUtils {
                         if (typeof clinicalData !== "undefined") {
                             for (let cd = 0; cd < clinicalData.length; cd++) {
                                 switch (key) {
-                                    case "clinvar":
-                                        clinvar.push(clinicalData[cd].traits[0]);
-                                        break;
-                                    case "cosmic":
-                                        cosmic.push(clinicalData[cd].primaryHistology);
-                                        break;
+                                case "clinvar":
+                                    clinvar.push(clinicalData[cd].traits[0]);
+                                    break;
+                                case "cosmic":
+                                    cosmic.push(clinicalData[cd].primaryHistology);
+                                    break;
                                 }
                             }
                         }
@@ -193,14 +193,14 @@ class VariantUtils {
                 }
             }
             if (genes.length > 0) {
-                variantString.push(genes.join(','));
+                variantString.push(genes.join(","));
             } else {
                 variantString.push("-");
             }
             variantString.push(json[i].type);
             this.getGenotypeSamples(json[i], samples, nucleotideGenotype, variantString);
             if (ct.length > 0) {
-                variantString.push(ct.join(','));
+                variantString.push(ct.join(","));
             } else {
                 variantString.push("-");
             }
@@ -218,17 +218,17 @@ class VariantUtils {
             });
             // variantString.push(pfArray.join(','));
             if (clinvar.length > 0) {
-                variantString.push(clinvar.join(','));
+                variantString.push(clinvar.join(","));
             } else {
                 variantString.push("-");
             }
             if (cosmic.length > 0) {
-                variantString.push(cosmic.join(','));
+                variantString.push(cosmic.join(","));
             } else {
                 variantString.push("-");
             }
 
-            dataString.push(variantString.join('\t'));
+            dataString.push(variantString.join("\t"));
             variantString = [];
         }
         return dataString;
@@ -339,4 +339,5 @@ class VariantUtils {
             }
         }
     }
+
 }
